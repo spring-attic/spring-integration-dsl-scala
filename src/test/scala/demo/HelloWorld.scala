@@ -71,7 +71,7 @@ object HelloWorld {
     integrationContext.init
     
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
-    var outputMessage = outputChannel.recieve
+    var outputMessage = outputChannel.receive
     println("Output Message: " + outputMessage)
   }
   /**
@@ -95,7 +95,7 @@ object HelloWorld {
     integrationContext.init
     
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
-    var outputMessage = resultChannel.recieve
+    var outputMessage = resultChannel.receive
     println("Output Message: " + outputMessage)
   }
   
@@ -117,7 +117,7 @@ object HelloWorld {
     integrationContext.init
     
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
-    var outputMessage = resultChannel.recieve
+    var outputMessage = resultChannel.receive
     println("Output Message: " + outputMessage)
   }
   /**
@@ -145,7 +145,7 @@ object HelloWorld {
     integrationContext.init
     
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
-    var outputMessage = outputChannel.recieve
+    var outputMessage = outputChannel.receive
     println("Output Message: " + outputMessage)
   }
 }

@@ -203,14 +203,14 @@ protected class FunctionInvoker(f: AnyRef) {
   var returnType = method.getReturnType
   var methodName = "send"
   if (!returnType.isAssignableFrom(Void.TYPE)) {
-    methodName = "sendAndRecieve"
+    methodName = "sendAndReceive"
   }
 
   def send(m: Message[Any]): Unit = {
     method.setAccessible(true)
     method.invoke(function, m)
   }
-  def sendAndRecieve(m: Message[Any]): Any = {
+  def sendAndReceive(m: Message[Any]): Any = {
     var method = function.getClass.getDeclaredMethod("apply", classOf[Message[Any]])
     method.setAccessible(true)
     method.invoke(function, m)

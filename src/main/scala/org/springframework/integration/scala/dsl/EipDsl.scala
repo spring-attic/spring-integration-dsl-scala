@@ -138,7 +138,7 @@ object channel {
  *
  */
 class queue_channel(n: String, c: ConfigurationParameter*) extends channel(n, c: _*) {
-  def recieve(): Message[_] = {
+  def receive(): Message[_] = {
     require(underlyingContext != null)
     var messageChannel = underlyingContext.getBean(channelName)
     messageChannel.asInstanceOf[QueueChannel].receive
