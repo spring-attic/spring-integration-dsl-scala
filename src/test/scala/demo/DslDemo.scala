@@ -42,7 +42,7 @@ object DslDemo {
     val inputChannel = channel()
     integrationContext <= {
         	inputChannel >>
-        activate.using { { m: Message[String] => { println(m.getPayload) } } }
+        	activate.using{ m: Message[String] => { println(m.getPayload) }  }
     }
 
     integrationContext.init
