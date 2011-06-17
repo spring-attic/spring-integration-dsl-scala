@@ -41,7 +41,7 @@ object DslDemo {
 
     val inputChannel = channel()
     integrationContext <= {
-      inputChannel >>
+        	inputChannel >>
         activate.using { { m: Message[String] => { println(m.getPayload) } } }
     }
 
@@ -58,7 +58,7 @@ object DslDemo {
 
     val inputChannel = channel.withName("inChannel")
     integrationContext <= {
-      inputChannel >>
+        inputChannel >>
         activate.withName("myService").using("T(java.lang.System).out.println(payload)")
     }
 
@@ -73,7 +73,7 @@ object DslDemo {
     var integrationContext = SpringIntegrationContext()
     val inputChannel = channel.withExecutor(Executors.newFixedThreadPool(10))
     integrationContext <= {
-      inputChannel >>
+        inputChannel >>
         activate.withName("myService").using { { m: Message[String] => { println(m.getPayload) } } }
     }
 
@@ -92,7 +92,7 @@ object DslDemo {
     val outputChannel = channel.withName("outputChannel").andQueue(5)
 
     integrationContext <= {
-      inputChannel >>
+        inputChannel >>
         activate.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
         outputChannel
     }
@@ -114,7 +114,7 @@ object DslDemo {
     val resultChannel = channel.withQueue.andName("resultChannel")
 
     integrationContext <= {
-      inputChannel >>
+        inputChannel >>
         activate.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
         middleChannel >>
         //transform.withPoller(5, 1000).andName("myTransformer").using{"'### ' + payload.toLowerCase() + ' ###'"} >>
@@ -139,7 +139,7 @@ object DslDemo {
     val resultChannel = channel.withName("resultChannel").andQueue
 
     integrationContext <= {
-      inputChannel >>
+        inputChannel >>
         activate.using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
         middleChannel >>
         transform.using { "'### ' + payload.toLowerCase() + ' ###'" } >>
