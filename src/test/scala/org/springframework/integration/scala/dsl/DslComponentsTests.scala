@@ -28,47 +28,30 @@ class DslComponentsTests{
     val anonymousDirectChannel = channel()
     assert(anonymousDirectChannel  != null)
     
-    val directNamedChannel = channel("someChannel")
+    val directNamedChannel = channel.withName("someName")
     assert(directNamedChannel  != null)
     
-    val anonymousQueueChannel = channel(queue(5))
-    assert(anonymousQueueChannel  != null)
+    val anonymousQueueChannelNoCapacity = channel.withQueue()
+    assert(anonymousQueueChannelNoCapacity  != null)
     
-    val namedQueueChannel = channel("someChannel", queue(5))
-    assert(namedQueueChannel  != null)
+    val anonymousQueueChannelWithCapacity = channel.withQueue(5)
+    assert(anonymousQueueChannelWithCapacity  != null)
     
-    val anonymousAsyncChannelWithDefaultExecutor = channel(executor())
+    val namedQueueChannelA = channel.withName("foo").andQueue
+    assert(namedQueueChannelA  != null)
+    
+    val namedQueueChannelB = channel.withQueue.andName("hjk")
+    assert(namedQueueChannelB  != null)
+    
+    val anonymousAsyncChannelWithDefaultExecutor = channel.withExecutor
     assert(anonymousAsyncChannelWithDefaultExecutor  != null)
     
-    val namedAsyncChannelWithDefaultExecutor = channel("someChannel", executor())
+    val namedAsyncChannelWithDefaultExecutor = channel.withExecutor.andName("hjk")
     assert(namedAsyncChannelWithDefaultExecutor  != null)
     
-    val namedAsyncChannelWithProvidedExecutor = channel("someChannel", executor(Executors.newCachedThreadPool))
+    val namedAsyncChannelWithProvidedExecutor = channel.withName("hjk").andExecutor(Executors.newCachedThreadPool)
     assert(namedAsyncChannelWithProvidedExecutor  != null)
     
-  }
-  
-  @Test
-  def testChannelSubscriptions(){
-    // identify parent ACs
-    var integrationConfiguration = new SpringIntegrationContext()
-   
-    integrationConfiguration <= {
-	    pub_sub_channel("channelB") >> (
-	        transform("innerTransformerA"){"SpEL"}, 
-	        
-	        transform("innerTransformerB"){"SpEL"} >> 
-	        channel("innerChannelA"), 
-	        
-	        transform("innerTransformerC"){"SpEL"} >> 
-	        channel("innerChannelB")
-	    )
-    }
-
-	//integrationConfiguration.init() -- issue explicit init() or
-    
-    //channel.send(Message) - will check if context is inited and will initialize it first
-	
   }
 
 }

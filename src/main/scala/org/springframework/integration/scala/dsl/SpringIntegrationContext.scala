@@ -15,7 +15,7 @@
  */
 package org.springframework.integration.scala.dsl
 import org.apache.log4j._
-import java.util._
+import java.util.concurrent._
 import java.util.concurrent.ThreadPoolExecutor._
 import org.springframework.context.support._
 import org.springframework.integration._
@@ -25,6 +25,7 @@ import org.springframework.integration.scheduling._
 import org.springframework.beans._
 import org.springframework.beans.factory.config._
 import org.springframework.util._
+import org.springframework.integration.config._
 
 /**
  * @author Oleg Zhurakousky
@@ -35,13 +36,13 @@ object SpringIntegrationContext {
 }
 class SpringIntegrationContext {
   private val logger = Logger.getLogger(this.getClass)
-  private var componentMap: Map[IntegrationComponent, IntegrationComponent] = null
+  private var componentMap: java.util.Map[IntegrationComponent, IntegrationComponent] = null
   private[dsl] var context = new GenericApplicationContext()
 
-  def <=(e: IntegrationComponent): IntegrationComponent = {
+  def <=(e: InitializedComponent): IntegrationComponent = {
     require(e != null)
     if (e.componentMap == null) {
-      e.componentMap = new HashMap[IntegrationComponent, IntegrationComponent]
+      e.componentMap = new java.util.HashMap[IntegrationComponent, IntegrationComponent]
     }
     this.componentMap = e.componentMap
     if (!e.componentMap.containsKey(e)) {
@@ -57,121 +58,129 @@ class SpringIntegrationContext {
     this.preProcess
     var iterator = componentMap.keySet().iterator
     while (iterator.hasNext) {
-      var recievingDescriptor = iterator.next
+      var receivingDescriptor = iterator.next
 
-      if (recievingDescriptor.isInstanceOf[channel]) {
-        this.buildChannel(recievingDescriptor.asInstanceOf[channel])
-        recievingDescriptor.asInstanceOf[channel].underlyingContext = context
-      } else {
-        var consumerBuilder =
-          BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.config.ConsumerEndpointFactoryBean")
-
-        var handlerBuilder: BeanDefinitionBuilder = null
-        if (recievingDescriptor.isInstanceOf[activate]) {
-          handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.config.ServiceActivatorFactoryBean")
-        } else if (recievingDescriptor.isInstanceOf[transform]) {
-          handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.config.TransformerFactoryBean")
-        } else {
-          throw new IllegalArgumentException("handler is not currently supported" + recievingDescriptor)
+      receivingDescriptor match {
+        case ch: channel => {
+          this.buildChannel(ch)
         }
+        case endpoint: AbstractEndpoint => {
+          val consumerBuilder =
+            BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
+          var handlerBuilder: BeanDefinitionBuilder = null
 
-        var handler = recievingDescriptor.asInstanceOf[AbstractEndpoint]
-
-        if (handler.inputChannel.isInstanceOf[queue_channel]) {
-          var poller = this.getPollerConfiguration(handler)
-          var pollerBuilder =
-            BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.scheduling.PollerMetadata")
-          if (poller == null) {
-            context.registerBeanDefinition("org.springframework.integration.context.defaultPollerMetadata", pollerBuilder.getBeanDefinition)
-          } else {
-            var triggerBuilder = BeanDefinitionBuilder.genericBeanDefinition("org.springframework.scheduling.support.PeriodicTrigger")
-            triggerBuilder.addConstructorArgValue(poller.fixedRate);
-            triggerBuilder.addPropertyValue("fixedRate", true);
-            var triggerBeanName = poller.getClass().getSimpleName + "_" + poller.hashCode
-            context.registerBeanDefinition(triggerBeanName, triggerBuilder.getBeanDefinition)
-            pollerBuilder.addPropertyReference("trigger", triggerBeanName)
-            pollerBuilder.addPropertyValue("maxMessagesPerPoll", poller.maxMessagesPerPoll)
-            consumerBuilder.addPropertyValue("pollerMetadata", pollerBuilder.getBeanDefinition)
+          endpoint match {
+            case sa: activate => {
+              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
+            }
+            case xfmr: transform => {
+              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.config.TransformerFactoryBean")
+            }
+            case _ => {
+              throw new IllegalArgumentException("handler is not currently supported" + receivingDescriptor)
+            }
           }
-        }
 
-        if (handler.targetObject != null) {
-          if (!handler.targetObject.isInstanceOf[String]) { // Scala function
-            var functionInvoker = new FunctionInvoker(handler.targetObject)
-            handlerBuilder.addPropertyValue("targetObject", functionInvoker);
-//            handlerBuilder.addPropertyValue("requiresReply", false);
-            handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
-          } else {
-            handlerBuilder.addPropertyValue("expressionString", handler.targetObject);
+          if (endpoint.inputChannel.configMap.containsKey(IntegrationComponent.queueCapacity)) { // this means channel is Queue and we need polling consumer
+            var pollerBuilder =
+              BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.scheduling.PollerMetadata")
+            // check if poller config is provided
+            if (endpoint.configMap.containsKey(IntegrationComponent.poller)) {
+              var pollerConfig = endpoint.configMap.get(IntegrationComponent.poller).asInstanceOf[Map[Any, _]]
+
+              var triggerBuilder = BeanDefinitionBuilder.genericBeanDefinition("org.springframework.scheduling.support.PeriodicTrigger")
+              if (pollerConfig.contains(IntegrationComponent.fixedRate)) {
+                triggerBuilder.addConstructorArgValue(pollerConfig.get(IntegrationComponent.fixedRate).get);
+                triggerBuilder.addPropertyValue(IntegrationComponent.fixedRate, true);
+              }
+              var triggerBeanName = "trtigger_" + triggerBuilder.hashCode
+
+              context.registerBeanDefinition(triggerBeanName, triggerBuilder.getBeanDefinition)
+              pollerBuilder.addPropertyReference("trigger", triggerBeanName)
+              if (pollerConfig.contains(IntegrationComponent.maxMessagesPerPoll)) {
+                pollerBuilder.addPropertyValue(IntegrationComponent.maxMessagesPerPoll, pollerConfig.get(IntegrationComponent.maxMessagesPerPoll).get)
+              }
+
+              consumerBuilder.addPropertyValue("pollerMetadata", pollerBuilder.getBeanDefinition)
+            } else {
+              context.registerBeanDefinition("org.springframework.integration.context.defaultPollerMetadata", pollerBuilder.getBeanDefinition)
+            }
           }
-        }
+          if (endpoint.configMap.containsKey(IntegrationComponent.using)) {
+            val using = endpoint.configMap.get(IntegrationComponent.using)
+            using match {
+              case function: Function[_, _] => {
+                var functionInvoker = new FunctionInvoker(function)
+                handlerBuilder.addPropertyValue("targetObject", functionInvoker);
+                handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
+              }
+              case spel: String => {
+                handlerBuilder.addPropertyValue("expressionString", spel);
+              }
+              case _ => {
+                throw new IllegalArgumentException("Unsupported value for 'using' - " + using)
+              }
+            }
+          }
+          this.ensureComponentIsNamed(endpoint.inputChannel)
+          consumerBuilder.addPropertyValue("inputChannelName", endpoint.inputChannel.configMap.get(IntegrationComponent.name))
 
-        var inputChannelName = recievingDescriptor.asInstanceOf[AbstractEndpoint].inputChannel.channelName
-        var outputChannel = recievingDescriptor.asInstanceOf[AbstractEndpoint].outputChannel
-        if (StringUtils.hasText(inputChannelName)) {
-          consumerBuilder.addPropertyValue("inputChannelName", inputChannelName)
+          endpoint match {
+            case e: AbstractEndpoint => {
+              var outputChannel = e.outputChannel
+              if (outputChannel != null) {
+                this.ensureComponentIsNamed(outputChannel)
+                handlerBuilder.addPropertyReference("outputChannel", outputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String]);
+              }
+            }
+          }
+          if (!endpoint.configMap.containsKey(IntegrationComponent.name)) {
+            endpoint.configMap.put(IntegrationComponent.name, endpoint.getClass().getSimpleName + "_" + endpoint.hashCode)
+          }
+          consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
+          val name = endpoint.configMap.get(IntegrationComponent.name).asInstanceOf[String]
+          context.registerBeanDefinition(name, consumerBuilder.getBeanDefinition)
         }
-        if (outputChannel != null && StringUtils.hasText(outputChannel.channelName)) {
-          handlerBuilder.addPropertyReference("outputChannel", outputChannel.channelName);
-        }
-        consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
-        context.registerBeanDefinition(handler.endpointName, consumerBuilder.getBeanDefinition)
       }
+
     }
     context.refresh
-  }
-
-  private def getPollerConfiguration(e: AbstractEndpoint): poller = {
-    if (e.configParameters != null) {
-      for (val configurationParameter <- e.configParameters) {
-        if (configurationParameter.isInstanceOf[poller]) {
-          return configurationParameter.asInstanceOf[poller]
-        }
-      }
-    }
-    null
   }
   /*
    * 
    */
   private def buildChannel(x: channel): Unit = {
     var channelBuilder: BeanDefinitionBuilder = null
-
-    if (x.isInstanceOf[pub_sub_channel]) {
-      channelBuilder =
-        BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.PublishSubscribeChannel")
-      for (val configParameter <- x.configParameters) {
-        if (configParameter.isInstanceOf[executor]) {
-          val exectr = configParameter.asInstanceOf[executor].threadExecutor
-          channelBuilder.addConstructorArg(exectr);
+    x.underlyingContext = context
+    x match {
+      case psChannel: pub_sub_channel => {
+        channelBuilder =
+          BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.PublishSubscribeChannel")
+        if (psChannel.configMap.containsKey(IntegrationComponent.executor)) {
+          channelBuilder.addConstructorArg(psChannel.configMap.get(IntegrationComponent.executor));
         }
       }
-    } else if (x.isInstanceOf[queue_channel]) {
-      channelBuilder =
-        BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.QueueChannel")
-      for (val configParameter <- x.configParameters) {
-        if (configParameter.isInstanceOf[queue]) {
-          val q = configParameter.asInstanceOf[queue]
-          if (q.queueSize > 0) {
-            channelBuilder.addConstructorArg(q.queueSize)
+      case _ =>
+        {
+          if (x.configMap.containsKey(IntegrationComponent.queueCapacity)) {
+            channelBuilder =
+              BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.QueueChannel")
+            var queueCapacity: Int = x.configMap.get(IntegrationComponent.queueCapacity).asInstanceOf[Int]
+            if (queueCapacity > 0) {
+              channelBuilder.addConstructorArg(queueCapacity)
+            }
+          } else if (x.configMap.containsKey(IntegrationComponent.executor)) {
+            channelBuilder = BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.ExecutorChannel")
+            channelBuilder.addConstructorArg(x.configMap.get(IntegrationComponent.executor))
+          } else {
+            channelBuilder =
+              BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.DirectChannel")
           }
         }
-      }
-    } else {
-      for (val configParameter <- x.configParameters) {
-        if (configParameter.isInstanceOf[executor]) {
-          val exectr = configParameter.asInstanceOf[executor].threadExecutor
-          channelBuilder = BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.ExecutorChannel")
-          channelBuilder.addConstructorArg(exectr)
-        }
-      }
     }
-    if (channelBuilder == null) {
-      channelBuilder =
-        BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.DirectChannel")
-    }
-    channelBuilder.addPropertyValue("componentName", x.channelName)
-    context.registerBeanDefinition(x.channelName, channelBuilder.getBeanDefinition)
+    this.ensureComponentIsNamed(x)
+    channelBuilder.addPropertyValue("componentName", x.configMap.get(IntegrationComponent.name))
+    context.registerBeanDefinition(x.configMap.get(IntegrationComponent.name).asInstanceOf[String], channelBuilder.getBeanDefinition)
   }
 
   private def preProcess() {
@@ -195,9 +204,14 @@ class SpringIntegrationContext {
     context.registerBeanDefinition("errorChannel", errorChannelBuilder.getBeanDefinition)
   }
 
+  private def ensureComponentIsNamed(ic: IntegrationComponent) = {
+    if (!ic.configMap.containsKey(IntegrationComponent.name)) {
+      ic.configMap.put(IntegrationComponent.name, ic.getClass().getSimpleName + "_" + ic.hashCode)
+    }
+  }
 }
 
-protected class FunctionInvoker(f: AnyRef) {
+protected class FunctionInvoker(f: Function[_, _]) {
   val function = f
   var method = function.getClass.getDeclaredMethod("apply", classOf[Message[Any]])
   var returnType = method.getReturnType
