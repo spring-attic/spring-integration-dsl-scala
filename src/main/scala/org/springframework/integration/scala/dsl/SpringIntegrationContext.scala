@@ -102,7 +102,8 @@ class SpringIntegrationContext {
               }
 
               consumerBuilder.addPropertyValue("pollerMetadata", pollerBuilder.getBeanDefinition)
-            } else {
+            } 
+            else {
               context.registerBeanDefinition("org.springframework.integration.context.defaultPollerMetadata", pollerBuilder.getBeanDefinition)
             }
           }
@@ -169,10 +170,12 @@ class SpringIntegrationContext {
             if (queueCapacity > 0) {
               channelBuilder.addConstructorArg(queueCapacity)
             }
-          } else if (x.configMap.containsKey(IntegrationComponent.executor)) {
+          } 
+          else if (x.configMap.containsKey(IntegrationComponent.executor)) {
             channelBuilder = BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.ExecutorChannel")
             channelBuilder.addConstructorArg(x.configMap.get(IntegrationComponent.executor))
-          } else {
+          } 
+          else {
             channelBuilder =
               BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.DirectChannel")
           }

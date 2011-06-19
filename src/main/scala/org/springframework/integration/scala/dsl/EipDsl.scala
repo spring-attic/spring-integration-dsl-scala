@@ -57,7 +57,8 @@ trait InitializedComponent extends IntegrationComponent {
       }
       if (element.componentMap == null) {
         element.componentMap = this.componentMap
-      } else {
+      } 
+      else {
         element.componentMap.putAll(this.componentMap)
         this.componentMap = element.componentMap
       }
@@ -71,7 +72,8 @@ trait InitializedComponent extends IntegrationComponent {
       if (this.isInstanceOf[AbstractEndpoint] && element.isInstanceOf[channel]) {
         // add startingComponent as output channel
         this.asInstanceOf[AbstractEndpoint].outputChannel = element.asInstanceOf[channel]
-      } else if (this.isInstanceOf[channel] && startingComponent.isInstanceOf[AbstractEndpoint]) {
+      } 
+      else if (this.isInstanceOf[channel] && startingComponent.isInstanceOf[AbstractEndpoint]) {
         // add channel as input channel to this
         startingComponent.asInstanceOf[AbstractEndpoint].inputChannel = this.asInstanceOf[channel]
       }
@@ -95,11 +97,12 @@ trait InitializedComponent extends IntegrationComponent {
       var c: IntegrationComponent = ic.componentMap.get(ic);
       if (c == null) {
         ic
-      } else {
+      } 
+      else {
         locateStartingComponent(c)
       }
-      //      c
-    } else {
+    } 
+    else {
       ic
     }
   }

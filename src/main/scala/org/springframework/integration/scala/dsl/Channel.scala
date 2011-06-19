@@ -41,7 +41,7 @@ abstract class AbstractChannel extends InitializedComponent {
 }
 
 /**
- * 
+ * Channel
  */
 class channel extends AbstractChannel {
 }
@@ -81,7 +81,7 @@ object channel {
 }
 
 /**
- *
+ * Pub-Sub Channel
  */
 class pub_sub_channel extends channel {
 
@@ -95,6 +95,8 @@ object pub_sub_channel {
     this.configMap.put("executor", executor)
   }
 }
+
+// TRAITS related to Channels
 /**
  *
  */
@@ -123,7 +125,9 @@ trait andExecutor extends channel {
     this
   }
 }
-
+/**
+ * 
+ */
 trait buffered extends channel {
   def receive(): Message[_] = {
     val underlyingChannelName = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]

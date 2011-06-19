@@ -14,7 +14,10 @@ import org.springframework.beans._
 import org.springframework.beans.factory.config._
 import org.springframework.util._
 import org.springframework.integration.config._
-
+/**
+ * @author Oleg Zhurakousky
+ *
+ */
 object DslDemo {
   def main(args: Array[String]): Unit = {
 

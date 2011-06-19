@@ -160,7 +160,7 @@ trait using extends IntegrationComponent {
         transformer
       }
       case _ => {
-        throw new IllegalArgumentException("Unsupported using")
+        throw new IllegalArgumentException("'using' trait is unsupported for this pattern: " + this)
       }
     }
   }
