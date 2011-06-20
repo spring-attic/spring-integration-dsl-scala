@@ -96,50 +96,50 @@ object activate {
     println(this.configMap)
   }
 }
-///**
-// * ROUTER (work in progress)
-// */
-//class route extends AbstractEndpoint {
-//  override def toString = {
-//    var name = this.configMap.get("name").asInstanceOf[String]
-//    if (StringUtils.hasText(name)) name else "route_" + this.hashCode
-//  }
-//}
-//object route {
-//
-//  def using(r: AnyRef) = new route() {
-//    this.configMap.put("using", "using")
-//    println(this.configMap)
-//  }
-//  def withMappings(mapping: collection.immutable.Map[String, String]) = new route() with using with andPoller with andName {
-//    this.configMap.put("withMappings", "withMappings")
-//    println(this.configMap)
-//  }
-//  def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new route() with using with andMappings with andName {
-//    this.configMap.put("withPoller", "withPoller")
-//    println(this.configMap)
-//  }
-//  def withPoller(maxMessagesPerPoll: Int, cron: String) = new route() with using with andName {
-//    this.configMap.put("withPoller", "withPoller")
-//    println(this.configMap)
-//  }
-//  def withPoller(cron: String) = new route() with using with andName {
-//    this.configMap.put("withPoller", "withPoller")
-//    println(this.configMap)
-//  }
-//  def withPoller(fixedRate: Int) = new route() with using with andName {
-//    this.configMap.put("withPoller", "withPoller")
-//    println(this.configMap)
-//  }
-//}
+/**
+ * ROUTER (work in progress)
+ */
+class route extends AbstractEndpoint {
+  override def toString = {
+    var name = this.configMap.get("name").asInstanceOf[String]
+    if (StringUtils.hasText(name)) name else "route_" + this.hashCode
+  }
+}
+object route {
 
-//trait andMappings extends route with using {
-//  def andMappings(r: AnyRef): route with using = {
-//    this.configMap.put("andMappings", "andMappings")
-//    println(this.configMap)
-//    this
-//  }
-//}
+  def using(r: AnyRef) = new route() with InitializedComponent {
+    this.configMap.put("using", "using")
+    println(this.configMap)
+  }
+  def withMappings(mapping: collection.immutable.Map[String, String]) = new route() with using with andPoller with andName {
+    this.configMap.put("withMappings", "withMappings")
+    println(this.configMap)
+  }
+  def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new route() with using with andMappings with andName {
+    this.configMap.put("withPoller", "withPoller")
+    println(this.configMap)
+  }
+  def withPoller(maxMessagesPerPoll: Int, cron: String) = new route() with using with andName {
+    this.configMap.put("withPoller", "withPoller")
+    println(this.configMap)
+  }
+  def withPoller(cron: String) = new route() with using with andName {
+    this.configMap.put("withPoller", "withPoller")
+    println(this.configMap)
+  }
+  def withPoller(fixedRate: Int) = new route() with using with andName {
+    this.configMap.put("withPoller", "withPoller")
+    println(this.configMap)
+  }
+}
+
+trait andMappings extends route with using {
+  def andMappings(r: AnyRef): route with using = {
+    this.configMap.put("andMappings", "andMappings")
+    println(this.configMap)
+    this
+  }
+}
 
 /**
  * Common Traits

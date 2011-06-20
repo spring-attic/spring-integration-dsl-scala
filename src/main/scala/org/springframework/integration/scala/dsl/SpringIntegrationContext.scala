@@ -17,8 +17,10 @@ package org.springframework.integration.scala.dsl
 import org.apache.log4j._
 import java.util.concurrent._
 import java.util.concurrent.ThreadPoolExecutor._
+import org.springframework.context._
 import org.springframework.context.support._
 import org.springframework.integration._
+import org.springframework.scheduling.support._
 import org.springframework.beans.factory.support._
 import org.springframework.integration.channel._
 import org.springframework.integration.scheduling._
@@ -32,28 +34,27 @@ import org.springframework.integration.config._
  *
  */
 object SpringIntegrationContext {
-  def apply(): SpringIntegrationContext = new SpringIntegrationContext()
+  def apply(components:InitializedComponent*): SpringIntegrationContext = new SpringIntegrationContext(null, components:_*)
 }
-class SpringIntegrationContext {
+class SpringIntegrationContext(parentContext:ApplicationContext,  components:InitializedComponent*) {
   private val logger = Logger.getLogger(this.getClass)
   private var componentMap: java.util.Map[IntegrationComponent, IntegrationComponent] = null
   private[dsl] var context = new GenericApplicationContext()
 
-  def <=(e: InitializedComponent): IntegrationComponent = {
-    require(e != null)
-    if (e.componentMap == null) {
-      e.componentMap = new java.util.HashMap[IntegrationComponent, IntegrationComponent]
+  require(components != null)
+  for (integrationComponent <- components) {
+    if (integrationComponent.componentMap == null) {
+      integrationComponent.componentMap = new java.util.HashMap[IntegrationComponent, IntegrationComponent]
     }
-    this.componentMap = e.componentMap
-    if (!e.componentMap.containsKey(e)) {
-      e.componentMap.put(e, null)
+    this.componentMap = integrationComponent.componentMap
+    if (!integrationComponent.componentMap.containsKey(integrationComponent)) {
+      integrationComponent.componentMap.put(integrationComponent, null)
     }
     if (logger isDebugEnabled) {
-      logger debug "Adding: " + e.componentMap + "' To: " + this
+      logger debug "Adding: " + integrationComponent.componentMap + "' To: " + this
     }
-    e
   }
-
+ 
   def init(): Unit = {
     this.preProcess
     var iterator = componentMap.keySet().iterator
@@ -74,7 +75,10 @@ class SpringIntegrationContext {
               handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
             }
             case xfmr: transform => {
-              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.config.TransformerFactoryBean")
+              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
+            }
+            case router: route => {
+              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
             }
             case _ => {
               throw new IllegalArgumentException("handler is not currently supported" + receivingDescriptor)
@@ -82,31 +86,9 @@ class SpringIntegrationContext {
           }
 
           if (endpoint.inputChannel.configMap.containsKey(IntegrationComponent.queueCapacity)) { // this means channel is Queue and we need polling consumer
-            var pollerBuilder =
-              BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.scheduling.PollerMetadata")
-            // check if poller config is provided
-            if (endpoint.configMap.containsKey(IntegrationComponent.poller)) {
-              var pollerConfig = endpoint.configMap.get(IntegrationComponent.poller).asInstanceOf[Map[Any, _]]
-
-              var triggerBuilder = BeanDefinitionBuilder.genericBeanDefinition("org.springframework.scheduling.support.PeriodicTrigger")
-              if (pollerConfig.contains(IntegrationComponent.fixedRate)) {
-                triggerBuilder.addConstructorArgValue(pollerConfig.get(IntegrationComponent.fixedRate).get);
-                triggerBuilder.addPropertyValue(IntegrationComponent.fixedRate, true);
-              }
-              var triggerBeanName = "trtigger_" + triggerBuilder.hashCode
-
-              context.registerBeanDefinition(triggerBeanName, triggerBuilder.getBeanDefinition)
-              pollerBuilder.addPropertyReference("trigger", triggerBeanName)
-              if (pollerConfig.contains(IntegrationComponent.maxMessagesPerPoll)) {
-                pollerBuilder.addPropertyValue(IntegrationComponent.maxMessagesPerPoll, pollerConfig.get(IntegrationComponent.maxMessagesPerPoll).get)
-              }
-
-              consumerBuilder.addPropertyValue("pollerMetadata", pollerBuilder.getBeanDefinition)
-            } 
-            else {
-              context.registerBeanDefinition("org.springframework.integration.context.defaultPollerMetadata", pollerBuilder.getBeanDefinition)
-            }
+            this.configurePoller(endpoint, consumerBuilder)
           }
+
           if (endpoint.configMap.containsKey(IntegrationComponent.using)) {
             val using = endpoint.configMap.get(IntegrationComponent.using)
             using match {
@@ -170,12 +152,10 @@ class SpringIntegrationContext {
             if (queueCapacity > 0) {
               channelBuilder.addConstructorArg(queueCapacity)
             }
-          } 
-          else if (x.configMap.containsKey(IntegrationComponent.executor)) {
+          } else if (x.configMap.containsKey(IntegrationComponent.executor)) {
             channelBuilder = BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.ExecutorChannel")
             channelBuilder.addConstructorArg(x.configMap.get(IntegrationComponent.executor))
-          } 
-          else {
+          } else {
             channelBuilder =
               BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.DirectChannel")
           }
@@ -185,7 +165,37 @@ class SpringIntegrationContext {
     channelBuilder.addPropertyValue("componentName", x.configMap.get(IntegrationComponent.name))
     context.registerBeanDefinition(x.configMap.get(IntegrationComponent.name).asInstanceOf[String], channelBuilder.getBeanDefinition)
   }
+  /*
+   * 
+   */
+  private def configurePoller(endpoint: AbstractEndpoint, consumerBuilder: BeanDefinitionBuilder) = {
+    var pollerBuilder =
+      BeanDefinitionBuilder.rootBeanDefinition(classOf[PollerMetadata])
+    // check if poller config is provided
+    if (endpoint.configMap.containsKey(IntegrationComponent.poller)) {
+      var pollerConfig = endpoint.configMap.get(IntegrationComponent.poller).asInstanceOf[Map[Any, _]]
 
+      var triggerBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[PeriodicTrigger])
+      if (pollerConfig.contains(IntegrationComponent.fixedRate)) {
+        triggerBuilder.addConstructorArgValue(pollerConfig.get(IntegrationComponent.fixedRate).get);
+        triggerBuilder.addPropertyValue(IntegrationComponent.fixedRate, true);
+      }
+      var triggerBeanName = "trtigger_" + triggerBuilder.hashCode
+
+      context.registerBeanDefinition(triggerBeanName, triggerBuilder.getBeanDefinition)
+      pollerBuilder.addPropertyReference("trigger", triggerBeanName)
+      if (pollerConfig.contains(IntegrationComponent.maxMessagesPerPoll)) {
+        pollerBuilder.addPropertyValue(IntegrationComponent.maxMessagesPerPoll, pollerConfig.get(IntegrationComponent.maxMessagesPerPoll).get)
+      }
+
+      consumerBuilder.addPropertyValue("pollerMetadata", pollerBuilder.getBeanDefinition)
+    } else {
+      context.registerBeanDefinition("org.springframework.integration.context.defaultPollerMetadata", pollerBuilder.getBeanDefinition)
+    }
+  }
+  /*
+   * 
+   */
   private def preProcess() {
 
     // taskScheduler
@@ -206,7 +216,9 @@ class SpringIntegrationContext {
       BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.PublishSubscribeChannel")
     context.registerBeanDefinition("errorChannel", errorChannelBuilder.getBeanDefinition)
   }
-
+  /*
+   * 
+   */
   private def ensureComponentIsNamed(ic: IntegrationComponent) = {
     if (!ic.configMap.containsKey(IntegrationComponent.name)) {
       ic.configMap.put(IntegrationComponent.name, ic.getClass().getSimpleName + "_" + ic.hashCode)

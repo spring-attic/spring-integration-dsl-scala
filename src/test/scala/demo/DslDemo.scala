@@ -21,32 +21,32 @@ import org.springframework.integration.config._
 object DslDemo {
   def main(args: Array[String]): Unit = {
 
-        directChannelWithGeneratedNameAndServiceWithScalaFunction
-        println("### End demo\n")
-        directChannelAndServiceWithSpel
-        println("### End demo\n")
-        asyncChannelWithService
-        println("### End demo\n")
-        directChannelWithServiceAndOutputMessageToQueueChannel
-        println("### End demo\n")
-        withPollingConsumerAndSpel
-        println("### End demo\n")
-        withPollingConsumerAndSpelDefaultPoller
-        println("### End demo\n")
-        withPubSubChannel
-        println("### End demo\n")
+    directChannelWithGeneratedNameAndServiceWithScalaFunction
+    println("### End demo\n")
+    directChannelAndServiceWithSpel
+    println("### End demo\n")
+    asyncChannelWithService
+    println("### End demo\n")
+    directChannelWithServiceAndOutputMessageToQueueChannel
+    println("### End demo\n")
+    withPollingConsumerAndSpel
+    println("### End demo\n")
+    withPollingConsumerAndSpelDefaultPoller
+    println("### End demo\n")
+    withPubSubChannel
+    println("### End demo\n")
   }
   /**
    *
    */
   def directChannelWithGeneratedNameAndServiceWithScalaFunction(): Unit = {
-    var integrationContext = SpringIntegrationContext()
 
     val inputChannel = channel()
-    integrationContext <= {
-        	inputChannel >>
-        	activate.using{ m: Message[String] => { println(m.getPayload) }  }
-    }
+
+    var integrationContext = SpringIntegrationContext(
+        inputChannel >>
+        activate.using { m: Message[String] => { println(m.getPayload) } }
+    )
 
     integrationContext.init
 
@@ -57,13 +57,13 @@ object DslDemo {
    *
    */
   def directChannelAndServiceWithSpel(): Unit = {
-    var integrationContext = SpringIntegrationContext()
-
+    
     val inputChannel = channel.withName("inChannel")
-    integrationContext <= {
+    
+    var integrationContext = SpringIntegrationContext(
         inputChannel >>
         activate.withName("myService").using("T(java.lang.System).out.println(payload)")
-    }
+    )
 
     integrationContext.init
 
@@ -73,12 +73,13 @@ object DslDemo {
    *
    */
   def asyncChannelWithService(): Unit = {
-    var integrationContext = SpringIntegrationContext()
+    
     val inputChannel = channel.withExecutor(Executors.newFixedThreadPool(10))
-    integrationContext <= {
-        inputChannel >>
+    
+    var integrationContext = SpringIntegrationContext(
+    	inputChannel >>
         activate.withName("myService").using { { m: Message[String] => { println(m.getPayload) } } }
-    }
+    )
 
     integrationContext.init
 
@@ -88,17 +89,16 @@ object DslDemo {
    *
    */
   def directChannelWithServiceAndOutputMessageToQueueChannel(): Unit = {
-    var integrationContext = SpringIntegrationContext()
-
+    
     val inputChannel = channel.withName("inputChannel")
     //    val outputChannel = channel.withQueue(5).andName("outputChannel")
     val outputChannel = channel.withName("outputChannel").andQueue(5)
 
-    integrationContext <= {
+    var integrationContext = SpringIntegrationContext(
         inputChannel >>
         activate.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
         outputChannel
-    }
+    )
 
     integrationContext.init
 
@@ -110,20 +110,19 @@ object DslDemo {
    *
    */
   def withPollingConsumerAndSpel(): Unit = {
-    var integrationContext = SpringIntegrationContext()
 
     val inputChannel = channel.withExecutor().andName("inputChannel")
     val middleChannel = channel.withQueue(5).andName("middleChannel")
     val resultChannel = channel.withQueue.andName("resultChannel")
 
-    integrationContext <= {
-        inputChannel >>
+    var integrationContext = SpringIntegrationContext(
+      inputChannel >>
         activate.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
         middleChannel >>
         //transform.withPoller(5, 1000).andName("myTransformer").using{"'### ' + payload.toLowerCase() + ' ###'"} >>
         transform.withName("myTransformer").andPoller(1000, 5).using { "'### ' + payload.toLowerCase() + ' ###'" } >>
         resultChannel
-    }
+    )
 
     integrationContext.init
 
@@ -135,19 +134,18 @@ object DslDemo {
    *
    */
   def withPollingConsumerAndSpelDefaultPoller(): Unit = {
-    var integrationContext = SpringIntegrationContext()
 
     val inputChannel = channel.withName("inputChannel").andExecutor
     val middleChannel = channel.withName("middleChannel").andQueue(5)
     val resultChannel = channel.withName("resultChannel").andQueue
 
-    integrationContext <= {
+    var integrationContext = SpringIntegrationContext(
         inputChannel >>
         activate.using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
         middleChannel >>
         transform.using { "'### ' + payload.toLowerCase() + ' ###'" } >>
         resultChannel
-    }
+    )
 
     integrationContext.init
 
@@ -159,22 +157,25 @@ object DslDemo {
    *
    */
   def withPubSubChannel(): Unit = {
-    var integrationContext = SpringIntegrationContext()
-
+    
     val inputChannel = pub_sub_channel.withName("inputChannel")
     val middleChannel = channel.withName("middleChannel").andQueue(5)
     val resultChannel = channel.withName("resultChannel").andQueue
 
-    integrationContext <= {
-      inputChannel >> (
-          transform.withName("xfmrA").using { "'From Transformer: ' + payload.toUpperCase()" } >>
-          middleChannel >>
-          transform.withName("xfmrB").using { m: Message[String] => { m.getPayload().asInstanceOf[String].toUpperCase() } } >>
-          resultChannel,
-
+    var integrationContext = SpringIntegrationContext(
+      inputChannel >> ( 
+        // subscriber 1
+    	{
+    		transform.withName("xfmrA").using { "'From Transformer: ' + payload.toUpperCase()" } >>
+    		middleChannel >>
+    		transform.withName("xfmrB").using { m: Message[String] => { m.getPayload().asInstanceOf[String].toUpperCase() } } >>
+    		resultChannel
+    	},
+        // subscriber 2
+        {
           activate.using { m: Message[String] => { println("From Service Activator: " + m) } }
-      )
-    }
+        })
+    )
 
     integrationContext.init
 
