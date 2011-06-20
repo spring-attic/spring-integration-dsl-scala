@@ -59,7 +59,7 @@ object transform {
 /**
  * Service Activator
  */
-class activate extends AbstractEndpoint {
+class service extends AbstractEndpoint {
   override def toString = {
     var name = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
     if (StringUtils.hasText(name)) name else "activate_" + this.hashCode
@@ -67,31 +67,31 @@ class activate extends AbstractEndpoint {
 }
 
 
-object activate {
-  def withName(componentName: String) = new activate() with using with andPoller {
+object service {
+  def withName(componentName: String) = new service() with using with andPoller {
     require(StringUtils.hasText(componentName))
     this.configMap.put(IntegrationComponent.name, componentName)
     println(this.configMap)
   }
 
-  def using(usingCode: AnyRef) = new activate() with InitializedComponent{
+  def using(usingCode: AnyRef) = new service() with InitializedComponent{
     this.configMap.put(IntegrationComponent.using, usingCode)
     println(this.configMap)
   }
 
-  def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new activate() with using with andName {
+  def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new service() with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))
     println(this.configMap)
   }
-  def withPoller(maxMessagesPerPoll: Int, cron: String) = new activate() with using with andName {
+  def withPoller(maxMessagesPerPoll: Int, cron: String) = new service() with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.cron -> cron))
     println(this.configMap)
   }
-  def withPoller(cron: String) = new activate() with using with andName {
+  def withPoller(cron: String) = new service() with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.cron -> cron))
     println(this.configMap)
   }
-  def withPoller(fixedRate: Int) = new activate() with using with andName {
+  def withPoller(fixedRate: Int) = new service() with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.fixedRate -> fixedRate))
     println(this.configMap)
   }
@@ -157,8 +157,8 @@ trait andMappings extends route with using {
 trait using extends IntegrationComponent {
   def using(usingCode: AnyRef): InitializedComponent = { 
     this match {
-      case act:activate => {
-        val activator = new activate() with InitializedComponent
+      case act:service => {
+        val activator = new service() with InitializedComponent
         activator.configMap.putAll(this.configMap)
         activator.configMap.put(IntegrationComponent.using, usingCode)
         activator

@@ -78,7 +78,7 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
           var handlerBuilder: BeanDefinitionBuilder = null
 
           endpoint match {
-            case sa: activate => {
+            case sa: service => {
               handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
             }
             case xfmr: transform => {

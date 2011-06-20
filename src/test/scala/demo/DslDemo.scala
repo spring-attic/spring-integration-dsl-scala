@@ -51,7 +51,7 @@ object DslDemo {
 
     var integrationContext = SpringIntegrationContext(
         inputChannel >>
-        activate.using { m: Message[String] => { println(m.getPayload) } }
+        service.using { m: Message[String] => { println(m.getPayload) } }
     )
 
     integrationContext.init
@@ -68,7 +68,7 @@ object DslDemo {
     
     var integrationContext = SpringIntegrationContext(
         inputChannel >>
-        activate.withName("myService").using("T(java.lang.System).out.println(payload)")
+        service.withName("myService").using("T(java.lang.System).out.println(payload)")
     )
 
     integrationContext.init
@@ -84,7 +84,7 @@ object DslDemo {
     
     var integrationContext = SpringIntegrationContext(
     	inputChannel >>
-        activate.withName("myService").using { { m: Message[String] => { println(m.getPayload) } } }
+        service.withName("myService").using { { m: Message[String] => { println(m.getPayload) } } }
     )
 
     integrationContext.init
@@ -102,7 +102,7 @@ object DslDemo {
 
     var integrationContext = SpringIntegrationContext(
         inputChannel >>
-        activate.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
+        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
         outputChannel
     )
 
@@ -123,7 +123,7 @@ object DslDemo {
 
     var integrationContext = SpringIntegrationContext(
       inputChannel >>
-        activate.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
+        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
         middleChannel >>
         //transform.withPoller(5, 1000).andName("myTransformer").using{"'### ' + payload.toLowerCase() + ' ###'"} >>
         transform.withName("myTransformer").andPoller(1000, 5).using { "'### ' + payload.toLowerCase() + ' ###'" } >>
@@ -147,7 +147,7 @@ object DslDemo {
 
     var integrationContext = SpringIntegrationContext(
         inputChannel >>
-        activate.using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
+        service.using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
         middleChannel >>
         transform.using { "'### ' + payload.toLowerCase() + ' ###'" } >>
         resultChannel
@@ -179,7 +179,7 @@ object DslDemo {
     	},
         // subscriber 2
         {
-          activate.using { m: Message[String] => { println("From Service Activator: " + m) } }
+          service.using { m: Message[String] => { println("From Service Activator: " + m) } }
         })
     )
 
@@ -198,11 +198,11 @@ object DslDemo {
    
     var integrationContext = SpringIntegrationContext(
         inputChannel >> 
-        activate.using{m:Message[_] => m.getPayload + "_activator1"} >>
+        service.using{m:Message[_] => m.getPayload + "_activator1"} >>
         transform.using{m:Message[_] => m.getPayload + "_transformer1"} >>
-        activate.using{m:Message[_] => m.getPayload + "_activator2"} >>
+        service.using{m:Message[_] => m.getPayload + "_activator2"} >>
         transform.using{m:Message[_] => m.getPayload + "_transformer2"} >>
-        activate.using{m:Message[_] => println(m)}
+        service.using{m:Message[_] => println(m)}
     )
 
     integrationContext.init
@@ -218,11 +218,11 @@ object DslDemo {
     var integrationContext = SpringIntegrationContext(
         {
           channel("foo") >>
-          activate.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
+          service.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
         },
     	{
           channel("bar") >>
-          activate.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
+          service.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
         },
         {
           inputChannel >>
@@ -246,11 +246,11 @@ object DslDemo {
     var integrationContext = SpringIntegrationContext(
         {
           channel("foo") >>
-          activate.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
+          service.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
         },
     	{
           channel("bar") >>
-          activate.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
+          service.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
         },
         {
           inputChannel >>
@@ -265,4 +265,5 @@ object DslDemo {
     inputChannel.send(new GenericMessage("baz"))
     println("Message from 'defaultOutputChannel' " + defaultOutputChannel.receive)
   }
+
 }
