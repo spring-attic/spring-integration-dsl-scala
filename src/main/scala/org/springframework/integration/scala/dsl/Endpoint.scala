@@ -107,28 +107,31 @@ class route extends AbstractEndpoint {
 }
 object route {
 
-  def using(r: AnyRef) = new route() with InitializedComponent {
-    this.configMap.put("using", "using")
+  def withName(componentName: String) = new route() with using with andPoller {
+    require(StringUtils.hasText(componentName))
+    this.configMap.put(IntegrationComponent.name, componentName)
     println(this.configMap)
   }
-  def withMappings(mapping: collection.immutable.Map[String, String]) = new route() with using with andPoller with andName {
-    this.configMap.put("withMappings", "withMappings")
+
+  def using(usingCode: AnyRef) = new route() with InitializedComponent{
+    this.configMap.put(IntegrationComponent.using, usingCode)
     println(this.configMap)
   }
-  def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new route() with using with andMappings with andName {
-    this.configMap.put("withPoller", "withPoller")
+
+  def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new route() with using with andName {
+    this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))
     println(this.configMap)
   }
   def withPoller(maxMessagesPerPoll: Int, cron: String) = new route() with using with andName {
-    this.configMap.put("withPoller", "withPoller")
+    this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.cron -> cron))
     println(this.configMap)
   }
   def withPoller(cron: String) = new route() with using with andName {
-    this.configMap.put("withPoller", "withPoller")
+    this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.cron -> cron))
     println(this.configMap)
   }
   def withPoller(fixedRate: Int) = new route() with using with andName {
-    this.configMap.put("withPoller", "withPoller")
+    this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.fixedRate -> fixedRate))
     println(this.configMap)
   }
 }
@@ -140,6 +143,13 @@ trait andMappings extends route with using {
     this
   }
 }
+//trait andDefaultOutputChannel extends route with using {
+//  def andDefaultOutputChannel(defaultOutputChannel: String): route with using = {
+//    this.configMap.put("defaultOutputChannel", defaultOutputChannel)
+//    println(this.configMap)
+//    this
+//  }
+//}
 
 /**
  * Common Traits

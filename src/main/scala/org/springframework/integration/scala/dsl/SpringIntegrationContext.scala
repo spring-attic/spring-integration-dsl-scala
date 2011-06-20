@@ -46,7 +46,14 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
     if (integrationComponent.componentMap == null) {
       integrationComponent.componentMap = new java.util.HashMap[IntegrationComponent, IntegrationComponent]
     }
-    this.componentMap = integrationComponent.componentMap
+    else {
+      if (this.componentMap == null){
+        this.componentMap = integrationComponent.componentMap
+      }
+      else {
+        this.componentMap.putAll(integrationComponent.componentMap)
+      }
+    }
     if (!integrationComponent.componentMap.containsKey(integrationComponent)) {
       integrationComponent.componentMap.put(integrationComponent, null)
     }
@@ -79,6 +86,7 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
             }
             case router: route => {
               handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
+              handlerBuilder.addPropertyValue("ignoreChannelNameResolutionFailures", true)
             }
             case _ => {
               throw new IllegalArgumentException("handler is not currently supported" + receivingDescriptor)
@@ -113,7 +121,12 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
               var outputChannel = e.outputChannel
               if (outputChannel != null) {
                 this.ensureComponentIsNamed(outputChannel)
-                handlerBuilder.addPropertyReference("outputChannel", outputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String]);
+                if (e.isInstanceOf[route]){
+                  handlerBuilder.addPropertyReference("defaultOutputChannel", outputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String]);
+                }
+                else {
+                  handlerBuilder.addPropertyReference("outputChannel", outputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String]);
+                }       
               }
             }
           }

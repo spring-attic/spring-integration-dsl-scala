@@ -49,6 +49,7 @@ class channel extends AbstractChannel {
 object channel {
 
   def apply(): channel = new channel()
+  def apply(name:String): channel = channel.withName(name)
 
   def withQueue(capacity: Int) = new channel() with buffered {
     this.configMap.put("queueCapacity", capacity)

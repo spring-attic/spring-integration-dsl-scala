@@ -35,6 +35,12 @@ object DslDemo {
     println("### End demo\n")
     withPubSubChannel
     println("### End demo\n")
+    withImplicitChannels
+    println("### End demo\n")
+    withRouter
+    println("### End demo\n")
+    withRouterAndDefaultOutputChannel
+    println("### End demo\n")
   }
   /**
    *
@@ -182,5 +188,81 @@ object DslDemo {
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
     var outputMessage = resultChannel.receive
     println("Output Message: " + outputMessage)
+  }
+  /**
+   * 
+   */
+  def withImplicitChannels(): Unit = {
+    
+    val inputChannel = channel.withName("inputChannel")
+   
+    var integrationContext = SpringIntegrationContext(
+        inputChannel >> 
+        activate.using{m:Message[_] => m.getPayload + "_activator1"} >>
+        transform.using{m:Message[_] => m.getPayload + "_transformer1"} >>
+        activate.using{m:Message[_] => m.getPayload + "_activator2"} >>
+        transform.using{m:Message[_] => m.getPayload + "_transformer2"} >>
+        activate.using{m:Message[_] => println(m)}
+    )
+
+    integrationContext.init
+    inputChannel.send(new GenericMessage("==> Hello from Scala"))
+  }
+  /**
+   * 
+   */
+  def withRouter(): Unit = {
+    
+    val inputChannel = channel.withName("inputChannel")
+   
+    var integrationContext = SpringIntegrationContext(
+        {
+          channel("foo") >>
+          activate.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
+        },
+    	{
+          channel("bar") >>
+          activate.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
+        },
+        {
+          inputChannel >>
+          route.using{m: Message[String] => { m.getPayload}}
+        }
+    )
+
+    integrationContext.init
+    inputChannel.send(new GenericMessage("foo"))
+    inputChannel.send(new GenericMessage("bar"))
+  }
+  
+  /**
+   * 
+   */
+  def withRouterAndDefaultOutputChannel(): Unit = {
+    
+    val inputChannel = channel.withName("inputChannel")
+    val defaultOutputChannel = channel.withName("defaultOutputChannel").andQueue
+   
+    var integrationContext = SpringIntegrationContext(
+        {
+          channel("foo") >>
+          activate.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
+        },
+    	{
+          channel("bar") >>
+          activate.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
+        },
+        {
+          inputChannel >>
+          route.using{m: Message[String] => { m.getPayload}} >>
+          defaultOutputChannel
+        }
+    )
+
+    integrationContext.init
+    inputChannel.send(new GenericMessage("foo"))
+    inputChannel.send(new GenericMessage("bar"))
+    inputChannel.send(new GenericMessage("baz"))
+    println("Message from 'defaultOutputChannel' " + defaultOutputChannel.receive)
   }
 }

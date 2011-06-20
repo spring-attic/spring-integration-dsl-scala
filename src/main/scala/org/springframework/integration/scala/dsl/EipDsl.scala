@@ -77,6 +77,13 @@ trait InitializedComponent extends IntegrationComponent {
         // add channel as input channel to this
         startingComponent.asInstanceOf[AbstractEndpoint].inputChannel = this.asInstanceOf[channel]
       }
+      else if (this.isInstanceOf[AbstractEndpoint] && element.isInstanceOf[AbstractEndpoint]) {
+        val anonChannel = channel()
+        this.asInstanceOf[AbstractEndpoint].outputChannel = anonChannel
+        element.asInstanceOf[AbstractEndpoint].inputChannel = anonChannel
+        element.componentMap.put(element, anonChannel)
+        element.componentMap.put(anonChannel, this)
+      }
 
       if (logger isDebugEnabled) {
         logger debug "From: '" + this + "' To: " + startingComponent
