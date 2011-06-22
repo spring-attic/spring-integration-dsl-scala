@@ -21,6 +21,7 @@ import java.lang.reflect._
 import org.aopalliance.intercept._
 import org.springframework.context._
 import org.springframework.integration.gateway._
+import scala.collection.JavaConversions
 /**
  * @author Oleg Zhurakousky
  *
@@ -105,7 +106,7 @@ class filter extends AbstractEndpoint {
 
 
 object filter {
-  def withName(componentName: String) = new filter() with using with andPoller {
+  def withName(componentName: String) = new filter() with using with andPoller with andErrorOnRejection{
     require(StringUtils.hasText(componentName))
     this.configMap.put(IntegrationComponent.name, componentName)
   }
@@ -125,6 +126,13 @@ object filter {
   }
   def withPoller(fixedRate: Int) = new filter() with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.fixedRate -> fixedRate))
+  }
+  
+  trait andErrorOnRejection extends filter with using {
+    def andErrorOnRejection(r: Boolean): filter with using = {
+	  this.configMap.put(IntegrationComponent.errorOnRejection, r)
+	  this
+	}
   }
 }
 
@@ -178,9 +186,9 @@ object route {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
   
-  def withChannelMappings(channelMappings: collection.immutable.Map[String, Any]) = new route() with using with andPoller {
+  def withChannelMappings(channelMappings: collection.immutable.Map[String, String]) = new route() with using with andPoller {
     require(channelMappings != null)
-    //this.configMap.put(IntegrationComponent.name, componentName)
+    this.configMap.put(IntegrationComponent.channelMappings, JavaConversions.asMap(channelMappings))
   }
 
   def using(usingCode: AnyRef) = new route() with InitializedComponent{
@@ -201,8 +209,8 @@ object route {
   }
   
   trait andMappings extends route with using {
-	def andMappings(r: AnyRef): route with using = {
-	  this.configMap.put("andMappings", "andMappings")
+	def andMappings(channelMappings: Map[String, String]): route with using = {
+	  this.configMap.put(IntegrationComponent.channelMappings, JavaConversions.asMap(channelMappings))
 	  this
 	}
   }
@@ -323,6 +331,12 @@ trait using extends IntegrationComponent {
         filter.configMap.putAll(this.configMap)
         filter.configMap.put(IntegrationComponent.using, usingCode)
         filter
+      }
+      case rt:route => {
+        val router = new route() with InitializedComponent
+        router.configMap.putAll(this.configMap)
+        router.configMap.put(IntegrationComponent.using, usingCode)
+        router
       }
       case _ => {
          throw new IllegalArgumentException("'using' trait is unsupported for this pattern: " + this) 

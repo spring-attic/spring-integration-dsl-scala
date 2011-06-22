@@ -90,10 +90,17 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
             case router: route => {
               handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
               handlerBuilder.addPropertyValue("ignoreChannelNameResolutionFailures", true)
+              val channelMappings = router.configMap.get(IntegrationComponent.channelMappings)
+              if (channelMappings != null){
+                handlerBuilder.addPropertyValue("channelIdentifierMap", channelMappings)
+              }     
             }
             case filter: filter => {
               handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])
-              //handlerBuilder.addPropertyValue("ignoreChannelNameResolutionFailures", true)
+              val errorOnRejection = filter.configMap.get(IntegrationComponent.errorOnRejection)
+              if (errorOnRejection != null){
+                handlerBuilder.addPropertyValue("throwExceptionOnRejection", errorOnRejection)
+              }  
             }
             case splitter: split => {
               handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
@@ -318,7 +325,7 @@ protected class FunctionInvoker(val f: Function[_, _]) {
       logger.debug("FunctionInvoker method name: " + methodName)    	
   }
   def sendPayload(m: Object): Unit = {
-    method.setAccessible(true)
+    method.setAccessible(true)  
     method.invoke(f, m)
   }
   def sendMessage(m: Message[_]): Unit = {

@@ -43,6 +43,12 @@ object IntegrationComponent {
   val defaultReplyChannel = "defaultReplyChannel"
   val gatewayProxy = "gatewayProxy"
     
+  // Filter Constants
+  val errorOnRejection = "errorOnRejection"
+    
+  // ROUTER Constants
+  val channelMappings = "channelMappings"
+    
   val errorChannelName = "errorChannelName"
 }
 //
