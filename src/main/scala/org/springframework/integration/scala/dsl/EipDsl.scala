@@ -36,6 +36,14 @@ object IntegrationComponent {
   val maxMessagesPerPoll = "maxMessagesPerPoll"
   val fixedRate = "fixedRate"
   val cron = "cron"
+    
+   // Gateway Constants
+  val serviceInterface = "serviceInterface"
+  val defaultRequestChannel = "defaultRequestChannel"
+  val defaultReplyChannel = "defaultReplyChannel"
+  val gatewayProxy = "gatewayProxy"
+    
+  val errorChannelName = "errorChannelName"
 }
 //
 abstract class IntegrationComponent {
@@ -47,8 +55,8 @@ abstract class IntegrationComponent {
 }
 //
 trait InitializedComponent extends IntegrationComponent {
-  def >>(e: InitializedComponent*): InitializedComponent = {
-
+  def ->(e: InitializedComponent*): InitializedComponent = {
+    println("ADDING")
     require(e.size > 0)
 
     for (element <- e) {
@@ -68,7 +76,7 @@ trait InitializedComponent extends IntegrationComponent {
       if (!element.componentMap.containsKey(this)) {
         element.componentMap.put(this, null)
       }
-
+      println(this.isInstanceOf[gateway])
       this match {
         case ae:AbstractEndpoint => {
           element match {
@@ -83,6 +91,22 @@ trait InitializedComponent extends IntegrationComponent {
         	  elmEndpoint.componentMap.put(anonChannel, this)
             }
           }
+        }
+        case gw:gateway => {
+          element match {
+            case ch:channel => {
+              gw.defaultRequestChannel = ch
+            }
+            case elmEndpoint:AbstractEndpoint => {
+              val anonChannel = channel()
+        	  gw.defaultRequestChannel = anonChannel
+        	  elmEndpoint.inputChannel = anonChannel
+        	  elmEndpoint.componentMap.put(element, anonChannel)
+        	  elmEndpoint.componentMap.put(anonChannel, this)
+        	  println(elmEndpoint.componentMap)
+            }
+          }
+          
         }
         case _ => {
           startingComponent.asInstanceOf[AbstractEndpoint].inputChannel = this.asInstanceOf[channel]

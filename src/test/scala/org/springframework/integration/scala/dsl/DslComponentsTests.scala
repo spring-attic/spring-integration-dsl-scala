@@ -50,8 +50,38 @@ class DslComponentsTests{
     assert(namedAsyncChannelWithDefaultExecutor  != null)
     
     val namedAsyncChannelWithProvidedExecutor = channel.withName("hjk").andExecutor(Executors.newCachedThreadPool)
-    assert(namedAsyncChannelWithProvidedExecutor  != null)
+    assert(namedAsyncChannelWithProvidedExecutor  != null)   
+  }
+  
+   @Test
+  def testGateway() {
+    val a = gateway.using(classOf[OrderProcessingGateway])
+    assert(a.isInstanceOf[InitializedComponent])   
     
+    val b = gateway.withErrorChannel("err").using(classOf[OrderProcessingGateway])
+    assert(b.isInstanceOf[InitializedComponent])   
+    
+    val c = gateway.withErrorChannel("err").andName("name").using(classOf[OrderProcessingGateway])
+    assert(c.isInstanceOf[InitializedComponent])   
+    
+    val d = gateway.withName("n").andErrorChannel("hjk").using(classOf[OrderProcessingGateway])
+    assert(d.isInstanceOf[InitializedComponent]) 
+    
+    val e = gateway.withErrorChannel("err")
+    assert(!e.isInstanceOf[InitializedComponent]) 
+    
+    val f = gateway.withName("hjk")
+    assert(!f.isInstanceOf[InitializedComponent]) 
+    
+    val g = gateway.withErrorChannel("err").andName("kjhug")
+    assert(!g.isInstanceOf[InitializedComponent]) 
+    
+    val h = gateway.withName("kjhu").andErrorChannel("kjhu")
+    assert(!h.isInstanceOf[InitializedComponent]) 
+  }
+   
+  trait OrderProcessingGateway  {
+    def processOrder(): Unit
   }
 
 }

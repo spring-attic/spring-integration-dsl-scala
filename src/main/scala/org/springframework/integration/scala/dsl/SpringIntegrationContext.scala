@@ -15,11 +15,13 @@
  */
 package org.springframework.integration.scala.dsl
 import org.apache.log4j._
+import java.lang.reflect._
 import java.util.concurrent._
 import java.util.concurrent.ThreadPoolExecutor._
 import org.springframework.context._
 import org.springframework.context.support._
 import org.springframework.integration._
+import org.springframework.integration.gateway._
 import org.springframework.scheduling.support._
 import org.springframework.beans.factory.support._
 import org.springframework.integration.channel._
@@ -61,8 +63,9 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
       logger debug "Adding: " + integrationComponent.componentMap + "' To: " + this
     }
   }
+  this.init()
  
-  def init(): Unit = {
+  private def init(): Unit = {
     this.preProcess
     var iterator = componentMap.keySet().iterator
     while (iterator.hasNext) {
@@ -88,11 +91,21 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
               handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
               handlerBuilder.addPropertyValue("ignoreChannelNameResolutionFailures", true)
             }
+            case filter: filter => {
+              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])
+              //handlerBuilder.addPropertyValue("ignoreChannelNameResolutionFailures", true)
+            }
+            case splitter: split => {
+              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
+              //handlerBuilder.addPropertyValue("ignoreChannelNameResolutionFailures", true)
+            }
             case _ => {
-              throw new IllegalArgumentException("handler is not currently supported" + receivingDescriptor)
+              throw new IllegalArgumentException("handler is not currently supported: " + receivingDescriptor)
             }
           }
-
+          if (endpoint == null){
+            println()
+          }
           if (endpoint.inputChannel.configMap.containsKey(IntegrationComponent.queueCapacity)) { // this means channel is Queue and we need polling consumer
             this.configurePoller(endpoint, consumerBuilder)
           }
@@ -103,6 +116,7 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
               case function: Function[_, _] => {
                 var functionInvoker = new FunctionInvoker(function)
                 handlerBuilder.addPropertyValue("targetObject", functionInvoker);
+                println(functionInvoker.methodName)
                 handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
               }
               case spel: String => {
@@ -136,6 +150,20 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
           consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
           val name = endpoint.configMap.get(IntegrationComponent.name).asInstanceOf[String]
           context.registerBeanDefinition(name, consumerBuilder.getBeanDefinition)
+        }
+        case gw:gateway => {
+          println("gateway")
+          val gatewayBuilder =
+            BeanDefinitionBuilder.rootBeanDefinition(classOf[GatewayProxyFactoryBean])
+          gatewayBuilder.addConstructorArg(gw.configMap.get(IntegrationComponent.serviceInterface))
+          gatewayBuilder.addPropertyReference("defaultRequestChannel", gw.defaultRequestChannel.toString())
+          var gatewayName = gw.configMap.get(IntegrationComponent.name).asInstanceOf[String]
+          if (!StringUtils.hasText(gatewayName)){
+            gatewayName = "gateway_" + gw.hashCode
+            gw.configMap.put(IntegrationComponent.name, gatewayName)
+          }
+          context.registerBeanDefinition(gatewayName, gatewayBuilder.getBeanDefinition)  
+          gw.underlyingContext = context
         }
       }
 
@@ -239,22 +267,78 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
   }
 }
 
-protected class FunctionInvoker(f: Function[_, _]) {
-  val function = f
-  var method = function.getClass.getDeclaredMethod("apply", classOf[Message[Any]])
-  var returnType = method.getReturnType
-  var methodName = "send"
-  if (!returnType.isAssignableFrom(Void.TYPE)) {
-    methodName = "sendAndReceive"
+protected class FunctionInvoker(val f: Function[_, _]) {
+  private val logger = Logger.getLogger(this.getClass)
+  var methodName:String = ""
+    
+  var method:Method = null
+  val methods = f.getClass().getDeclaredMethods()
+  if (methods.size > 1){
+    for(m <- f.getClass().getDeclaredMethods()){
+      var returnType = m.getReturnType()
+      val inputParameter = m.getParameterTypes()(0)
+      if (!(returnType.isAssignableFrom(classOf[Object]) && inputParameter.isAssignableFrom(classOf[Object]))){
+        if (logger.isDebugEnabled){
+        	logger.debug("Selecting method: " + m)    	
+        }
+        method = m
+        if (returnType.isAssignableFrom(Void.TYPE) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendMessage"
+        }
+        else if (returnType.isAssignableFrom(Void.TYPE) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendPayload"
+        }
+        else if (returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendMessageAndReceiveMessage"
+        }
+        else if (!returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendMessageAndReceivePayload"
+        }
+        else if (returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendPayloadAndReceiveMessage"
+        }
+        else if (!returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendPayloadAndReceivePayload"
+        }
+      }
+    }
   }
-
-  def send(m: Message[Any]): Unit = {
-    method.setAccessible(true)
-    method.invoke(function, m)
+  else {
+    method = f.getClass.getDeclaredMethod("apply", classOf[Object])
+    methodName = "sendPayoadAndReceive"
+    if (logger.isDebugEnabled){
+       logger.debug("Selecting method: " + method)    	
+    }
   }
-  def sendAndReceive(m: Message[Any]): Any = {
-    var method = function.getClass.getDeclaredMethod("apply", classOf[Message[Any]])
+  if (logger.isDebugEnabled){
+      logger.debug("FunctionInvoker method name: " + methodName)    	
+  }
+  def sendPayload(m: Object): Unit = {
     method.setAccessible(true)
-    method.invoke(function, m)
+    method.invoke(f, m)
+  }
+  def sendMessage(m: Message[_]): Unit = {
+    method.setAccessible(true)
+    method.invoke(f, m)
+  }
+  def sendPayloadAndReceivePayload(m: Object): Object = {
+    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+    method.setAccessible(true)
+    method.invoke(f, m)
+  }
+  def sendPayloadAndReceiveMessage(m: Object): Message[_] = {
+    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+    method.setAccessible(true)
+    method.invoke(f, m).asInstanceOf[Message[_]]
+  }
+  def sendMessageAndReceivePayload(m: Message[_]): Object = {
+    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+    method.setAccessible(true)
+    method.invoke(f, m)
+  }
+  def sendMessageAndReceiveMessage(m: Message[_]): Message[_] = {
+    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+    method.setAccessible(true)
+    method.invoke(f, m).asInstanceOf[Message[_]]
   }
 }

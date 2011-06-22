@@ -50,11 +50,9 @@ object DslDemo {
     val inputChannel = channel()
 
     var integrationContext = SpringIntegrationContext(
-        inputChannel >>
+        inputChannel ->
         service.using { m: Message[String] => { println(m.getPayload) } }
     )
-
-    integrationContext.init
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
   }
@@ -67,11 +65,9 @@ object DslDemo {
     val inputChannel = channel.withName("inChannel")
     
     var integrationContext = SpringIntegrationContext(
-        inputChannel >>
+        inputChannel ->
         service.withName("myService").using("T(java.lang.System).out.println(payload)")
     )
-
-    integrationContext.init
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
   }
@@ -83,11 +79,9 @@ object DslDemo {
     val inputChannel = channel.withExecutor(Executors.newFixedThreadPool(10))
     
     var integrationContext = SpringIntegrationContext(
-    	inputChannel >>
+    	inputChannel ->
         service.withName("myService").using { { m: Message[String] => { println(m.getPayload) } } }
     )
-
-    integrationContext.init
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
   }
@@ -101,12 +95,10 @@ object DslDemo {
     val outputChannel = channel.withName("outputChannel").andQueue(5)
 
     var integrationContext = SpringIntegrationContext(
-        inputChannel >>
-        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
+        inputChannel ->
+        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } ->
         outputChannel
     )
-
-    integrationContext.init
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
     var outputMessage = outputChannel.receive
@@ -122,15 +114,13 @@ object DslDemo {
     val resultChannel = channel.withQueue.andName("resultChannel")
 
     var integrationContext = SpringIntegrationContext(
-      inputChannel >>
-        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
-        middleChannel >>
-        //transform.withPoller(5, 1000).andName("myTransformer").using{"'### ' + payload.toLowerCase() + ' ###'"} >>
-        transform.withName("myTransformer").andPoller(1000, 5).using { "'### ' + payload.toLowerCase() + ' ###'" } >>
+      inputChannel ->
+        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } ->
+        middleChannel ->
+        //transform.withPoller(5, 1000).andName("myTransformer").using{"'### ' + payload.toLowerCase() + ' ###'"} ->
+        transform.withName("myTransformer").andPoller(1000, 5).using { "'### ' + payload.toLowerCase() + ' ###'" } ->
         resultChannel
     )
-
-    integrationContext.init
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
     var outputMessage = resultChannel.receive
@@ -146,14 +136,12 @@ object DslDemo {
     val resultChannel = channel.withName("resultChannel").andQueue
 
     var integrationContext = SpringIntegrationContext(
-        inputChannel >>
-        service.using { m: Message[String] => { m.getPayload.toUpperCase() } } >>
-        middleChannel >>
-        transform.using { "'### ' + payload.toLowerCase() + ' ###'" } >>
+        inputChannel ->
+        service.using { m: Message[String] => { m.getPayload.toUpperCase() } } ->
+        middleChannel ->
+        transform.using { "'### ' + payload.toLowerCase() + ' ###'" } ->
         resultChannel
     )
-
-    integrationContext.init
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
     var outputMessage = resultChannel.receive
@@ -169,12 +157,12 @@ object DslDemo {
     val resultChannel = channel.withName("resultChannel").andQueue
 
     var integrationContext = SpringIntegrationContext(
-      inputChannel >> ( 
+      inputChannel -> ( 
         // subscriber 1
     	{
-    		transform.withName("xfmrA").using { "'From Transformer: ' + payload.toUpperCase()" } >>
-    		middleChannel >>
-    		transform.withName("xfmrB").using { m: Message[String] => { m.getPayload().asInstanceOf[String].toUpperCase() } } >>
+    		transform.withName("xfmrA").using { "'From Transformer: ' + payload.toUpperCase()" } ->
+    		middleChannel ->
+    		transform.withName("xfmrB").using { m: Message[String] => { m.getPayload().asInstanceOf[String].toUpperCase() } } ->
     		resultChannel
     	},
         // subscriber 2
@@ -182,8 +170,6 @@ object DslDemo {
           service.using { m: Message[String] => { println("From Service Activator: " + m) } }
         })
     )
-
-    integrationContext.init
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
     var outputMessage = resultChannel.receive
@@ -197,15 +183,14 @@ object DslDemo {
     val inputChannel = channel.withName("inputChannel")
    
     var integrationContext = SpringIntegrationContext(
-        inputChannel >> 
-        service.using{m:Message[_] => m.getPayload + "_activator1"} >>
-        transform.using{m:Message[_] => m.getPayload + "_transformer1"} >>
-        service.using{m:Message[_] => m.getPayload + "_activator2"} >>
-        transform.using{m:Message[_] => m.getPayload + "_transformer2"} >>
+        inputChannel -> 
+        service.using{m:Message[_] => m.getPayload + "_activator1"} ->
+        transform.using{m:Message[_] => m.getPayload + "_transformer1"} ->
+        service.using{m:Message[_] => m.getPayload + "_activator2"} ->
+        transform.using{m:Message[_] => m.getPayload + "_transformer2"} ->
         service.using{m:Message[_] => println(m)}
     )
 
-    integrationContext.init
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
   }
   /**
@@ -217,20 +202,19 @@ object DslDemo {
    
     var integrationContext = SpringIntegrationContext(
         {
-          channel("foo") >>
+          channel("foo") ->
           service.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
         },
     	{
-          channel("bar") >>
+          channel("bar") ->
           service.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
         },
         {
-          inputChannel >>
+          inputChannel ->
           route.using{m: Message[String] => { m.getPayload}}
         }
     )
 
-    integrationContext.init
     inputChannel.send(new GenericMessage("foo"))
     inputChannel.send(new GenericMessage("bar"))
   }
@@ -245,21 +229,20 @@ object DslDemo {
    
     var integrationContext = SpringIntegrationContext(
         {
-          channel("foo") >>
+          channel("foo") ->
           service.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
         },
     	{
-          channel("bar") >>
+          channel("bar") ->
           service.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
         },
         {
-          inputChannel >>
-          route.using{m: Message[String] => { m.getPayload}} >>
+          inputChannel ->
+          route.using{m: Message[String] => { m.getPayload}} ->
           defaultOutputChannel
         }
     )
 
-    integrationContext.init
     inputChannel.send(new GenericMessage("foo"))
     inputChannel.send(new GenericMessage("bar"))
     inputChannel.send(new GenericMessage("baz"))
