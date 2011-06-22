@@ -243,7 +243,7 @@ object gateway{
   
   private def generateProxy[T](serviceTrait:Class[T]): T  with InitializedComponent = {
     
-    val gw = new IntegrationComponent with gateway
+    val gw = new IntegrationComponent with InitializedComponent with gateway
     gw.configMap.put(IntegrationComponent.serviceInterface, serviceTrait)
     
     var factory = new ProxyFactory()
