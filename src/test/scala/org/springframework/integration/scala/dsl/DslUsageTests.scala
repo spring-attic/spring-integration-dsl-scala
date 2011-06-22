@@ -102,6 +102,25 @@ class DslUsageTests{
      
      orderGateway.processOrder("Spring Integration in Action")
   }
+  
+  @Test
+  def testGatewayRequestObjectReplyObjectWithErrorChannel() {
+     val orderGateway = gateway.withErrorChannel("errChannel").using(classOf[RequestObjectReplyObject])
+       
+     val integrationContext = SpringIntegrationContext(
+         {
+           orderGateway ->
+           service.using{order:String => throw new IllegalArgumentException("intentional")} 
+         },
+         {
+           channel("errChannel") ->
+           service.using{errorMessage:Message[_] => "You got ERROR: " + errorMessage.getPayload}
+         }   
+     )
+     
+     var reply = orderGateway.processOrder("Spring Integration in Action").asInstanceOf[String]
+     assert(reply.startsWith("You got ERROR"))
+  }
    
   trait RequestObjectOnly  {
     def processOrder(order:String): Unit
