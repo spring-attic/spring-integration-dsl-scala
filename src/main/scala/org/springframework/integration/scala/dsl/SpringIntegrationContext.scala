@@ -156,7 +156,11 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
           val gatewayBuilder =
             BeanDefinitionBuilder.rootBeanDefinition(classOf[GatewayProxyFactoryBean])
           gatewayBuilder.addConstructorArg(gw.configMap.get(IntegrationComponent.serviceInterface))
-          gatewayBuilder.addPropertyReference("defaultRequestChannel", gw.defaultRequestChannel.toString())
+          gatewayBuilder.addPropertyReference("defaultRequestChannel", gw.defaultRequestChannel.toString())        
+          var errChannel = gw.configMap.get(IntegrationComponent.errorChannelName).asInstanceOf[String]
+          if (StringUtils.hasText(errChannel)){
+            gatewayBuilder.addPropertyReference("errorChannel", errChannel)
+          }      
           var gatewayName = gw.configMap.get(IntegrationComponent.name).asInstanceOf[String]
           if (!StringUtils.hasText(gatewayName)){
             gatewayName = "gateway_" + gw.hashCode

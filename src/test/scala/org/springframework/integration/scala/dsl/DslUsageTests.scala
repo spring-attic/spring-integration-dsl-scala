@@ -82,6 +82,26 @@ class DslUsageTests{
      assert(reply.isInstanceOf[Message[_]])
      assert(reply.asInstanceOf[Message[_]].getPayload.equals("SPRING INTEGRATION IN ACTION"))
   }
+  
+  @Test
+  def testGatewayRequestObjectOnlyWithErrorChannel() {
+     
+     val orderGateway = gateway.withErrorChannel("errChannel").using(classOf[RequestObjectOnly])
+       
+     val integrationContext = SpringIntegrationContext(
+         {
+           orderGateway ->
+           service.using{order:String => order.toUpperCase()} ->
+           service.using{m:Message[_] => throw new IllegalArgumentException("intentional")}
+         },
+         {
+           channel("errChannel") ->
+           service.using{errorMessage:Message[_] => println(errorMessage)}
+         }
+     )
+     
+     orderGateway.processOrder("Spring Integration in Action")
+  }
    
   trait RequestObjectOnly  {
     def processOrder(order:String): Unit

@@ -236,14 +236,19 @@ object gateway{
  
   def using[T](serviceTrait:Class[T]): T with InitializedComponent = {
     require(serviceTrait != null)
-    val proxy = generateProxy(serviceTrait)
+    val proxy = generateProxy(serviceTrait, null)
     val gw = new IntegrationComponent with gateway
     return proxy
   }
   
-  private def generateProxy[T](serviceTrait:Class[T]): T  with InitializedComponent = {
-    
+  private def generateProxy[T](serviceTrait:Class[T], g:gateway): T  with InitializedComponent = {
     val gw = new IntegrationComponent with InitializedComponent with gateway
+    
+   
+    if (g != null){
+      gw.configMap.putAll(g.asInstanceOf[IntegrationComponent].configMap)
+    }
+    
     gw.configMap.put(IntegrationComponent.serviceInterface, serviceTrait)
     
     var factory = new ProxyFactory()
@@ -290,7 +295,7 @@ trait gateway {
   
 	  def using[T](serviceTrait:Class[T]): T with InitializedComponent = {
 		require(serviceTrait != null)
-		gateway.generateProxy(serviceTrait)
+		gateway.generateProxy(serviceTrait, this)
 	  }
 }
 
