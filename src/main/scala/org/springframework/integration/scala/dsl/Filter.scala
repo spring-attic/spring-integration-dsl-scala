@@ -20,15 +20,19 @@ import org.springframework.util._
  *
  */
 class filter extends AbstractEndpoint {
+    
   override def toString = {
     var name = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
-    if (StringUtils.hasText(name)) name else "filter_" + this.hashCode
+    if (StringUtils.hasText(name)) name else filter.filterPrefix + this.hashCode
   }
 }
 /**
  * 
  */
 object filter {
+  val throwExceptionOnRejection = "throwExceptionOnRejection"
+  val filterPrefix =  "filter_"
+    
   def withName(componentName: String) = new filter() with using with andPoller with andErrorOnRejection{
     require(StringUtils.hasText(componentName))
     this.configMap.put(IntegrationComponent.name, componentName)
@@ -52,8 +56,8 @@ object filter {
   }
   
   trait andErrorOnRejection extends filter with using {
-    def andErrorOnRejection(r: Boolean): filter with using = {
-	  this.configMap.put(IntegrationComponent.errorOnRejection, r)
+    def andErrorOnRejection(throwErrorOnRejection: Boolean): filter with using = {
+	  this.configMap.put(throwExceptionOnRejection, throwErrorOnRejection)
 	  this
 	}
   }

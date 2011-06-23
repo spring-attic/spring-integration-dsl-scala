@@ -27,30 +27,23 @@ import org.springframework.context._
  */
 object IntegrationComponent {
   val name = "name"
+  val outputChannel = "outputChannel"
+  val inputChannelName = "inputChannelName"
   val queueCapacity = "queueCapacity"
   val executor = "executor"
   val poller = "poller"
   val using = "using"
+  val handler = "handler"
   val errorChannelName = "errorChannelName"
+  val targetObject = "targetObject"
+  val targetMethodName = "targetMethodName"
+  val expressionString = "expressionString"
     
   // POLLER Constants
   val maxMessagesPerPoll = "maxMessagesPerPoll"
   val fixedRate = "fixedRate"
   val cron = "cron"
-    
-   // GATEWAY Constants
-  val serviceInterface = "serviceInterface"
-  val defaultRequestChannel = "defaultRequestChannel"
-  val defaultReplyChannel = "defaultReplyChannel"
-  val gatewayProxy = "gatewayProxy"
-    
-  // FILTER Constants
-  val errorOnRejection = "errorOnRejection"
-    
-  // ROUTER Constants
-  val channelMappings = "channelMappings"
-    
-  
+ 
 }
 /**
  * 

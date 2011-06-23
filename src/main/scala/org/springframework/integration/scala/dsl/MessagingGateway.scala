@@ -19,41 +19,51 @@ import org.springframework.aop.framework._
 import org.aopalliance.intercept._
 import org.springframework.context._
 import org.apache.log4j._
- 
+import org.springframework.beans.factory.config._
+import org.springframework.beans.factory.support._
+import org.springframework.integration.gateway._
+
 /**
  * @author Oleg Zhurakousky
  *
  */
-object gateway{
+object gateway {
   private val logger = Logger.getLogger(this.getClass)
+
+  val serviceInterface = "serviceInterface"
+  val defaultRequestChannel = "defaultRequestChannel"
+  val defaultReplyChannel = "defaultReplyChannel"
+  val errorChannel = "errorChannel"
+
+  val gatewayPrefix = "gateway_"
   /**
-   * 
+   *
    */
   def withErrorChannel(errorChannelName: String) = new IntegrationComponent() with gateway {
     this.configMap.put(IntegrationComponent.errorChannelName, errorChannelName)
-   
+
     def andName(name: String) = new IntegrationComponent() with gateway {
-	    require(StringUtils.hasText(name))
-	    this.configMap.put(IntegrationComponent.name, name)
-	}
+      require(StringUtils.hasText(name))
+      this.configMap.put(IntegrationComponent.name, name)
+    }
   }
   /**
-   * 
+   *
    */
-  def withName(componentName: String) = new IntegrationComponent() with gateway{
+  def withName(componentName: String) = new IntegrationComponent() with gateway {
     require(StringUtils.hasText(componentName))
     this.configMap.put(IntegrationComponent.name, componentName)
-    
+
     def andErrorChannel(errorChannelName: String): IntegrationComponent with gateway = {
-	    require(StringUtils.hasText(errorChannelName))
-	    this.configMap.put(IntegrationComponent.errorChannelName, errorChannelName)
-	    this
-	}
+      require(StringUtils.hasText(errorChannelName))
+      this.configMap.put(IntegrationComponent.errorChannelName, errorChannelName)
+      this
+    }
   }
   /**
-   * 
+   *
    */
-  def using[T](serviceTrait:Class[T]): T with InitializedComponent = {
+  def using[T](serviceTrait: Class[T]): T with InitializedComponent = {
     require(serviceTrait != null)
     val proxy = generateProxy(serviceTrait, null)
     val gw = new IntegrationComponent with gateway
@@ -62,26 +72,44 @@ object gateway{
   /*
    * 
    */
-  private def generateProxy[T](serviceTrait:Class[T], g:gateway): T  with InitializedComponent = {
+  private[dsl] def buildGateway(gw:gateway with IntegrationComponent): BeanDefinition = {
+    val gatewayBuilder =
+      BeanDefinitionBuilder.rootBeanDefinition(classOf[GatewayProxyFactoryBean])
+    gatewayBuilder.addConstructorArg(gw.configMap.get(gateway.serviceInterface))
+    gatewayBuilder.addPropertyReference(gateway.defaultRequestChannel, gw.defaultRequestChannel.toString())
+    var errChannel = gw.configMap.get(IntegrationComponent.errorChannelName).asInstanceOf[String]
+    if (StringUtils.hasText(errChannel)) {
+      gatewayBuilder.addPropertyReference(gateway.errorChannel, errChannel)
+    }
+    var gatewayName = gw.configMap.get(IntegrationComponent.name).asInstanceOf[String]
+    if (!StringUtils.hasText(gatewayName)) {
+      gatewayName = gateway.gatewayPrefix + gw.hashCode
+      gw.configMap.put(IntegrationComponent.name, gatewayName)
+    }
+    gatewayBuilder.getBeanDefinition
+  }
+  /*
+   * 
+   */
+  private def generateProxy[T](serviceTrait: Class[T], g: gateway): T with InitializedComponent = {
     val gw = new IntegrationComponent with InitializedComponent with gateway
-    
-   
-    if (g != null){
+
+    if (g != null) {
       gw.configMap.putAll(g.asInstanceOf[IntegrationComponent].configMap)
     }
-    
-    gw.configMap.put(IntegrationComponent.serviceInterface, serviceTrait)
-    
+
+    gw.configMap.put(gateway.serviceInterface, serviceTrait)
+
     var factory = new ProxyFactory()
     factory.addInterface(classOf[InitializedComponent])
     factory.addInterface(serviceTrait)
     factory.addAdvice(new MethodInterceptor {
-      def invoke(invocation:MethodInvocation): Object = {
+      def invoke(invocation: MethodInvocation): Object = {
         val methodName = invocation.getMethod().getName
-        if (logger.isDebugEnabled){
+        if (logger.isDebugEnabled) {
           logger.debug("Invoking method: " + methodName)
         }
-        
+
         methodName match {
           case "$minus$greater" => {
             val to = invocation.getArguments()(0).asInstanceOf[collection.mutable.WrappedArray[_]](0).asInstanceOf[InitializedComponent]
@@ -89,39 +117,38 @@ object gateway{
           }
           case _ => {
             try {
-              if (gw.underlyingContext != null){
+              if (gw.underlyingContext != null) {
                 var gatewayProxy = gw.underlyingContext.getBean(serviceTrait)
                 var method = invocation.getMethod
                 ReflectionUtils.makeAccessible(method);
                 var argument = invocation.getArguments()(0)
-			    return method.invoke(gatewayProxy, argument);
+                return method.invoke(gatewayProxy, argument);
               }
               return invocation.proceed
+            } catch {
+              case ex: Exception => throw new IllegalArgumentException("Invocation of method '" +
+                methodName + "' happened too early. Proxy has not been initialized", ex)
             }
-            catch {
-              case ex:Exception => throw new IllegalArgumentException("Invocation of method '" + 
-                  methodName + "' happened too early. Proxy has not been initialized", ex)
-            }          
           }
-        }    
+        }
       }
     })
     var proxy = factory.getProxy
     return proxy.asInstanceOf[T with InitializedComponent]
-  } 
+  }
 }
 /**
- * 
+ *
  */
-trait gateway { 
-	  private[dsl] var defaultReplyChannel: channel = null;
+trait gateway {
+  private[dsl] var defaultReplyChannel: channel = null;
 
-	  private[dsl] var defaultRequestChannel: channel = null;
-  
-	  private[dsl] var underlyingContext: ApplicationContext = null;
-  
-	  def using[T](serviceTrait:Class[T]): T with InitializedComponent = {
-		require(serviceTrait != null)
-		gateway.generateProxy(serviceTrait, this)
-	  }
+  private[dsl] var defaultRequestChannel: channel = null;
+
+  private[dsl] var underlyingContext: ApplicationContext = null;
+
+  def using[T](serviceTrait: Class[T]): T with InitializedComponent = {
+    require(serviceTrait != null)
+    gateway.generateProxy(serviceTrait, this)
+  }
 }

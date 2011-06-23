@@ -36,12 +36,12 @@ import org.springframework.integration.config._
  *
  */
 object SpringIntegrationContext {
-  def apply(components:InitializedComponent*): SpringIntegrationContext = new SpringIntegrationContext(null, components:_*)
+  def apply(components: InitializedComponent*): SpringIntegrationContext = new SpringIntegrationContext(null, components: _*)
 }
 /**
- * 
+ *
  */
-class SpringIntegrationContext(parentContext:ApplicationContext,  components:InitializedComponent*) {
+class SpringIntegrationContext(parentContext: ApplicationContext, components: InitializedComponent*) {
   private val logger = Logger.getLogger(this.getClass)
   private var componentMap: java.util.Map[IntegrationComponent, IntegrationComponent] = null
   private[dsl] var context = new GenericApplicationContext()
@@ -50,12 +50,10 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
   for (integrationComponent <- components) {
     if (integrationComponent.componentMap == null) {
       integrationComponent.componentMap = new java.util.HashMap[IntegrationComponent, IntegrationComponent]
-    }
-    else {
-      if (this.componentMap == null){
+    } else {
+      if (this.componentMap == null) {
         this.componentMap = integrationComponent.componentMap
-      }
-      else {
+      } else {
         this.componentMap.putAll(integrationComponent.componentMap)
       }
     }
@@ -83,108 +81,120 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
         case endpoint: AbstractEndpoint => {
           val consumerBuilder =
             BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
-          var handlerBuilder: BeanDefinitionBuilder = null
 
-          endpoint match {
-            case sa: service => {
-              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
-            }
-            case xfmr: transform => {
-              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
-            }
-            case router: route => {
-              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
-              handlerBuilder.addPropertyValue("ignoreChannelNameResolutionFailures", true)
-              val channelMappings = router.configMap.get(IntegrationComponent.channelMappings)
-              if (channelMappings != null){
-                handlerBuilder.addPropertyValue("channelIdentifierMap", channelMappings)
-              }     
-            }
-            case filter: filter => {
-              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])
-              val errorOnRejection = filter.configMap.get(IntegrationComponent.errorOnRejection)
-              if (errorOnRejection != null){
-                handlerBuilder.addPropertyValue("throwExceptionOnRejection", errorOnRejection)
-              }  
-            }
-            case splitter: split => {
-              handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
-              //handlerBuilder.addPropertyValue("ignoreChannelNameResolutionFailures", true)
-            }
-            case _ => {
-              throw new IllegalArgumentException("handler is not currently supported: " + receivingDescriptor)
-            }
-          }
-          if (endpoint == null){
-            println()
-          }
-          if (endpoint.inputChannel.configMap.containsKey(IntegrationComponent.queueCapacity)) { // this means channel is Queue and we need polling consumer
+          var handlerBuilder = this.getHandlerDefinitionBuilder(endpoint)
+
+          // Determine if Polling Consumer and define poller
+          if (endpoint.inputChannel.configMap.containsKey(IntegrationComponent.queueCapacity)) {
             this.configurePoller(endpoint, consumerBuilder)
           }
 
-          if (endpoint.configMap.containsKey(IntegrationComponent.using)) {
-            val using = endpoint.configMap.get(IntegrationComponent.using)
-            using match {
-              case function: Function[_, _] => {
-                var functionInvoker = new FunctionInvoker(function)
-                handlerBuilder.addPropertyValue("targetObject", functionInvoker);
-                println(functionInvoker.methodName)
-                handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
-              }
-              case spel: String => {
-                handlerBuilder.addPropertyValue("expressionString", spel);
-              }
-              case _ => {
-                throw new IllegalArgumentException("Unsupported value for 'using' - " + using)
-              }
-            }
-          }
+          this.defineHandlerTarget(endpoint,handlerBuilder)
+
           this.ensureComponentIsNamed(endpoint.inputChannel)
-          consumerBuilder.addPropertyValue("inputChannelName", endpoint.inputChannel.configMap.get(IntegrationComponent.name))
+          consumerBuilder.addPropertyValue(IntegrationComponent.inputChannelName, endpoint.inputChannel.configMap.get(IntegrationComponent.name))
 
           endpoint match {
             case e: AbstractEndpoint => {
               var outputChannel = e.outputChannel
               if (outputChannel != null) {
                 this.ensureComponentIsNamed(outputChannel)
-                if (e.isInstanceOf[route]){
-                  handlerBuilder.addPropertyReference("defaultOutputChannel", outputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String]);
+                if (e.isInstanceOf[route]) {
+                  handlerBuilder.addPropertyReference(route.defaultOutputChannel, outputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String]);
+                } else {
+                  handlerBuilder.addPropertyReference(IntegrationComponent.outputChannel, outputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String]);
                 }
-                else {
-                  handlerBuilder.addPropertyReference("outputChannel", outputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String]);
-                }       
               }
             }
           }
           if (!endpoint.configMap.containsKey(IntegrationComponent.name)) {
             endpoint.configMap.put(IntegrationComponent.name, endpoint.getClass().getSimpleName + "_" + endpoint.hashCode)
           }
-          consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
+          consumerBuilder.addPropertyValue(IntegrationComponent.handler, handlerBuilder.getBeanDefinition)
           val name = endpoint.configMap.get(IntegrationComponent.name).asInstanceOf[String]
           context.registerBeanDefinition(name, consumerBuilder.getBeanDefinition)
         }
-        case gw:gateway => {
-          println("gateway")
-          val gatewayBuilder =
-            BeanDefinitionBuilder.rootBeanDefinition(classOf[GatewayProxyFactoryBean])
-          gatewayBuilder.addConstructorArg(gw.configMap.get(IntegrationComponent.serviceInterface))
-          gatewayBuilder.addPropertyReference("defaultRequestChannel", gw.defaultRequestChannel.toString())        
-          var errChannel = gw.configMap.get(IntegrationComponent.errorChannelName).asInstanceOf[String]
-          if (StringUtils.hasText(errChannel)){
-            gatewayBuilder.addPropertyReference("errorChannel", errChannel)
-          }      
-          var gatewayName = gw.configMap.get(IntegrationComponent.name).asInstanceOf[String]
-          if (!StringUtils.hasText(gatewayName)){
-            gatewayName = "gateway_" + gw.hashCode
-            gw.configMap.put(IntegrationComponent.name, gatewayName)
-          }
-          context.registerBeanDefinition(gatewayName, gatewayBuilder.getBeanDefinition)  
+        case gw: gateway => {
+//          val gatewayBuilder =
+//            BeanDefinitionBuilder.rootBeanDefinition(classOf[GatewayProxyFactoryBean])
+//          gatewayBuilder.addConstructorArg(gw.configMap.get(gateway.serviceInterface))
+//          gatewayBuilder.addPropertyReference(gateway.defaultRequestChannel, gw.defaultRequestChannel.toString())
+//          var errChannel = gw.configMap.get(IntegrationComponent.errorChannelName).asInstanceOf[String]
+//          if (StringUtils.hasText(errChannel)) {
+//            gatewayBuilder.addPropertyReference(gateway.errorChannel, errChannel)
+//          }
+//          var gatewayName = gw.configMap.get(IntegrationComponent.name).asInstanceOf[String]
+//          if (!StringUtils.hasText(gatewayName)) {
+//            gatewayName = gateway.gatewayPrefix + gw.hashCode
+//            gw.configMap.put(IntegrationComponent.name, gatewayName)
+//          }
+          var gatewayDefinition = gateway.buildGateway(gw)
           gw.underlyingContext = context
+          context.registerBeanDefinition(gw.configMap.get(IntegrationComponent.name).asInstanceOf[String], gatewayDefinition)    
         }
       }
 
     }
     context.refresh
+  }
+  /*
+   * 
+   */
+  private def defineHandlerTarget(endpoint:AbstractEndpoint, handlerBuilder:BeanDefinitionBuilder) = {
+    if (endpoint.configMap.containsKey(IntegrationComponent.using)) {
+      val using = endpoint.configMap.get(IntegrationComponent.using)
+      using match {
+        case function: Function[_, _] => {
+          var functionInvoker = new FunctionInvoker(function)
+          handlerBuilder.addPropertyValue(IntegrationComponent.targetObject, functionInvoker);
+          println(functionInvoker.methodName)
+          handlerBuilder.addPropertyValue(IntegrationComponent.targetMethodName, functionInvoker.methodName);
+        }
+        case spel: String => {
+          handlerBuilder.addPropertyValue(IntegrationComponent.expressionString, spel);
+        }
+        case _ => {
+          throw new IllegalArgumentException("Unsupported value for 'using' - " + using)
+        }
+      }
+    }
+  }
+  /*
+   * 
+   */
+  private def getHandlerDefinitionBuilder(endpoint: AbstractEndpoint): BeanDefinitionBuilder = {
+    var handlerBuilder: BeanDefinitionBuilder = null
+
+    endpoint match {
+      case sa: service => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
+      }
+      case xfmr: transform => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
+      }
+      case router: route => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
+        handlerBuilder.addPropertyValue(route.ignoreChannelNameResolutionFailures, true)
+        val channelMappings = router.configMap.get(route.channelIdentifierMap)
+        if (channelMappings != null) {
+          handlerBuilder.addPropertyValue(route.channelIdentifierMap, channelMappings)
+        }
+      }
+      case fltr: filter => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])
+        val errorOnRejection = fltr.configMap.get(filter.throwExceptionOnRejection)
+        if (errorOnRejection != null) {
+          handlerBuilder.addPropertyValue(filter.throwExceptionOnRejection, errorOnRejection)
+        }
+      }
+      case splitter: split => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
+      }
+      case _ => {
+        throw new IllegalArgumentException("handler is not currently supported: " + endpoint)
+      }
+    }
+    handlerBuilder
   }
   /*
    * 
@@ -195,7 +205,7 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
     x match {
       case psChannel: pub_sub_channel => {
         channelBuilder =
-          BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.PublishSubscribeChannel")
+          BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
         if (psChannel.configMap.containsKey(IntegrationComponent.executor)) {
           channelBuilder.addConstructorArg(psChannel.configMap.get(IntegrationComponent.executor));
         }
@@ -204,17 +214,17 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
         {
           if (x.configMap.containsKey(IntegrationComponent.queueCapacity)) {
             channelBuilder =
-              BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.QueueChannel")
+              BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
             var queueCapacity: Int = x.configMap.get(IntegrationComponent.queueCapacity).asInstanceOf[Int]
             if (queueCapacity > 0) {
               channelBuilder.addConstructorArg(queueCapacity)
             }
           } else if (x.configMap.containsKey(IntegrationComponent.executor)) {
-            channelBuilder = BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.ExecutorChannel")
+            channelBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ExecutorChannel])
             channelBuilder.addConstructorArg(x.configMap.get(IntegrationComponent.executor))
           } else {
             channelBuilder =
-              BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.DirectChannel")
+              BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
           }
         }
     }
@@ -283,56 +293,50 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
   }
 }
 /**
- * 
+ *
  */
 private[dsl] final class FunctionInvoker(val f: Function[_, _]) {
   private val logger = Logger.getLogger(this.getClass)
-  var methodName:String = ""
-    
-  var method:Method = null
+  var methodName: String = ""
+
+  var method: Method = null
   val methods = f.getClass().getDeclaredMethods()
-  if (methods.size > 1){
-    for(m <- f.getClass().getDeclaredMethods()){
+  if (methods.size > 1) {
+    for (m <- f.getClass().getDeclaredMethods()) {
       var returnType = m.getReturnType()
       val inputParameter = m.getParameterTypes()(0)
-      if (!(returnType.isAssignableFrom(classOf[Object]) && inputParameter.isAssignableFrom(classOf[Object]))){
-        if (logger.isDebugEnabled){
-        	logger.debug("Selecting method: " + m)    	
+      if (!(returnType.isAssignableFrom(classOf[Object]) && inputParameter.isAssignableFrom(classOf[Object]))) {
+        if (logger.isDebugEnabled) {
+          logger.debug("Selecting method: " + m)
         }
         method = m
         if (returnType.isAssignableFrom(Void.TYPE) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
           methodName = "sendMessage"
-        }
-        else if (returnType.isAssignableFrom(Void.TYPE) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+        } else if (returnType.isAssignableFrom(Void.TYPE) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
           methodName = "sendPayload"
-        }
-        else if (returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+        } else if (returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
           methodName = "sendMessageAndReceiveMessage"
-        }
-        else if (!returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+        } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
           methodName = "sendMessageAndReceivePayload"
-        }
-        else if (returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+        } else if (returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
           methodName = "sendPayloadAndReceiveMessage"
-        }
-        else if (!returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+        } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
           methodName = "sendPayloadAndReceivePayload"
         }
       }
     }
-  }
-  else {
+  } else {
     method = f.getClass.getDeclaredMethod("apply", classOf[Object])
     methodName = "sendPayoadAndReceive"
-    if (logger.isDebugEnabled){
-       logger.debug("Selecting method: " + method)    	
+    if (logger.isDebugEnabled) {
+      logger.debug("Selecting method: " + method)
     }
   }
-  if (logger.isDebugEnabled){
-      logger.debug("FunctionInvoker method name: " + methodName)    	
+  if (logger.isDebugEnabled) {
+    logger.debug("FunctionInvoker method name: " + methodName)
   }
   def sendPayload(m: Object): Unit = {
-    method.setAccessible(true)  
+    method.setAccessible(true)
     method.invoke(f, m)
   }
   def sendMessage(m: Message[_]): Unit = {

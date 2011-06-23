@@ -38,7 +38,7 @@ object OrderProcessing {
         {
           orderGateway ->
           filter.withName("orderValidator").andErrorOnRejection(true).using{p:PurchaseOrder => !p.items.isEmpty} ->
-          split.using{p:PurchaseOrder => JavaConversions.asList(p.items)} ->
+          split.using{p:PurchaseOrder => JavaConversions.asList(p.items)} ->  
           route.withChannelMappings(Map("books" -> "booksChannel", "bikes" -> "bikesChannel")).using{pi:PurchaseOrderItem => pi.itemType}
         },
         {

@@ -21,16 +21,21 @@ import scala.collection.JavaConversions
  *
  */
 class route extends AbstractEndpoint {
+    
   override def toString = {
-    var name = this.configMap.get("name").asInstanceOf[String]
-    if (StringUtils.hasText(name)) name else "route_" + this.hashCode
+    var name = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
+    if (StringUtils.hasText(name)) name else route.routerPrefix + this.hashCode
   }
 }
 /**
  * 
  */
 object route {
-
+  val channelIdentifierMap = "channelIdentifierMap"
+  val ignoreChannelNameResolutionFailures = "ignoreChannelNameResolutionFailures"
+  val defaultOutputChannel = "defaultOutputChannel"
+  val routerPrefix =  "route_"
+  
   def withName(componentName: String) = new route() with using with andPoller {
     require(StringUtils.hasText(componentName))
     this.configMap.put(IntegrationComponent.name, componentName)
@@ -38,7 +43,7 @@ object route {
   
   def withChannelMappings(channelMappings: collection.immutable.Map[String, String]) = new route() with using with andPoller {
     require(channelMappings != null)
-    this.configMap.put(IntegrationComponent.channelMappings, JavaConversions.asMap(channelMappings))
+    this.configMap.put(channelIdentifierMap, JavaConversions.asMap(channelMappings))
   }
 
   def using(usingCode: AnyRef) = new route() with InitializedComponent{
@@ -60,7 +65,7 @@ object route {
   
   trait andMappings extends route with using {
 	def andMappings(channelMappings: Map[String, String]): route with using = {
-	  this.configMap.put(IntegrationComponent.channelMappings, JavaConversions.asMap(channelMappings))
+	  this.configMap.put(route.channelIdentifierMap, JavaConversions.asMap(channelMappings))
 	  this
 	}
   }
