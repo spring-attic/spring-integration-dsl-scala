@@ -23,6 +23,7 @@ import org.springframework.integration.channel._
 import org.springframework.integration.message._
 import org.springframework.aop.framework._
 import org.springframework.aop.target._
+import org.springframework.context.support._
 /**
  * @author Oleg Zhurakousky
  *
@@ -120,6 +121,22 @@ class DslUsageTests{
      
      var reply = orderGateway.processOrder("Spring Integration in Action").asInstanceOf[String]
      assert(reply.startsWith("You got ERROR"))
+  }
+  
+  @Test
+  def testWithParentContext() {
+     
+
+     val parentContext = new ClassPathXmlApplicationContext("parent-config.xml", this.getClass);
+     
+     val inputChannel = channel("inputChannel")
+     
+     val integrationContext = SpringIntegrationContext(parentContext,
+        inputChannel ->
+        service.using("@simpleService.printMessage(#this)")
+     )
+     
+     inputChannel.send(new GenericMessage("Hello from Scala"))
   }
    
   trait RequestObjectOnly  {

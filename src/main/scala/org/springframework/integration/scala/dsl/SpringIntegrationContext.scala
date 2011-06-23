@@ -40,6 +40,7 @@ import org.springframework.scheduling.concurrent._
  */
 object SpringIntegrationContext {
   def apply(components: InitializedComponent*): SpringIntegrationContext = new SpringIntegrationContext(null, components: _*)
+  def apply(parentContext: ApplicationContext, components: InitializedComponent*): SpringIntegrationContext = new SpringIntegrationContext(parentContext, components: _*)
 }
 /**
  *
@@ -48,6 +49,10 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
   private val logger = Logger.getLogger(this.getClass)
   private var componentMap: java.util.Map[IntegrationComponent, IntegrationComponent] = null
   private[dsl] var context = new GenericApplicationContext()
+  
+  if (parentContext != null){
+    context.setParent(parentContext)
+  }
 
   require(components != null)
   
@@ -65,6 +70,13 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
     }
     if (!integrationComponent.componentMap.containsKey(integrationComponent)) {
       integrationComponent.componentMap.put(integrationComponent, null)
+      
+      if (this.componentMap == null) {
+        this.componentMap = integrationComponent.componentMap
+      } 
+      else {
+        this.componentMap.putAll(integrationComponent.componentMap)
+      }
     }
     if (logger isDebugEnabled) {
       logger debug "Adding: " + integrationComponent.componentMap + "' To: " + this

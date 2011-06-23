@@ -18,6 +18,7 @@ import org.springframework.integration.scala.dsl._
 import org.springframework.integration.Message
 import scala.collection.JavaConversions
 import java.util.Random
+import java.util.concurrent._
 
 /**
  * @author Oleg Zhurakousky
