@@ -26,7 +26,7 @@ import org.springframework.context._
  *
  */
 object IntegrationComponent {
-  val name = "name"
+  val name = "componentName"
   val outputChannel = "outputChannel"
   val inputChannelName = "inputChannelName"
   val queueCapacity = "queueCapacity"
@@ -34,16 +34,18 @@ object IntegrationComponent {
   val poller = "poller"
   val using = "using"
   val handler = "handler"
-  val errorChannelName = "errorChannelName"
+  val errorChannelName = "errorChannelName" 
   val targetObject = "targetObject"
   val targetMethodName = "targetMethodName"
   val expressionString = "expressionString"
+  
     
   // POLLER Constants
   val maxMessagesPerPoll = "maxMessagesPerPoll"
   val fixedRate = "fixedRate"
   val cron = "cron"
- 
+  val trigger = "trigger"
+  val pollerMetadata = "pollerMetadata"
 }
 /**
  * 
@@ -56,9 +58,12 @@ abstract class IntegrationComponent {
   private[dsl] var componentMap: HashMap[IntegrationComponent, IntegrationComponent] = null
 }
 /**
- * 
+ * Trait which defines '->' method which composes the Message Flow
  */
 trait InitializedComponent extends IntegrationComponent {
+  /**
+   * 
+   */
   def ->(e: InitializedComponent*): InitializedComponent = {
     require(e.size > 0)
 

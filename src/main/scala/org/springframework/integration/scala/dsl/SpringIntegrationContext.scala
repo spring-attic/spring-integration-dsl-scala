@@ -30,6 +30,9 @@ import org.springframework.beans._
 import org.springframework.beans.factory.config._
 import org.springframework.util._
 import org.springframework.integration.config._
+import org.springframework.integration.context._
+import org.springframework.integration.aggregator._
+import org.springframework.scheduling.concurrent._
 
 /**
  * @author Oleg Zhurakousky
@@ -47,13 +50,16 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
   private[dsl] var context = new GenericApplicationContext()
 
   require(components != null)
+  
   for (integrationComponent <- components) {
     if (integrationComponent.componentMap == null) {
       integrationComponent.componentMap = new java.util.HashMap[IntegrationComponent, IntegrationComponent]
-    } else {
+    } 
+    else {
       if (this.componentMap == null) {
         this.componentMap = integrationComponent.componentMap
-      } else {
+      } 
+      else {
         this.componentMap.putAll(integrationComponent.componentMap)
       }
     }
@@ -65,6 +71,10 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
     }
   }
   this.init()
+  
+  def stop() = {
+    context.destroy
+  }
   /*
    * 
    */
@@ -88,12 +98,15 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
           if (endpoint.inputChannel.configMap.containsKey(IntegrationComponent.queueCapacity)) {
             this.configurePoller(endpoint, consumerBuilder)
           }
-
+          // Build Target Object
           this.defineHandlerTarget(endpoint,handlerBuilder)
 
           this.ensureComponentIsNamed(endpoint.inputChannel)
+          
+          // Set Input Channel
           consumerBuilder.addPropertyValue(IntegrationComponent.inputChannelName, endpoint.inputChannel.configMap.get(IntegrationComponent.name))
 
+          // Identify and set Output Channel
           endpoint match {
             case e: AbstractEndpoint => {
               var outputChannel = e.outputChannel
@@ -115,25 +128,11 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
           context.registerBeanDefinition(name, consumerBuilder.getBeanDefinition)
         }
         case gw: gateway => {
-//          val gatewayBuilder =
-//            BeanDefinitionBuilder.rootBeanDefinition(classOf[GatewayProxyFactoryBean])
-//          gatewayBuilder.addConstructorArg(gw.configMap.get(gateway.serviceInterface))
-//          gatewayBuilder.addPropertyReference(gateway.defaultRequestChannel, gw.defaultRequestChannel.toString())
-//          var errChannel = gw.configMap.get(IntegrationComponent.errorChannelName).asInstanceOf[String]
-//          if (StringUtils.hasText(errChannel)) {
-//            gatewayBuilder.addPropertyReference(gateway.errorChannel, errChannel)
-//          }
-//          var gatewayName = gw.configMap.get(IntegrationComponent.name).asInstanceOf[String]
-//          if (!StringUtils.hasText(gatewayName)) {
-//            gatewayName = gateway.gatewayPrefix + gw.hashCode
-//            gw.configMap.put(IntegrationComponent.name, gatewayName)
-//          }
           var gatewayDefinition = gateway.buildGateway(gw)
           gw.underlyingContext = context
           context.registerBeanDefinition(gw.configMap.get(IntegrationComponent.name).asInstanceOf[String], gatewayDefinition)    
         }
       }
-
     }
     context.refresh
   }
@@ -190,6 +189,11 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
       case splitter: split => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
       }
+      case aggregator: aggregate => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[CorrelatingMessageHandler])
+        val processorBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[DefaultAggregatingMessageGroupProcessor]);
+        handlerBuilder.addConstructorArgValue(processorBuilder.getBeanDefinition());
+      }
       case _ => {
         throw new IllegalArgumentException("handler is not currently supported: " + endpoint)
       }
@@ -208,6 +212,9 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
           BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
         if (psChannel.configMap.containsKey(IntegrationComponent.executor)) {
           channelBuilder.addConstructorArg(psChannel.configMap.get(IntegrationComponent.executor));
+        }
+        if (psChannel.configMap.containsKey("applySequence")) {
+          channelBuilder.addPropertyValue("applySequence", psChannel.configMap.get("applySequence"));
         }
       }
       case _ =>
@@ -229,7 +236,7 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
         }
     }
     this.ensureComponentIsNamed(x)
-    channelBuilder.addPropertyValue("componentName", x.configMap.get(IntegrationComponent.name))
+    channelBuilder.addPropertyValue(IntegrationComponent.name, x.configMap.get(IntegrationComponent.name))
     context.registerBeanDefinition(x.configMap.get(IntegrationComponent.name).asInstanceOf[String], channelBuilder.getBeanDefinition)
   }
   /*
@@ -247,17 +254,19 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
         triggerBuilder.addConstructorArgValue(pollerConfig.get(IntegrationComponent.fixedRate).get);
         triggerBuilder.addPropertyValue(IntegrationComponent.fixedRate, true);
       }
-      var triggerBeanName = "trtigger_" + triggerBuilder.hashCode
+     
+      var triggerBeanName = IntegrationComponent.trigger + "_" + triggerBuilder.hashCode
 
       context.registerBeanDefinition(triggerBeanName, triggerBuilder.getBeanDefinition)
-      pollerBuilder.addPropertyReference("trigger", triggerBeanName)
+      pollerBuilder.addPropertyReference(IntegrationComponent.trigger, triggerBeanName)
       if (pollerConfig.contains(IntegrationComponent.maxMessagesPerPoll)) {
         pollerBuilder.addPropertyValue(IntegrationComponent.maxMessagesPerPoll, pollerConfig.get(IntegrationComponent.maxMessagesPerPoll).get)
       }
 
-      consumerBuilder.addPropertyValue("pollerMetadata", pollerBuilder.getBeanDefinition)
+      consumerBuilder.addPropertyValue(IntegrationComponent.pollerMetadata, pollerBuilder.getBeanDefinition)
     } else {
-      context.registerBeanDefinition("org.springframework.integration.context.defaultPollerMetadata", pollerBuilder.getBeanDefinition)
+      
+      context.registerBeanDefinition(IntegrationContextUtils.DEFAULT_POLLER_METADATA_BEAN_NAME, pollerBuilder.getBeanDefinition)
     }
   }
   /*
@@ -267,21 +276,20 @@ class SpringIntegrationContext(parentContext: ApplicationContext, components: In
 
     // taskScheduler
     var schedulerBuilder = BeanDefinitionBuilder
-      .genericBeanDefinition("org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler");
+      .genericBeanDefinition(classOf[ThreadPoolTaskScheduler]);
     schedulerBuilder.addPropertyValue("poolSize", 10);
     schedulerBuilder.addPropertyValue("threadNamePrefix", "task-scheduler-");
     schedulerBuilder.addPropertyValue("rejectedExecutionHandler", new CallerRunsPolicy());
-    var errorHandlerBuilder = BeanDefinitionBuilder
-      .genericBeanDefinition("org.springframework.integration.channel.MessagePublishingErrorHandler");
+    var errorHandlerBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[MessagePublishingErrorHandler]);
     errorHandlerBuilder.addPropertyReference("defaultErrorChannel", "errorChannel");
     schedulerBuilder.addPropertyValue("errorHandler", errorHandlerBuilder.getBeanDefinition());
 
-    context.registerBeanDefinition("taskScheduler", schedulerBuilder.getBeanDefinition)
+    context.registerBeanDefinition(IntegrationContextUtils.TASK_SCHEDULER_BEAN_NAME, schedulerBuilder.getBeanDefinition)
 
     // default errorChannel
     var errorChannelBuilder =
-      BeanDefinitionBuilder.rootBeanDefinition("org.springframework.integration.channel.PublishSubscribeChannel")
-    context.registerBeanDefinition("errorChannel", errorChannelBuilder.getBeanDefinition)
+      BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
+    context.registerBeanDefinition(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, errorChannelBuilder.getBeanDefinition)
   }
   /*
    * 

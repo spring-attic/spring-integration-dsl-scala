@@ -29,13 +29,13 @@ abstract class AbstractChannel extends InitializedComponent {
   private[dsl] var underlyingContext: ApplicationContext = null;
 
   override def toString = {
-    var name = this.configMap.get("name").asInstanceOf[String]
+    var name = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
     if (StringUtils.hasText(name)) name else "channel_" + this.hashCode
   }
 
   def send(m: Message[Any]): Unit = {
     require(underlyingContext != null)
-    var messageChannel = underlyingContext.getBean(this.configMap.get("name").asInstanceOf[String])
+    var messageChannel = underlyingContext.getBean(this.configMap.get(IntegrationComponent.name).asInstanceOf[String])
     messageChannel.asInstanceOf[MessageChannel].send(m)
   }
 }
@@ -66,7 +66,7 @@ object channel {
     }
   }
   def withName(name: String) = new channel() with andQueue with andExecutor {
-    this.configMap.put("name", name)
+    this.configMap.put(IntegrationComponent.name, name)
   }
   def withExecutor(executor: Executor) = new channel() with andName {
     this.configMap.put("executor", executor)
@@ -89,10 +89,13 @@ class pub_sub_channel extends channel {
 //
 object pub_sub_channel {
   def withName(name: String) = new pub_sub_channel() with andExecutor {
-    this.configMap.put("name", name)
+    this.configMap.put(IntegrationComponent.name, name)
   }
   def withExecutor(executor: Executor) = new pub_sub_channel() with andName {
     this.configMap.put("executor", executor)
+  }
+  def withApplySequence(applySequence: Boolean) = new pub_sub_channel() with andName {
+    this.configMap.put("applySequence", applySequence)
   }
 }
 

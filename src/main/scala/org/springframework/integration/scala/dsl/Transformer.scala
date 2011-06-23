@@ -22,7 +22,7 @@ import org.springframework.util._
 class transform extends AbstractEndpoint {
   override def toString = {
     var name = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
-    if (StringUtils.hasText(name)) name else "transforml_" + this.hashCode
+    if (StringUtils.hasText(name)) name else "transform_" + this.hashCode
   }
 } 
 /**

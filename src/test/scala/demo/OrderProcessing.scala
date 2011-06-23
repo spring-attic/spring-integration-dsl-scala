@@ -17,6 +17,7 @@ package demo
 import org.springframework.integration.scala.dsl._
 import org.springframework.integration.Message
 import scala.collection.JavaConversions
+import java.util.Random
 
 /**
  * @author Oleg Zhurakousky
@@ -33,36 +34,44 @@ object OrderProcessing {
     val invalidOrder = PurchaseOrder(List())  
     
     val orderGateway = gateway.withErrorChannel("errorFlowChannel").using(classOf[OrderProcessingGateway])
+    val aggregationChannel = channel("aggregationChannel")
     
     val integrationContext = SpringIntegrationContext(
         {
           orderGateway ->
           filter.withName("orderValidator").andErrorOnRejection(true).using{p:PurchaseOrder => !p.items.isEmpty} ->
           split.using{p:PurchaseOrder => JavaConversions.asList(p.items)} ->  
+          channel.withExecutor ->
           route.withChannelMappings(Map("books" -> "booksChannel", "bikes" -> "bikesChannel")).using{pi:PurchaseOrderItem => pi.itemType}
         },
         {
           channel("errorFlowChannel") ->
-	      service.using{m:Message[_] => println("Received ERROR: " + m)}
+	      service.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
         },
 	    {
 	      channel("bikesChannel") ->
-	      service.using{m:Message[_] => println("Processing bikes order: " + m)}
+	      service.using{m:Message[_] => println("Processing bikes order: " + m); m} ->
+	      aggregationChannel
 	    },
 	    {
 	      channel("booksChannel") ->
-	      service.using{m:Message[_] => println("Processing books order: " + m)}
+	      service.using{m:Message[_] => println("Processing books order: " + m); Thread.sleep(new Random().nextInt(2000)); m} ->
+	      aggregationChannel
+	    },
+	    {
+	      aggregationChannel ->
+	      aggregate()
 	    }
     )
     
-    orderGateway.processOrder(validOrder)
-    
+    val reply = orderGateway.processOrder(validOrder)
+    println("Reply: " + reply)
 //    orderGateway.processOrder(invalidOrder)
-    
+    integrationContext.stop
   }
   
   trait OrderProcessingGateway  {
-    def processOrder(order:PurchaseOrder): Unit
+    def processOrder(order:PurchaseOrder): Object
   }
 
   case class PurchaseOrder(val items: List[PurchaseOrderItem]) {
