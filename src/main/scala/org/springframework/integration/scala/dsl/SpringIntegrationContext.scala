@@ -38,6 +38,9 @@ import org.springframework.integration.config._
 object SpringIntegrationContext {
   def apply(components:InitializedComponent*): SpringIntegrationContext = new SpringIntegrationContext(null, components:_*)
 }
+/**
+ * 
+ */
 class SpringIntegrationContext(parentContext:ApplicationContext,  components:InitializedComponent*) {
   private val logger = Logger.getLogger(this.getClass)
   private var componentMap: java.util.Map[IntegrationComponent, IntegrationComponent] = null
@@ -64,7 +67,9 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
     }
   }
   this.init()
- 
+  /*
+   * 
+   */
   private def init(): Unit = {
     this.preProcess
     var iterator = componentMap.keySet().iterator
@@ -277,8 +282,10 @@ class SpringIntegrationContext(parentContext:ApplicationContext,  components:Ini
     }
   }
 }
-
-protected class FunctionInvoker(val f: Function[_, _]) {
+/**
+ * 
+ */
+private[dsl] final class FunctionInvoker(val f: Function[_, _]) {
   private val logger = Logger.getLogger(this.getClass)
   var methodName:String = ""
     

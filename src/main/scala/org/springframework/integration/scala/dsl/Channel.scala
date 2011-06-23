@@ -60,7 +60,6 @@ object channel {
   }
   def withQueue() = new channel() with buffered {
     this.configMap.put("queueCapacity", 0)
-    println(this.configMap)
     def andName(componentName: String): channel with buffered = {
       this.configMap.put("andName", "andName")
       this

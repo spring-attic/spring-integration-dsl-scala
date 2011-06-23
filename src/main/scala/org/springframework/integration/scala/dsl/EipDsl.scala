@@ -31,27 +31,30 @@ object IntegrationComponent {
   val executor = "executor"
   val poller = "poller"
   val using = "using"
+  val errorChannelName = "errorChannelName"
     
   // POLLER Constants
   val maxMessagesPerPoll = "maxMessagesPerPoll"
   val fixedRate = "fixedRate"
   val cron = "cron"
     
-   // Gateway Constants
+   // GATEWAY Constants
   val serviceInterface = "serviceInterface"
   val defaultRequestChannel = "defaultRequestChannel"
   val defaultReplyChannel = "defaultReplyChannel"
   val gatewayProxy = "gatewayProxy"
     
-  // Filter Constants
+  // FILTER Constants
   val errorOnRejection = "errorOnRejection"
     
   // ROUTER Constants
   val channelMappings = "channelMappings"
     
-  val errorChannelName = "errorChannelName"
+  
 }
-//
+/**
+ * 
+ */
 abstract class IntegrationComponent {
   private[dsl] val logger = Logger.getLogger(this.getClass)
   
@@ -59,10 +62,11 @@ abstract class IntegrationComponent {
 
   private[dsl] var componentMap: HashMap[IntegrationComponent, IntegrationComponent] = null
 }
-//
+/**
+ * 
+ */
 trait InitializedComponent extends IntegrationComponent {
   def ->(e: InitializedComponent*): InitializedComponent = {
-    println("ADDING")
     require(e.size > 0)
 
     for (element <- e) {
@@ -82,7 +86,7 @@ trait InitializedComponent extends IntegrationComponent {
       if (!element.componentMap.containsKey(this)) {
         element.componentMap.put(this, null)
       }
-      println(this.isInstanceOf[gateway])
+    
       this match {
         case ae:AbstractEndpoint => {
           element match {
@@ -109,7 +113,6 @@ trait InitializedComponent extends IntegrationComponent {
         	  elmEndpoint.inputChannel = anonChannel
         	  elmEndpoint.componentMap.put(element, anonChannel)
         	  elmEndpoint.componentMap.put(anonChannel, this)
-        	  println(elmEndpoint.componentMap)
             }
           }
           
@@ -122,8 +125,6 @@ trait InitializedComponent extends IntegrationComponent {
 
       if (logger isDebugEnabled) {
         logger debug "From: '" + this + "' To: " + startingComponent
-
-        println(this.componentMap);
       }
       if (e.size == 1) {
         return element
@@ -149,10 +150,12 @@ trait InitializedComponent extends IntegrationComponent {
     }
   }
 }
+/**
+ * 
+ */
 trait andName extends IntegrationComponent with using {
   def andName(componentName: String): IntegrationComponent with using = {
-    this.configMap.put("andName", "andName")
-    println(this.configMap)
+    this.configMap.put(IntegrationComponent.name, componentName)
     this
   }
 }

@@ -23,6 +23,7 @@ import scala.collection.JavaConversions
  *
  */
 object OrderProcessing {
+  
   def main(args: Array[String]): Unit = {
     val validOrder = PurchaseOrder(List(
       PurchaseOrderItem("books", "Spring Integration in Action"),
