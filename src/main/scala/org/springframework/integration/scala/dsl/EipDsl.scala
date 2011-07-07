@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package org.springframework.integration.scala.dsl
+import scala.collection.mutable.ListBuffer
 import java.lang.reflect._
 import org.apache.log4j._
 import java.util._
@@ -21,11 +22,27 @@ import java.util.concurrent._
 import org.springframework.integration._
 import org.springframework.integration.channel._
 import org.springframework.context._
+import scalaz._
+import Scalaz._
+
 /**
  * @author Oleg Zhurakousky
  *
  */
 object IntegrationComponent {
+  private[dsl] class ConcatResponder(s1: ListBuffer[Any], s2: Any) extends Responder[ListBuffer[Any]] {
+    def respond(k: (ListBuffer[Any]) => Unit) = {
+      val s = s1 += s2
+      k(s)
+    }
+  }
+  implicit def componentToKleisli(x: InitializedComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+    kleisli((s1: ListBuffer[Any]) => new ConcatResponder(s1, x).map(r => r))
+  }
+  private[dsl] def compose(e: InitializedComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+    kleisli((s1: ListBuffer[Any]) => new ConcatResponder(s1, e).map(r => r))
+  }
+
   val name = "componentName"
   val outputChannel = "outputChannel"
   val inputChannelName = "inputChannelName"
@@ -34,12 +51,11 @@ object IntegrationComponent {
   val poller = "poller"
   val using = "using"
   val handler = "handler"
-  val errorChannelName = "errorChannelName" 
+  val errorChannelName = "errorChannelName"
   val targetObject = "targetObject"
   val targetMethodName = "targetMethodName"
   val expressionString = "expressionString"
-  
-    
+
   // POLLER Constants
   val maxMessagesPerPoll = "maxMessagesPerPoll"
   val fixedRate = "fixedRate"
@@ -48,11 +64,11 @@ object IntegrationComponent {
   val pollerMetadata = "pollerMetadata"
 }
 /**
- * 
+ *
  */
 abstract class IntegrationComponent {
   private[dsl] val logger = Logger.getLogger(this.getClass)
-  
+
   private[dsl] val configMap = new HashMap[Any, Any]
 
   private[dsl] var componentMap: HashMap[IntegrationComponent, IntegrationComponent] = null
@@ -61,8 +77,26 @@ abstract class IntegrationComponent {
  * Trait which defines '->' method which composes the Message Flow
  */
 trait InitializedComponent extends IntegrationComponent {
+
+  import IntegrationComponent._
+
+  def >=>(e: InitializedComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+    compose(this) >=> compose(e)
+  }
+
+  def >=>(e: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+    val thisK = compose(this)
+      val kliesliBuffer = new ListBuffer[Any]
+      for (kl <- e) {
+        val listBuffer = new ListBuffer[Any]
+        val b = kl.apply(listBuffer).respond(r => r)
+        kliesliBuffer += listBuffer
+        println()
+      }
+      thisK >=> kleisli((s1: ListBuffer[Any]) => new ConcatResponder(s1, kliesliBuffer).map(r => r))
+  }
   /**
-   * 
+   *
    */
   def ->(e: InitializedComponent*): InitializedComponent = {
     require(e.size > 0)
@@ -73,8 +107,7 @@ trait InitializedComponent extends IntegrationComponent {
       }
       if (element.componentMap == null) {
         element.componentMap = this.componentMap
-      } 
-      else {
+      } else {
         element.componentMap.putAll(this.componentMap)
         this.componentMap = element.componentMap
       }
@@ -84,42 +117,41 @@ trait InitializedComponent extends IntegrationComponent {
       if (!element.componentMap.containsKey(this)) {
         element.componentMap.put(this, null)
       }
-    
+
       this match {
-        case ae:AbstractEndpoint => {
+        case ae: AbstractEndpoint => {
           element match {
-            case ch:channel => {
+            case ch: channel => {
               ae.outputChannel = ch
             }
-            case elmEndpoint:AbstractEndpoint => {
+            case elmEndpoint: AbstractEndpoint => {
               val anonChannel = channel()
-        	  ae.outputChannel = anonChannel
-        	  elmEndpoint.inputChannel = anonChannel
-        	  elmEndpoint.componentMap.put(element, anonChannel)
-        	  elmEndpoint.componentMap.put(anonChannel, this)
+              ae.outputChannel = anonChannel
+              elmEndpoint.inputChannel = anonChannel
+              elmEndpoint.componentMap.put(element, anonChannel)
+              elmEndpoint.componentMap.put(anonChannel, this)
             }
           }
         }
-        case gw:gateway => {
+        case gw: gateway => {
           element match {
-            case ch:channel => {
+            case ch: channel => {
               gw.defaultRequestChannel = ch
             }
-            case elmEndpoint:AbstractEndpoint => {
+            case elmEndpoint: AbstractEndpoint => {
               val anonChannel = channel()
-        	  gw.defaultRequestChannel = anonChannel
-        	  elmEndpoint.inputChannel = anonChannel
-        	  elmEndpoint.componentMap.put(element, anonChannel)
-        	  elmEndpoint.componentMap.put(anonChannel, this)
+              gw.defaultRequestChannel = anonChannel
+              elmEndpoint.inputChannel = anonChannel
+              elmEndpoint.componentMap.put(element, anonChannel)
+              elmEndpoint.componentMap.put(anonChannel, this)
             }
           }
-          
+
         }
         case _ => {
           startingComponent.asInstanceOf[AbstractEndpoint].inputChannel = this.asInstanceOf[channel]
         }
       }
-
 
       if (logger isDebugEnabled) {
         logger debug "From: '" + this + "' To: " + startingComponent
@@ -138,18 +170,16 @@ trait InitializedComponent extends IntegrationComponent {
       var c: IntegrationComponent = ic.componentMap.get(ic);
       if (c == null) {
         ic
-      } 
-      else {
+      } else {
         locateStartingComponent(c)
       }
-    } 
-    else {
+    } else {
       ic
     }
   }
 }
 /**
- * 
+ *
  */
 trait andName extends IntegrationComponent with using {
   def andName(componentName: String): IntegrationComponent with using = {

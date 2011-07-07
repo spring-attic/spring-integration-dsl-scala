@@ -36,7 +36,9 @@ abstract class AbstractChannel extends InitializedComponent {
   def send(m: Message[Any]): Unit = {
     require(underlyingContext != null)
     var messageChannel = underlyingContext.getBean(this.configMap.get(IntegrationComponent.name).asInstanceOf[String])
-    messageChannel.asInstanceOf[MessageChannel].send(m)
+    val mChannel = messageChannel.asInstanceOf[MessageChannel]
+    mChannel.send(m)
+    println()
   }
 }
 

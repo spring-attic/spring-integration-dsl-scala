@@ -49,8 +49,8 @@ object DslDemo {
 
     val inputChannel = channel()
 
-    var integrationContext = SpringIntegrationContext(
-        inputChannel ->
+    var integrationContext = IntegrationContext(
+        inputChannel >=>
         service.using { m: Message[String] => { println(m.getPayload) } }
     )
 
@@ -64,8 +64,8 @@ object DslDemo {
     
     val inputChannel = channel.withName("inChannel")
     
-    var integrationContext = SpringIntegrationContext(
-        inputChannel ->
+    var integrationContext = IntegrationContext(
+        inputChannel >=>
         service.withName("myService").using("T(java.lang.System).out.println(payload)")
     )
 
@@ -78,8 +78,8 @@ object DslDemo {
     
     val inputChannel = channel.withExecutor(Executors.newFixedThreadPool(10))
     
-    var integrationContext = SpringIntegrationContext(
-    	inputChannel ->
+    var integrationContext = IntegrationContext(
+    	inputChannel >=>
         service.withName("myService").using { { m: Message[String] => { println(m.getPayload) } } }
     )
 
@@ -94,9 +94,9 @@ object DslDemo {
     //    val outputChannel = channel.withQueue(5).andName("outputChannel")
     val outputChannel = channel.withName("outputChannel").andQueue(5)
 
-    var integrationContext = SpringIntegrationContext(
-        inputChannel ->
-        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } ->
+    var integrationContext = IntegrationContext(
+        inputChannel >=>
+        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >=>
         outputChannel
     )
 
@@ -113,12 +113,12 @@ object DslDemo {
     val middleChannel = channel.withQueue(5).andName("middleChannel")
     val resultChannel = channel.withQueue.andName("resultChannel")
 
-    var integrationContext = SpringIntegrationContext(
-      inputChannel ->
-        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } ->
-        middleChannel ->
-        //transform.withPoller(5, 1000).andName("myTransformer").using{"'### ' + payload.toLowerCase() + ' ###'"} ->
-        transform.withName("myTransformer").andPoller(1000, 5).using { "'### ' + payload.toLowerCase() + ' ###'" } ->
+    var integrationContext = IntegrationContext(
+      inputChannel >=>
+        service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >=>
+        middleChannel >=>
+        //transform.withPoller(5, 1000).andName("myTransformer").using{"'### ' + payload.toLowerCase() + ' ###'"} >=>
+        transform.withName("myTransformer").andPoller(1000, 5).using { "'### ' + payload.toLowerCase() + ' ###'" } >=>
         resultChannel
     )
 
@@ -135,11 +135,11 @@ object DslDemo {
     val middleChannel = channel.withName("middleChannel").andQueue(5)
     val resultChannel = channel.withName("resultChannel").andQueue
 
-    var integrationContext = SpringIntegrationContext(
-        inputChannel ->
-        service.using { m: Message[String] => { m.getPayload.toUpperCase() } } ->
-        middleChannel ->
-        transform.using { "'### ' + payload.toLowerCase() + ' ###'" } ->
+    var integrationContext = IntegrationContext(
+        inputChannel >=>
+        service.using { m: Message[String] => { m.getPayload.toUpperCase() } } >=>
+        middleChannel >=>
+        transform.using { "'### ' + payload.toLowerCase() + ' ###'" } >=>
         resultChannel
     )
 
@@ -156,13 +156,13 @@ object DslDemo {
     val middleChannel = channel.withName("middleChannel").andQueue(5)
     val resultChannel = channel.withName("resultChannel").andQueue
 
-    var integrationContext = SpringIntegrationContext(
-      inputChannel -> ( 
+    var integrationContext = IntegrationContext(
+      inputChannel >=> ( 
         // subscriber 1
     	{
-    		transform.withName("xfmrA").using { "'From Transformer: ' + payload.toUpperCase()" } ->
-    		middleChannel ->
-    		transform.withName("xfmrB").using { m: Message[String] => { m.getPayload().asInstanceOf[String].toUpperCase() } } ->
+    		transform.withName("xfmrA").using { "'From Transformer: ' + payload.toUpperCase()" } >=>
+    		middleChannel >=>
+    		transform.withName("xfmrB").using { m: Message[String] => { m.getPayload().asInstanceOf[String].toUpperCase() } } >=>
     		resultChannel
     	},
         // subscriber 2
@@ -182,12 +182,12 @@ object DslDemo {
     
     val inputChannel = channel.withName("inputChannel")
    
-    var integrationContext = SpringIntegrationContext(
-        inputChannel -> 
-        service.using{m:Message[_] => m.getPayload + "_activator1"} ->
-        transform.using{m:Message[_] => m.getPayload + "_transformer1"} ->
-        service.using{m:Message[_] => m.getPayload + "_activator2"} ->
-        transform.using{m:Message[_] => m.getPayload + "_transformer2"} ->
+    var integrationContext = IntegrationContext(
+        inputChannel >=> 
+        service.using{m:Message[_] => m.getPayload + "_activator1"} >=>
+        transform.using{m:Message[_] => m.getPayload + "_transformer1"} >=>
+        service.using{m:Message[_] => m.getPayload + "_activator2"} >=>
+        transform.using{m:Message[_] => m.getPayload + "_transformer2"} >=>
         service.using{m:Message[_] => println(m)}
     )
 
@@ -200,17 +200,17 @@ object DslDemo {
     
     val inputChannel = channel.withName("inputChannel")
    
-    var integrationContext = SpringIntegrationContext(
+    var integrationContext = IntegrationContext(
         {
-          channel("foo") ->
+          channel("foo") >=>
           service.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
         },
     	{
-          channel("bar") ->
+          channel("bar") >=>
           service.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
         },
         {
-          inputChannel ->
+          inputChannel >=>
           route.using{m: Message[String] => { m.getPayload}}
         }
     )
@@ -227,18 +227,18 @@ object DslDemo {
     val inputChannel = channel.withName("inputChannel")
     val defaultOutputChannel = channel.withName("defaultOutputChannel").andQueue
    
-    var integrationContext = SpringIntegrationContext(
+    var integrationContext = IntegrationContext(
         {
-          channel("foo") ->
+          channel("foo") >=>
           service.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
         },
     	{
-          channel("bar") ->
+          channel("bar") >=>
           service.using{ m: Message[String] => { println("FROM BAR channel: " + m.getPayload) }}
         },
         {
-          inputChannel ->
-          route.using{m: Message[String] => { m.getPayload}} ->
+          inputChannel >=>
+          route.using{m: Message[String] => { m.getPayload}} >=>
           defaultOutputChannel
         }
     )

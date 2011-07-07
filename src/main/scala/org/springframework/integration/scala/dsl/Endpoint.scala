@@ -20,9 +20,9 @@ package org.springframework.integration.scala.dsl
  */
 private[dsl] class AbstractEndpoint extends IntegrationComponent {
 
-  private[dsl] var inputChannel: channel = null;
+  private[dsl] var inputChannel: AbstractChannel = null;
 
-  private[dsl] var outputChannel: channel = null;
+  private[dsl] var outputChannel: AbstractChannel = null;
 }
 
 /**

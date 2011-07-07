@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package org.springframework.integration.scala.dsl
+import scala.collection.mutable.ListBuffer
 import org.apache.log4j._
 import java.lang.reflect._
 import java.util.concurrent._
@@ -33,6 +34,9 @@ import org.springframework.integration.config._
 import org.springframework.integration.context._
 import org.springframework.integration.aggregator._
 import org.springframework.scheduling.concurrent._
+import scalaz._
+import Scalaz._
+import IntegrationComponent._
 
 /**
  * @author Oleg Zhurakousky
@@ -41,6 +45,7 @@ import org.springframework.scheduling.concurrent._
 object SpringIntegrationContext {
   def apply(components: InitializedComponent*): SpringIntegrationContext = new SpringIntegrationContext(null, components: _*)
   def apply(parentContext: ApplicationContext, components: InitializedComponent*): SpringIntegrationContext = new SpringIntegrationContext(parentContext, components: _*)
+  
 }
 /**
  *
