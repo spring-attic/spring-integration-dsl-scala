@@ -72,7 +72,7 @@ object gateway {
   /*
    * 
    */
-  private[dsl] def buildGateway(gw:gateway with IntegrationComponent): BeanDefinition = {
+  private[dsl] def buildGateway(gw: gateway with IntegrationComponent): BeanDefinition = {
     val gatewayBuilder =
       BeanDefinitionBuilder.rootBeanDefinition(classOf[GatewayProxyFactoryBean])
     gatewayBuilder.addConstructorArg(gw.configMap.get(gateway.serviceInterface))
@@ -111,20 +111,17 @@ object gateway {
         }
 
         methodName match {
-          case "$minus$greater" => {
-            val to = invocation.getArguments()(0).asInstanceOf[collection.mutable.WrappedArray[_]](0).asInstanceOf[InitializedComponent]
-            return gw -> to
+          case "$greater$eq$greater" => {
+            val to = invocation.getArguments()(0).asInstanceOf[InitializedComponent]
+            return gw >=> to
           }
           case _ => {
             try {
-              if (gw.underlyingContext != null) {
-                var gatewayProxy = gw.underlyingContext.getBean(serviceTrait)
-                var method = invocation.getMethod
-                ReflectionUtils.makeAccessible(method);
-                var argument = invocation.getArguments()(0)
-                return method.invoke(gatewayProxy, argument);
-              }
-              return invocation.proceed
+              var gatewayProxy = gw.underlyingContext.getBean(serviceTrait)
+              var method = invocation.getMethod
+              ReflectionUtils.makeAccessible(method);
+              var argument = invocation.getArguments()(0)
+              method.invoke(gatewayProxy, argument);
             } catch {
               case ex: Exception => throw new IllegalArgumentException("Invocation of method '" +
                 methodName + "' happened too early. Proxy has not been initialized", ex)

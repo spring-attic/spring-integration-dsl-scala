@@ -95,73 +95,7 @@ trait InitializedComponent extends IntegrationComponent {
       }
       thisK >=> kleisli((s1: ListBuffer[Any]) => new ConcatResponder(s1, kliesliBuffer).map(r => r))
   }
-  /**
-   *
-   */
-  def ->(e: InitializedComponent*): InitializedComponent = {
-    require(e.size > 0)
-
-    for (element <- e) {
-      if (this.componentMap == null) {
-        this.componentMap = new HashMap[IntegrationComponent, IntegrationComponent]
-      }
-      if (element.componentMap == null) {
-        element.componentMap = this.componentMap
-      } else {
-        element.componentMap.putAll(this.componentMap)
-        this.componentMap = element.componentMap
-      }
-
-      val startingComponent = this.locateStartingComponent(element)
-      element.componentMap.put(startingComponent, this)
-      if (!element.componentMap.containsKey(this)) {
-        element.componentMap.put(this, null)
-      }
-
-      this match {
-        case ae: AbstractEndpoint => {
-          element match {
-            case ch: channel => {
-              ae.outputChannel = ch
-            }
-            case elmEndpoint: AbstractEndpoint => {
-              val anonChannel = channel()
-              ae.outputChannel = anonChannel
-              elmEndpoint.inputChannel = anonChannel
-              elmEndpoint.componentMap.put(element, anonChannel)
-              elmEndpoint.componentMap.put(anonChannel, this)
-            }
-          }
-        }
-        case gw: gateway => {
-          element match {
-            case ch: channel => {
-              gw.defaultRequestChannel = ch
-            }
-            case elmEndpoint: AbstractEndpoint => {
-              val anonChannel = channel()
-              gw.defaultRequestChannel = anonChannel
-              elmEndpoint.inputChannel = anonChannel
-              elmEndpoint.componentMap.put(element, anonChannel)
-              elmEndpoint.componentMap.put(anonChannel, this)
-            }
-          }
-
-        }
-        case _ => {
-          startingComponent.asInstanceOf[AbstractEndpoint].inputChannel = this.asInstanceOf[channel]
-        }
-      }
-
-      if (logger isDebugEnabled) {
-        logger debug "From: '" + this + "' To: " + startingComponent
-      }
-      if (e.size == 1) {
-        return element
-      }
-    }
-    this
-  }
+  
   /*
    * 
    */

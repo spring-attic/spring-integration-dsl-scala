@@ -34,9 +34,9 @@ class DslUsageTests{
   def testGatewayRequestObjectOnly() {
      val orderGateway = gateway.using(classOf[RequestObjectOnly])
        
-     val integrationContext = SpringIntegrationContext(
-        orderGateway ->
-        service.using{order:String => order.toUpperCase()} ->
+     val integrationContext = IntegrationContext(
+        orderGateway >=>
+        service.using{order:String => order.toUpperCase()} >=>
         service.using{m:Message[_] => println(m)}
      )
      
@@ -47,8 +47,8 @@ class DslUsageTests{
   def testGatewayRequestObjectReplyObject() {
      val orderGateway = gateway.using(classOf[RequestObjectReplyObject])
        
-     val integrationContext = SpringIntegrationContext(
-        orderGateway ->
+     val integrationContext = IntegrationContext(
+        orderGateway >=>
         service.using{order:String => order.toUpperCase()} 
      )
      
@@ -60,8 +60,8 @@ class DslUsageTests{
   def testGatewayRequestObjectReplyMessage() {
      val orderGateway = gateway.using(classOf[RequestObjectReplyMessage])
        
-     val integrationContext = SpringIntegrationContext(
-        orderGateway ->
+     val integrationContext = IntegrationContext(
+        orderGateway >=>
         service.using{order:String => order.toUpperCase()} 
      )
      
@@ -74,8 +74,8 @@ class DslUsageTests{
   def testGatewayRequestMessageReplyMessage() {
      val orderGateway = gateway.using(classOf[RequestMessageReplyMessage])
        
-     val integrationContext = SpringIntegrationContext(
-        orderGateway ->
+     val integrationContext = IntegrationContext(
+        orderGateway >=>
         service.using{order:String => order.toUpperCase()} 
      )
      
@@ -89,14 +89,14 @@ class DslUsageTests{
      
      val orderGateway = gateway.withErrorChannel("errChannel").using(classOf[RequestObjectOnly])
        
-     val integrationContext = SpringIntegrationContext(
+     val integrationContext = IntegrationContext(
          {
-           orderGateway ->
-           service.using{order:String => order.toUpperCase()} ->
+           orderGateway >=>
+           service.using{order:String => order.toUpperCase()} >=>
            service.using{m:Message[_] => throw new IllegalArgumentException("intentional")}
          },
          {
-           channel("errChannel") ->
+           channel("errChannel") >=>
            service.using{errorMessage:Message[_] => println(errorMessage)}
          }
      )
@@ -108,13 +108,13 @@ class DslUsageTests{
   def testGatewayRequestObjectReplyObjectWithErrorChannel() {
      val orderGateway = gateway.withErrorChannel("errChannel").using(classOf[RequestObjectReplyObject])
        
-     val integrationContext = SpringIntegrationContext(
+     val integrationContext = IntegrationContext(
          {
-           orderGateway ->
+           orderGateway >=>
            service.using{order:String => throw new IllegalArgumentException("intentional")} 
          },
          {
-           channel("errChannel") ->
+           channel("errChannel") >=>
            service.using{errorMessage:Message[_] => "You got ERROR: " + errorMessage.getPayload}
          }   
      )
@@ -126,13 +126,12 @@ class DslUsageTests{
   @Test
   def testWithParentContext() {
      
-
      val parentContext = new ClassPathXmlApplicationContext("parent-config.xml", this.getClass);
      
      val inputChannel = channel("inputChannel")
      
-     val integrationContext = SpringIntegrationContext(parentContext,
-        inputChannel ->
+     val integrationContext = IntegrationContext(parentContext,
+        inputChannel >=>
         service.using("@simpleService.printMessage(#this)")
      )
      

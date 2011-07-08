@@ -15,6 +15,7 @@
  */
 package org.springframework.integration.scala.dsl
 import java.util.concurrent.ThreadPoolExecutor._
+import java.lang.reflect._
 import scala.collection.mutable.ListBuffer
 import scalaz._
 import Scalaz._
@@ -25,6 +26,7 @@ import org.springframework.context.support._
 import org.springframework.beans.factory.support._
 import org.springframework.scheduling.support._
 import org.springframework.scheduling.concurrent._
+import org.springframework.integration._
 import org.springframework.integration.channel._
 import org.springframework.integration.config._
 import org.springframework.integration.context._
@@ -36,19 +38,23 @@ import org.springframework.integration.scheduling._
  *
  */
 object IntegrationContext {
-  def apply(compositions: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): IntegrationContext = new IntegrationContext(null, compositions:_*)
-  def apply(parentContext: ApplicationContext, compositions: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): IntegrationContext = 
-	  	new IntegrationContext(parentContext, compositions:_*)
+  def apply(compositions: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): IntegrationContext = new IntegrationContext(null, compositions: _*)
+  def apply(parentContext: ApplicationContext, compositions: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): IntegrationContext =
+    new IntegrationContext(parentContext, compositions: _*)
 }
 /**
- * 
+ *
  */
 class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*) {
   private val logger = Logger.getLogger(this.getClass)
   private[dsl] var context = new GenericApplicationContext()
 
-  val compositionBuffer = new ListBuffer[Any]
-  for (composition <- compositions){
+  if (parentContext != null){
+    context.setParent(parentContext)
+  }
+  
+  for (composition <- compositions) {
+    val compositionBuffer = new ListBuffer[Any]
     composition.apply(compositionBuffer).respond(r => r)
     process(null, compositionBuffer)
   }
@@ -61,7 +67,8 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
    */
   private def process(from: IntegrationComponent, lb: ListBuffer[Any]) {
 
-    val endpoints = new ListBuffer[AbstractEndpoint]
+    val endpointsAndGateways = new ListBuffer[Any]
+    
     var _from = from
 
     for (compositionElement <- lb) {
@@ -84,12 +91,12 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
           }
 
           logWiring(_from, toChannel)
-          
+
           _from = toChannel
         }
         case toEndpoint: AbstractEndpoint => {
           this.ensureComponentIsNamed(toEndpoint)
-          endpoints += toEndpoint
+          endpointsAndGateways += toEndpoint
           _from match {
             case ep: AbstractEndpoint => {
               val anonChannel = channel("anonChannel_" + ep.hashCode)
@@ -102,18 +109,51 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
             case ch: AbstractChannel => {
               toEndpoint.inputChannel = ch
               logWiring(_from, toEndpoint)
-         
+            }
+            case gw: gateway => {
+              println("2")
+              val anonChannel = channel("anonChannel_" + gw.hashCode)
+              this.buildChannel(anonChannel)
+              gw.defaultRequestChannel = anonChannel
+              toEndpoint.inputChannel = anonChannel
+              logWiring(gw, anonChannel)
+              logWiring(anonChannel, toEndpoint)
             }
           }
-          
+
           _from = toEndpoint
+        }
+        case gw: gateway with IntegrationComponent => {
+          println("1")
+          endpointsAndGateways += gw
+          gw.underlyingContext = context
+          _from = gw
         }
       }
     }
-    
-    for (endpoint <- endpoints){
-      logger.debug("Building: " + endpoint + "(in:" + endpoint.asInstanceOf[AbstractEndpoint].inputChannel + ", out:" + endpoint.asInstanceOf[AbstractEndpoint].outputChannel + ")")
-      this.wireEndpoint(endpoint)
+
+    for (endpointOrGateway <- endpointsAndGateways) {
+      endpointOrGateway match {
+        case endpoint:AbstractEndpoint => {
+          logger.debug("Building: " + endpoint + "(in:" + endpoint.inputChannel + 
+              ", out:" + endpoint.outputChannel + ")")
+        }
+        case gw:gateway => {
+          logger.debug("Building: " + gw + "(in:" + gw.defaultRequestChannel + 
+              ", out:" + gw.defaultReplyChannel + ")")
+        }
+      }
+      
+      endpointOrGateway match {
+        case endpoint:AbstractEndpoint => {
+          this.wireEndpoint(endpoint)
+        }
+        case gw:gateway with IntegrationComponent => {
+         var gatewayDefinition = gateway.buildGateway(gw)
+         context.registerBeanDefinition(gw.configMap.get(IntegrationComponent.name).asInstanceOf[String], gatewayDefinition) 
+        }
+      }
+      
     }
   }
   /*
@@ -134,13 +174,13 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
     consumerBuilder.addPropertyValue(IntegrationComponent.inputChannelName, inChannelName)
 
     if (endpoint.isInstanceOf[route]) {
-      if (endpoint.outputChannel != null){
+      if (endpoint.outputChannel != null) {
         handlerBuilder.addPropertyReference(route.defaultOutputChannel, this.resolveChannelName(endpoint.outputChannel));
-      }     
+      }
     } else {
-      if (endpoint.outputChannel != null){
+      if (endpoint.outputChannel != null) {
         handlerBuilder.addPropertyReference(IntegrationComponent.outputChannel, this.resolveChannelName(endpoint.outputChannel));
-      }   
+      }
     }
 
     consumerBuilder.addPropertyValue(IntegrationComponent.handler, handlerBuilder.getBeanDefinition)
@@ -159,7 +199,11 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
       if (logger.isDebugEnabled) {
         if (from.isInstanceOf[AbstractChannel]) {
           logger.debug("Wiring: " + from + " -> " + to)
-        } else {
+        } 
+        else if (from.isInstanceOf[gateway]){
+          logger.debug("Wiring: " + from + "(request:" + from.asInstanceOf[gateway].defaultRequestChannel + ", reply:" + from.asInstanceOf[gateway].defaultReplyChannel + ")")
+        }
+        else {
           logger.debug("Wiring: " + from + "(in:" + from.asInstanceOf[AbstractEndpoint].inputChannel + ", out:" + from.asInstanceOf[AbstractEndpoint].outputChannel + ")")
         }
       }
@@ -333,5 +377,74 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
     var errorChannelBuilder =
       BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
     context.registerBeanDefinition(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, errorChannelBuilder.getBeanDefinition)
+  }
+}
+private[dsl] final class FunctionInvoker(val f: Function[_, _]) {
+  private val logger = Logger.getLogger(this.getClass)
+  var methodName: String = ""
+
+  var method: Method = null
+  val methods = f.getClass().getDeclaredMethods()
+  if (methods.size > 1) {
+    for (m <- f.getClass().getDeclaredMethods()) {
+      var returnType = m.getReturnType()
+      val inputParameter = m.getParameterTypes()(0)
+      if (!(returnType.isAssignableFrom(classOf[Object]) && inputParameter.isAssignableFrom(classOf[Object]))) {
+        if (logger.isDebugEnabled) {
+          logger.debug("Selecting method: " + m)
+        }
+        method = m
+        if (returnType.isAssignableFrom(Void.TYPE) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendMessage"
+        } else if (returnType.isAssignableFrom(Void.TYPE) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendPayload"
+        } else if (returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendMessageAndReceiveMessage"
+        } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendMessageAndReceivePayload"
+        } else if (returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendPayloadAndReceiveMessage"
+        } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          methodName = "sendPayloadAndReceivePayload"
+        }
+      }
+    }
+  } else {
+    method = f.getClass.getDeclaredMethod("apply", classOf[Object])
+    methodName = "sendPayoadAndReceive"
+    if (logger.isDebugEnabled) {
+      logger.debug("Selecting method: " + method)
+    }
+  }
+  if (logger.isDebugEnabled) {
+    logger.debug("FunctionInvoker method name: " + methodName)
+  }
+  def sendPayload(m: Object): Unit = {
+    method.setAccessible(true)
+    method.invoke(f, m)
+  }
+  def sendMessage(m: Message[_]): Unit = {
+    method.setAccessible(true)
+    method.invoke(f, m)
+  }
+  def sendPayloadAndReceivePayload(m: Object): Object = {
+    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+    method.setAccessible(true)
+    method.invoke(f, m)
+  }
+  def sendPayloadAndReceiveMessage(m: Object): Message[_] = {
+    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+    method.setAccessible(true)
+    method.invoke(f, m).asInstanceOf[Message[_]]
+  }
+  def sendMessageAndReceivePayload(m: Message[_]): Object = {
+    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+    method.setAccessible(true)
+    method.invoke(f, m)
+  }
+  def sendMessageAndReceiveMessage(m: Message[_]): Message[_] = {
+    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+    method.setAccessible(true)
+    method.invoke(f, m).asInstanceOf[Message[_]]
   }
 }

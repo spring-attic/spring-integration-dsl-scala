@@ -35,32 +35,32 @@ object OrderProcessing {
     val invalidOrder = PurchaseOrder(List())  
     
     val orderGateway = gateway.withErrorChannel("errorFlowChannel").using(classOf[OrderProcessingGateway])
-    val aggregationChannel = channel("aggregationChannel")
+    val aggregationChannel = channel.withName("aggregationChannel")
     
-    val integrationContext = SpringIntegrationContext(
+    val integrationContext = IntegrationContext(
         {
-          orderGateway ->
-          filter.withName("orderValidator").andErrorOnRejection(true).using{p:PurchaseOrder => !p.items.isEmpty} ->
-          split.using{p:PurchaseOrder => JavaConversions.asList(p.items)} ->  
-          channel.withExecutor ->
+          orderGateway >=>
+          filter.withName("orderValidator").andErrorOnRejection(true).using{p:PurchaseOrder => !p.items.isEmpty} >=>
+          split.using{p:PurchaseOrder => JavaConversions.asList(p.items)} >=>  
+          channel.withExecutor >=>
           route.withChannelMappings(Map("books" -> "booksChannel", "bikes" -> "bikesChannel")).using{pi:PurchaseOrderItem => pi.itemType}
         },
         {
-          channel("errorFlowChannel") ->
+          channel("errorFlowChannel") >=>
 	      service.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
         },
 	    {
-	      channel("bikesChannel") ->
-	      service.using{m:Message[_] => println("Processing bikes order: " + m); m} ->
+	      channel("bikesChannel") >=>
+	      service.using{m:Message[_] => println("Processing bikes order: " + m); m} >=>
 	      aggregationChannel
 	    },
 	    {
-	      channel("booksChannel") ->
-	      service.using{m:Message[_] => println("Processing books order: " + m); Thread.sleep(new Random().nextInt(2000)); m} ->
+	      channel("booksChannel") >=>
+	      service.using{m:Message[_] => println("Processing books order: " + m); Thread.sleep(new Random().nextInt(2000)); m} >=>
 	      aggregationChannel
 	    },
 	    {
-	      aggregationChannel ->
+	      aggregationChannel >=>
 	      aggregate()
 	    }
     )
@@ -68,7 +68,7 @@ object OrderProcessing {
     val reply = orderGateway.processOrder(validOrder)
     println("Reply: " + reply)
 //    orderGateway.processOrder(invalidOrder)
-    integrationContext.stop
+    //integrationContext.stop
   }
   
   trait OrderProcessingGateway  {
