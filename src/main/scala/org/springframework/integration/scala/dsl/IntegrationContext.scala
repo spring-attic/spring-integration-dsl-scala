@@ -49,10 +49,10 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
   private val logger = Logger.getLogger(this.getClass)
   private[dsl] var context = new GenericApplicationContext()
 
-  if (parentContext != null){
+  if (parentContext != null) {
     context.setParent(parentContext)
   }
-  
+
   for (composition <- compositions) {
     val compositionBuffer = new ListBuffer[Any]
     composition.apply(compositionBuffer).respond(r => r)
@@ -68,7 +68,7 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
   private def process(from: IntegrationComponent, lb: ListBuffer[Any]) {
 
     val endpointsAndGateways = new ListBuffer[Any]
-    
+
     var _from = from
 
     for (compositionElement <- lb) {
@@ -79,87 +79,54 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
           process(_from, lBuf)
 
         }
-        case toChannel: AbstractChannel => {
-          this.ensureComponentIsNamed(toChannel)
-          this.buildChannel(toChannel)
-          if (_from != null) {
-            _from match {
-              case ep: AbstractEndpoint => {
-                ep.outputChannel = toChannel
+        case ic: IntegrationComponent => {
+          
+          _from = ic
+          
+          ic match {
+            case toEndpoint: AbstractEndpoint => {
+              this.wireEndpoint(toEndpoint)
+            }
+            case gw: gateway with IntegrationComponent => {
+              gw.underlyingContext = context
+              if (gw.defaultRequestChannel != null) {
+                if (!context.containsBeanDefinition(gw.defaultRequestChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String])) {
+                  this.buildChannel(gw.defaultRequestChannel)
+                }
+
               }
+              if (gw.defaultReplyChannel != null) {
+                if (!context.containsBeanDefinition(gw.defaultReplyChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String])) {
+                  this.buildChannel(gw.defaultReplyChannel)
+                }
+
+              }
+              var gatewayDefinition = gateway.buildGateway(gw)
+              context.registerBeanDefinition(gw.configMap.get(IntegrationComponent.name).asInstanceOf[String], gatewayDefinition)
             }
+            case _ =>
           }
-
-          logWiring(_from, toChannel)
-
-          _from = toChannel
-        }
-        case toEndpoint: AbstractEndpoint => {
-          this.ensureComponentIsNamed(toEndpoint)
-          endpointsAndGateways += toEndpoint
-          _from match {
-            case ep: AbstractEndpoint => {
-              val anonChannel = channel("anonChannel_" + ep.hashCode)
-              this.buildChannel(anonChannel)
-              toEndpoint.inputChannel = anonChannel
-              ep.outputChannel = anonChannel
-              logWiring(ep, anonChannel)
-              logWiring(anonChannel, toEndpoint)
-            }
-            case ch: AbstractChannel => {
-              toEndpoint.inputChannel = ch
-              logWiring(_from, toEndpoint)
-            }
-            case gw: gateway => {
-              println("2")
-              val anonChannel = channel("anonChannel_" + gw.hashCode)
-              this.buildChannel(anonChannel)
-              gw.defaultRequestChannel = anonChannel
-              toEndpoint.inputChannel = anonChannel
-              logWiring(gw, anonChannel)
-              logWiring(anonChannel, toEndpoint)
-            }
-          }
-
-          _from = toEndpoint
-        }
-        case gw: gateway with IntegrationComponent => {
-          println("1")
-          endpointsAndGateways += gw
-          gw.underlyingContext = context
-          _from = gw
+          
         }
       }
-    }
-
-    for (endpointOrGateway <- endpointsAndGateways) {
-      endpointOrGateway match {
-        case endpoint:AbstractEndpoint => {
-          logger.debug("Building: " + endpoint + "(in:" + endpoint.inputChannel + 
-              ", out:" + endpoint.outputChannel + ")")
-        }
-        case gw:gateway => {
-          logger.debug("Building: " + gw + "(in:" + gw.defaultRequestChannel + 
-              ", out:" + gw.defaultReplyChannel + ")")
-        }
-      }
-      
-      endpointOrGateway match {
-        case endpoint:AbstractEndpoint => {
-          this.wireEndpoint(endpoint)
-        }
-        case gw:gateway with IntegrationComponent => {
-         var gatewayDefinition = gateway.buildGateway(gw)
-         context.registerBeanDefinition(gw.configMap.get(IntegrationComponent.name).asInstanceOf[String], gatewayDefinition) 
-        }
-      }
-      
     }
   }
   /*
    * 
    */
   private def wireEndpoint(endpoint: AbstractEndpoint) {
+    if (endpoint.inputChannel != null) {
+      if (!context.containsBeanDefinition(endpoint.inputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String])) {
+        this.buildChannel(endpoint.inputChannel)
+      }
+
+    }
+    if (endpoint.outputChannel != null) {
+      if (!context.containsBeanDefinition(endpoint.outputChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String])) {
+        this.buildChannel(endpoint.outputChannel)
+      }
+    }
+
     val consumerBuilder =
       BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
     var handlerBuilder = this.getHandlerDefinitionBuilder(endpoint)
@@ -186,28 +153,6 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
     consumerBuilder.addPropertyValue(IntegrationComponent.handler, handlerBuilder.getBeanDefinition)
     val consumerName = endpoint.configMap.get(IntegrationComponent.name).asInstanceOf[String]
     context.registerBeanDefinition(consumerName, consumerBuilder.getBeanDefinition)
-  }
-  /*
-   * 
-   */
-  private def logWiring(from: IntegrationComponent, to: IntegrationComponent) {
-    if (from == null) {
-      if (logger.isDebugEnabled) {
-        logger.debug("Wiring: " + to)
-      }
-    } else {
-      if (logger.isDebugEnabled) {
-        if (from.isInstanceOf[AbstractChannel]) {
-          logger.debug("Wiring: " + from + " -> " + to)
-        } 
-        else if (from.isInstanceOf[gateway]){
-          logger.debug("Wiring: " + from + "(request:" + from.asInstanceOf[gateway].defaultRequestChannel + ", reply:" + from.asInstanceOf[gateway].defaultReplyChannel + ")")
-        }
-        else {
-          logger.debug("Wiring: " + from + "(in:" + from.asInstanceOf[AbstractEndpoint].inputChannel + ", out:" + from.asInstanceOf[AbstractEndpoint].outputChannel + ")")
-        }
-      }
-    }
   }
   /*
    * 
@@ -244,17 +189,8 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
           }
         }
     }
-    this.ensureComponentIsNamed(x)
     channelBuilder.addPropertyValue(IntegrationComponent.name, x.configMap.get(IntegrationComponent.name))
     context.registerBeanDefinition(x.configMap.get(IntegrationComponent.name).asInstanceOf[String], channelBuilder.getBeanDefinition)
-  }
-  /*
-   * 
-   */
-  private def ensureComponentIsNamed(ic: IntegrationComponent) = {
-    if (ic != null && !ic.configMap.containsKey(IntegrationComponent.name)) {
-      ic.configMap.put(IntegrationComponent.name, ic.getClass().getSimpleName + "_" + ic.hashCode)
-    }
   }
   /*
    * 
@@ -354,6 +290,7 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
    * 
    */
   private def resolveChannelName(ch: AbstractChannel): String = {
+
     ch.configMap.get(IntegrationComponent.name).asInstanceOf[String]
   }
   /*

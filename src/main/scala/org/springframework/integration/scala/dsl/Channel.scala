@@ -46,6 +46,7 @@ abstract class AbstractChannel extends InitializedComponent {
  * Channel
  */
 class channel extends AbstractChannel {
+  this.configMap.put(IntegrationComponent.name, "generatedChannel_" + this.hashCode)
 }
 //
 object channel {

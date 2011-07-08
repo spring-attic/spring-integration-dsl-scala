@@ -23,6 +23,8 @@ private[dsl] class AbstractEndpoint extends IntegrationComponent {
   private[dsl] var inputChannel: AbstractChannel = null;
 
   private[dsl] var outputChannel: AbstractChannel = null;
+  
+  this.configMap.put(IntegrationComponent.name, "generatedEndpoint_" + this.hashCode)
 }
 
 /**

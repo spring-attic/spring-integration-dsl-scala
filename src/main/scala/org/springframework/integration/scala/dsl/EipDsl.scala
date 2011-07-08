@@ -30,12 +30,97 @@ import Scalaz._
  *
  */
 object IntegrationComponent {
-  private[dsl] class ConcatResponder(s1: ListBuffer[Any], s2: Any) extends Responder[ListBuffer[Any]] {
-    def respond(k: (ListBuffer[Any]) => Unit) = {
-      val s = s1 += s2
-      k(s)
+  private[dsl] class ConcatResponder(fromComponents: ListBuffer[Any], toComponents: Any) extends Responder[ListBuffer[Any]] {
+    private val logger = Logger.getLogger(this.getClass)
+    /**
+     * 
+     */
+    def respond(function: (ListBuffer[Any]) => Unit) = {
+      toComponents match {
+        case componentBuffer:ListBuffer[Any] => {
+          for(lbRoute <- componentBuffer){
+            lbRoute match {
+              case buffer:ListBuffer[IntegrationComponent] => {
+                val firstComponent:IntegrationComponent = buffer.first
+                this.wireComponents(fromComponents.last.asInstanceOf[IntegrationComponent], firstComponent)
+              }
+              case _ => {
+                throw new IllegalArgumentException("Unrecognized component: " + lbRoute)
+              }
+            }
+          }
+        }
+        case ic:IntegrationComponent => {
+          if (!fromComponents.isEmpty){
+            val fromComponent:IntegrationComponent = fromComponents.last.asInstanceOf[IntegrationComponent]
+            this.wireComponents(fromComponent, ic)
+          }
+        }
+      }
+      
+      val s = fromComponents += toComponents
+      function(s)
+    }
+    /*
+     * 
+     */
+    private def wireComponents(from:IntegrationComponent, to:IntegrationComponent) {
+      from match {
+        case ch:AbstractChannel => {
+          this.addChannel(to, ch, true)
+        }
+        case ic:IntegrationComponent => {
+          var ch:AbstractChannel = null
+          var inputRequired = false
+          to match {
+            case c:AbstractChannel => {
+              ch = c
+            }
+            case _ => {
+              inputRequired = true
+              ch = channel()
+            }
+          }
+          this.addChannel(ic, ch, false)
+          if (inputRequired){
+            this.addChannel(to, ch, true)
+          }
+        }
+      }
+    }
+    /*
+     * 
+     */
+    private def addChannel(ic:IntegrationComponent, ch:AbstractChannel, input:Boolean) {
+      ic match {
+        case gw:gateway => {
+          if (!input){
+            logger.debug(">=> Adding default-request-channel '" + ch + "' to the " + gw)
+            gw.defaultRequestChannel = ch
+          }
+          else {
+            logger.debug(">=> Adding default-reply-channel '" + ch + "' to the " + gw)
+            gw.defaultReplyChannel = ch
+          } 
+        }
+        case endpoint:AbstractEndpoint => {
+          if (!input){
+            logger.debug(">=> Adding output-channel '" + ch + "' to the " + endpoint)
+            endpoint.outputChannel = ch
+          }
+          else {
+            logger.debug(">=> Adding input-channel '" + ch + "' to the " + endpoint)
+            endpoint.inputChannel = ch
+          } 
+        }
+        case _ =>{
+          throw new IllegalArgumentException("OOOOPS")
+        }
+      }
     }
   }
+  
+  // END 
   implicit def componentToKleisli(x: InitializedComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
     kleisli((s1: ListBuffer[Any]) => new ConcatResponder(s1, x).map(r => r))
   }

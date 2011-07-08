@@ -138,9 +138,9 @@ object gateway {
  *
  */
 trait gateway {
-  private[dsl] var defaultReplyChannel: channel = null;
+  private[dsl] var defaultReplyChannel: AbstractChannel = null;
 
-  private[dsl] var defaultRequestChannel: channel = null;
+  private[dsl] var defaultRequestChannel: AbstractChannel = null;
 
   private[dsl] var underlyingContext: ApplicationContext = null;
 
