@@ -71,7 +71,6 @@ abstract class IntegrationComponent {
 
   private[dsl] val configMap = new HashMap[Any, Any]
 
-  private[dsl] var componentMap: HashMap[IntegrationComponent, IntegrationComponent] = null
 }
 /**
  * Trait which defines '->' method which composes the Message Flow
@@ -94,22 +93,6 @@ trait InitializedComponent extends IntegrationComponent {
         println()
       }
       thisK >=> kleisli((s1: ListBuffer[Any]) => new ConcatResponder(s1, kliesliBuffer).map(r => r))
-  }
-  
-  /*
-   * 
-   */
-  private def locateStartingComponent(ic: IntegrationComponent): IntegrationComponent = {
-    if (ic.componentMap.containsKey(ic)) {
-      var c: IntegrationComponent = ic.componentMap.get(ic);
-      if (c == null) {
-        ic
-      } else {
-        locateStartingComponent(c)
-      }
-    } else {
-      ic
-    }
   }
 }
 /**
