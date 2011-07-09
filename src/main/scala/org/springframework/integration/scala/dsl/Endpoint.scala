@@ -31,7 +31,16 @@ private[dsl] class AbstractEndpoint extends IntegrationComponent {
  * Common Traits
  */
 trait using extends IntegrationComponent {
-  def using(usingCode: AnyRef): InitializedComponent = { 
+  
+  def using(spel: String): InitializedComponent = { 
+    this.process(spel)
+  }
+  
+  def using(function: _ => _): InitializedComponent = { 
+    this.process(function)
+  }
+  
+  private def process(usingCode: AnyRef): InitializedComponent = { 
     this match {
       case service:service => {
         val activator = new service() with InitializedComponent
