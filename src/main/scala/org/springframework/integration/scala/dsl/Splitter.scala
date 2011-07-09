@@ -34,8 +34,13 @@ object split {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(usingCode: AnyRef) = new split() with InitializedComponent{
-    this.configMap.put(IntegrationComponent.using, usingCode)
+  def using(spel: String) = new split() with InitializedComponent{
+    require(StringUtils.hasText(spel))
+    this.configMap.put(IntegrationComponent.using, spel)
+  }
+  
+  def using(function: _ => _) = new split() with InitializedComponent{
+    this.configMap.put(IntegrationComponent.using, function)
   }
 
   def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new split() with using with andName {

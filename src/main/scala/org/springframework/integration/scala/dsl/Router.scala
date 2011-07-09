@@ -46,8 +46,13 @@ object route {
     this.configMap.put(channelIdentifierMap, JavaConversions.asMap(channelMappings))
   }
 
-  def using(usingCode: AnyRef) = new route() with InitializedComponent{
-    this.configMap.put(IntegrationComponent.using, usingCode)
+  def using(spel: String) = new route() with InitializedComponent{
+    require(StringUtils.hasText(spel))
+    this.configMap.put(IntegrationComponent.using, spel)
+  }
+  
+  def using(function: _ => _) = new route() with InitializedComponent{
+    this.configMap.put(IntegrationComponent.using, function)
   }
 
   def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new route() with using with andName {

@@ -31,14 +31,22 @@ class aggregate extends AbstractEndpoint {
 object aggregate {
   def apply(): aggregate with InitializedComponent = new aggregate() with InitializedComponent
   
-  def apply(name:String): aggregate with InitializedComponent = aggregate.withName(name)
+  def apply(name:String): aggregate with InitializedComponent = {
+    require(StringUtils.hasText(name))
+    aggregate.withName(name)
+  }
   
   def withName(componentName: String) = new aggregate() with using with andPoller with InitializedComponent{
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(usingCode: AnyRef) = new aggregate() with InitializedComponent{
-    this.configMap.put(IntegrationComponent.using, usingCode)
+  def using(spel: String) = new aggregate() with InitializedComponent{
+    require(StringUtils.hasText(spel))
+    this.configMap.put(IntegrationComponent.using, spel)
+  }
+  
+  def using(function: _ => _) = new aggregate() with InitializedComponent{
+    this.configMap.put(IntegrationComponent.using, function)
   }
 
   def withPoller(fixedRate: Int, maxMessagesPerPoll: Int) = new aggregate() with using with andName with InitializedComponent{

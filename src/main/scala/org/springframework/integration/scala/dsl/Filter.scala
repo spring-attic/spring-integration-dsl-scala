@@ -38,17 +38,24 @@ object filter {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(usingCode: AnyRef) = new filter() with InitializedComponent{
-    this.configMap.put(IntegrationComponent.using, usingCode)
+  def using(spel: String) = new filter() with InitializedComponent{
+    require(StringUtils.hasText(spel))
+    this.configMap.put(IntegrationComponent.using, spel)
+  }
+  
+  def using(function: _ => _) = new filter() with InitializedComponent{
+    this.configMap.put(IntegrationComponent.using, function)
   }
 
   def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new filter() with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))
   }
   def withPoller(maxMessagesPerPoll: Int, cron: String) = new filter() with using with andName {
+    require(StringUtils.hasText(cron))
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.cron -> cron))
   }
   def withPoller(cron: String) = new filter() with using with andName {
+    require(StringUtils.hasText(cron))
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.cron -> cron))
   }
   def withPoller(fixedRate: Int) = new filter() with using with andName {

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package org.springframework.integration.scala.dsl
+import org.springframework.util._
 /**
  * @author Oleg Zhurakousky
  *
@@ -33,6 +34,7 @@ private[dsl] class AbstractEndpoint extends IntegrationComponent {
 trait using extends IntegrationComponent {
   
   def using(spel: String): InitializedComponent = { 
+    require(StringUtils.hasText(spel))
     this.finalize(spel)
   }
   

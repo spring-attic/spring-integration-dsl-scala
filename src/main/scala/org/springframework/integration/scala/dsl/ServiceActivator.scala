@@ -22,7 +22,7 @@ import org.springframework.util._
 class service extends AbstractEndpoint {
   override def toString = {
     var name = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
-    if (StringUtils.hasText(name)) name else "activate_" + this.hashCode
+    if (StringUtils.hasText(name)) name else "service-activator_" + this.hashCode
   }
 }
 /**
@@ -34,20 +34,28 @@ object service {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(usingCode: AnyRef) = new service() with InitializedComponent{
-    this.configMap.put(IntegrationComponent.using, usingCode)
+  def using(spel: String) = new service() with InitializedComponent{
+    require(StringUtils.hasText(spel))
+    this.configMap.put(IntegrationComponent.using, spel)
+  }
+  
+  def using(function: _ => _) = new service() with InitializedComponent{
+    this.configMap.put(IntegrationComponent.using, function)
   }
 
   def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new service() with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))
   }
   def withPoller(maxMessagesPerPoll: Int, cron: String) = new service() with using with andName {
+    require(StringUtils.hasText(cron))
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.cron -> cron))
   }
   def withPoller(cron: String) = new service() with using with andName {
+    require(StringUtils.hasText(cron))
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.cron -> cron))
   }
   def withPoller(fixedRate: Int) = new service() with using with andName {
+    require(fixedRate > 0)
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.fixedRate -> fixedRate))
   }
 }

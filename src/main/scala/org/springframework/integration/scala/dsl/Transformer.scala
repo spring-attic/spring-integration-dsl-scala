@@ -33,8 +33,13 @@ object transform {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(usingCode: AnyRef) = new transform() with InitializedComponent{
-    this.configMap.put(IntegrationComponent.using, usingCode)
+  def using(spel: String) = new transform() with InitializedComponent{
+    require(StringUtils.hasText(spel))
+    this.configMap.put(IntegrationComponent.using, spel)
+  }
+  
+  def using(function: _ => _) = new transform() with InitializedComponent{
+    this.configMap.put(IntegrationComponent.using, function)
   }
 
   def withPoller(fixedRate: Int, maxMessagesPerPoll: Int) = new transform() with using with andName {
