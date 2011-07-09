@@ -140,6 +140,7 @@ object IntegrationComponent {
   val targetObject = "targetObject"
   val targetMethodName = "targetMethodName"
   val expressionString = "expressionString"
+  val applySequence = "applySequence"
 
   // POLLER Constants
   val maxMessagesPerPoll = "maxMessagesPerPoll"

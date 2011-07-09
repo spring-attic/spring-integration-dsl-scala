@@ -20,7 +20,7 @@ package org.springframework.integration.scala.dsl
  */
 private[dsl] class AbstractEndpoint extends IntegrationComponent {
 
-  private[dsl] var inputChannel: AbstractChannel = null;
+  private[dsl] var inputChannel: AbstractChannel = null
 
   private[dsl] var outputChannel: AbstractChannel = null;
   
@@ -33,38 +33,36 @@ private[dsl] class AbstractEndpoint extends IntegrationComponent {
 trait using extends IntegrationComponent {
   
   def using(spel: String): InitializedComponent = { 
-    this.process(spel)
+    this.finalize(spel)
   }
   
   def using(function: _ => _): InitializedComponent = { 
-    this.process(function)
+    this.finalize(function)
   }
   
-  private def process(usingCode: AnyRef): InitializedComponent = { 
+  private def finalize(usingCode: AnyRef): InitializedComponent = { 
+    this.configMap.put(IntegrationComponent.using, usingCode)
+    
     this match {
       case service:service => {
-        val activator = new service() with InitializedComponent
-        activator.configMap.putAll(this.configMap)
-        activator.configMap.put(IntegrationComponent.using, usingCode)
-        activator
+        val sa = new service() with InitializedComponent
+        sa.configMap.putAll(this.configMap)
+        sa
       }
       case transformer:transform => {
-        val transformer = new transform() with InitializedComponent
-        transformer.configMap.putAll(this.configMap)
-        transformer.configMap.put(IntegrationComponent.using, usingCode)
-        transformer
+        val tr = new transform() with InitializedComponent
+        tr.configMap.putAll(this.configMap)
+        tr
       }
       case fltr:filter => {
-        val filter = new filter() with InitializedComponent
-        filter.configMap.putAll(this.configMap)
-        filter.configMap.put(IntegrationComponent.using, usingCode)
-        filter
+        val fltr = new filter() with InitializedComponent
+        fltr.configMap.putAll(this.configMap)
+        fltr
       }
       case rt:route => {
-        val router = new route() with InitializedComponent
-        router.configMap.putAll(this.configMap)
-        router.configMap.put(IntegrationComponent.using, usingCode)
-        router
+        val rt = new route() with InitializedComponent
+        rt.configMap.putAll(this.configMap)
+        rt
       }
       case _ => {
          throw new IllegalArgumentException("'using' trait is unsupported for this pattern: " + this) 
@@ -72,6 +70,9 @@ trait using extends IntegrationComponent {
     }
   }
 }
+/**
+ * 
+ */
 trait andPoller extends AbstractEndpoint with using with andName{
   def andPoller(maxMessagesPerPoll: Int, fixedRate: Int): AbstractEndpoint with using with andName = {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))

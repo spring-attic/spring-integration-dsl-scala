@@ -29,8 +29,7 @@ abstract class AbstractChannel extends InitializedComponent {
   private[dsl] var underlyingContext: ApplicationContext = null;
 
   override def toString = {
-    var name = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
-    if (StringUtils.hasText(name)) name else "channel_" + this.hashCode
+    this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
   }
 
   def send(m: Message[Any]): Unit = {
@@ -52,32 +51,49 @@ class channel extends AbstractChannel {
 object channel {
 
   def apply(): channel = new channel()
-  def apply(name:String): channel = channel.withName(name)
+  
+  def apply(name: String): channel = {
+    require(StringUtils.hasText(name))
+    channel.withName(name)
+  }
 
   def withQueue(capacity: Int) = new channel() with buffered {
-    this.configMap.put("queueCapacity", capacity)
-    def andName(componentName: String): channel with buffered = {
-      this.configMap.put("andName", "andName")
+    require(capacity > -1)
+    this.configMap.put(IntegrationComponent.queueCapacity, capacity)
+    
+    def andName(name: String): channel with buffered = {
+      require(StringUtils.hasText(name))
+      this.configMap.put(IntegrationComponent.name, name)
       this
     }
   }
+
   def withQueue() = new channel() with buffered {
-    this.configMap.put("queueCapacity", 0)
-    def andName(componentName: String): channel with buffered = {
-      this.configMap.put("andName", "andName")
+    this.configMap.put(IntegrationComponent.queueCapacity, 0)
+    
+    def andName(name: String): channel with buffered = {
+      require(StringUtils.hasText(name))
+      this.configMap.put(IntegrationComponent.name, name)
       this
     }
   }
+
   def withName(name: String) = new channel() with andQueue with andExecutor {
+    require(StringUtils.hasText(name))
     this.configMap.put(IntegrationComponent.name, name)
   }
+
   def withExecutor(executor: Executor) = new channel() with andName {
-    this.configMap.put("executor", executor)
+    require(executor != null)
+    this.configMap.put(IntegrationComponent.executor, executor)
   }
-   def withExecutor() = new channel() {
-    this.configMap.put("executor", Executors.newCachedThreadPool)
-    def andName(componentName: String): channel  = {
-      this.configMap.put("andName", "andName")
+
+  def withExecutor() = new channel() {
+    this.configMap.put(IntegrationComponent.executor, Executors.newCachedThreadPool)
+    
+    def andName(name: String): channel = {
+      require(StringUtils.hasText(name))
+      this.configMap.put(IntegrationComponent.name, name)
       this
     }
   }
@@ -92,13 +108,15 @@ class pub_sub_channel extends channel {
 //
 object pub_sub_channel {
   def withName(name: String) = new pub_sub_channel() with andExecutor {
+    require(StringUtils.hasText(name))
     this.configMap.put(IntegrationComponent.name, name)
   }
   def withExecutor(executor: Executor) = new pub_sub_channel() with andName {
-    this.configMap.put("executor", executor)
+    require(executor != null)
+    this.configMap.put(IntegrationComponent.executor, executor)
   }
   def withApplySequence(applySequence: Boolean) = new pub_sub_channel() with andName {
-    this.configMap.put("applySequence", applySequence)
+    this.configMap.put(IntegrationComponent.applySequence, applySequence)
   }
 }
 
@@ -106,8 +124,9 @@ object pub_sub_channel {
 /**
  *
  */
-trait andQueue extends channel{
+trait andQueue extends channel {
   def andQueue(capacity: Int): channel with buffered = {
+    require(capacity > -1)
     val queueChannel = channel.withQueue(capacity)
     queueChannel.configMap.putAll(this.configMap)
     queueChannel
@@ -122,17 +141,18 @@ trait andQueue extends channel{
  *
  */
 trait andExecutor extends channel {
-  def andExecutor(executor:Executor): channel = {
-    this.configMap.put("executor", executor)
+  def andExecutor(executor: Executor): channel = {
+    require(executor != null)
+    this.configMap.put(IntegrationComponent.executor, executor)
     this
   }
   def andExecutor(): channel = {
-    this.configMap.put("executor", Executors.newCachedThreadPool)
+    this.configMap.put(IntegrationComponent.executor, Executors.newCachedThreadPool)
     this
   }
 }
 /**
- * 
+ *
  */
 trait buffered extends channel {
   def receive(): Message[_] = {
