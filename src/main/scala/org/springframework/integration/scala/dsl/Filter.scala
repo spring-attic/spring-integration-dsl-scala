@@ -38,12 +38,12 @@ object filter {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new filter() with InitializedComponent{
+  def using(spel: String) = new filter() with AssembledComponent{
     require(StringUtils.hasText(spel))
     this.configMap.put(IntegrationComponent.using, spel)
   }
   
-  def using(function: _ => _) = new filter() with InitializedComponent{
+  def using(function: _ => _) = new filter() with AssembledComponent{
     this.configMap.put(IntegrationComponent.using, function)
   }
 

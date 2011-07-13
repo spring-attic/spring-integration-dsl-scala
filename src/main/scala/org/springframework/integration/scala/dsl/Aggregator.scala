@@ -29,30 +29,30 @@ class aggregate extends AbstractEndpoint {
  * 
  */
 object aggregate {
-  def apply(): aggregate with InitializedComponent = new aggregate() with InitializedComponent
+  def apply(): aggregate with AssembledComponent = new aggregate() with AssembledComponent
   
-  def apply(name:String): aggregate with InitializedComponent = {
+  def apply(name:String): aggregate with AssembledComponent = {
     require(StringUtils.hasText(name))
     aggregate.withName(name)
   }
   
-  def withName(componentName: String) = new aggregate() with using with andPoller with InitializedComponent{
+  def withName(componentName: String) = new aggregate() with using with andPoller with AssembledComponent{
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new aggregate() with InitializedComponent{
+  def using(spel: String) = new aggregate() with AssembledComponent{
     require(StringUtils.hasText(spel))
     this.configMap.put(IntegrationComponent.using, spel)
   }
   
-  def using(function: _ => _) = new aggregate() with InitializedComponent{
+  def using(function: _ => _) = new aggregate() with AssembledComponent{
     this.configMap.put(IntegrationComponent.using, function)
   }
 
-  def withPoller(fixedRate: Int, maxMessagesPerPoll: Int) = new aggregate() with using with andName with InitializedComponent{
+  def withPoller(fixedRate: Int, maxMessagesPerPoll: Int) = new aggregate() with using with andName with AssembledComponent{
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))
   }
-  def withPoller(fixedRate: Int) = new aggregate() with using with andName with InitializedComponent{
+  def withPoller(fixedRate: Int) = new aggregate() with using with andName with AssembledComponent{
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.fixedRate -> fixedRate))
   }
 }

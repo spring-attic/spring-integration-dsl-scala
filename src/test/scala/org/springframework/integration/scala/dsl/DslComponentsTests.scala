@@ -56,28 +56,28 @@ class DslComponentsTests{
    @Test
   def testGateway() {
     val a = gateway.using(classOf[OrderProcessingGateway])
-    assert(a.isInstanceOf[InitializedComponent])   
+    assert(a.isInstanceOf[AssembledComponent])   
     
     val b = gateway.withErrorChannel("err").using(classOf[OrderProcessingGateway])
-    assert(b.isInstanceOf[InitializedComponent])   
+    assert(b.isInstanceOf[AssembledComponent])   
     
     val c = gateway.withErrorChannel("err").andName("name").using(classOf[OrderProcessingGateway])
-    assert(c.isInstanceOf[InitializedComponent])   
+    assert(c.isInstanceOf[AssembledComponent])   
     
     val d = gateway.withName("n").andErrorChannel("hjk").using(classOf[OrderProcessingGateway])
-    assert(d.isInstanceOf[InitializedComponent]) 
+    assert(d.isInstanceOf[AssembledComponent]) 
     
     val e = gateway.withErrorChannel("err")
-    assert(!e.isInstanceOf[InitializedComponent]) 
+    assert(!e.isInstanceOf[AssembledComponent]) 
     
     val f = gateway.withName("hjk")
-    assert(!f.isInstanceOf[InitializedComponent]) 
+    assert(!f.isInstanceOf[AssembledComponent]) 
     
     val g = gateway.withErrorChannel("err").andName("kjhug")
-    assert(!g.isInstanceOf[InitializedComponent]) 
+    assert(!g.isInstanceOf[AssembledComponent]) 
     
     val h = gateway.withName("kjhu").andErrorChannel("kjhu")
-    assert(!h.isInstanceOf[InitializedComponent]) 
+    assert(!h.isInstanceOf[AssembledComponent]) 
   }
    
   trait OrderProcessingGateway  {

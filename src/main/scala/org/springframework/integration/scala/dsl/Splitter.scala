@@ -34,12 +34,12 @@ object split {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new split() with InitializedComponent{
+  def using(spel: String) = new split() with AssembledComponent{
     require(StringUtils.hasText(spel))
     this.configMap.put(IntegrationComponent.using, spel)
   }
   
-  def using(function: _ => _) = new split() with InitializedComponent{
+  def using(function: _ => _) = new split() with AssembledComponent{
     this.configMap.put(IntegrationComponent.using, function)
   }
 

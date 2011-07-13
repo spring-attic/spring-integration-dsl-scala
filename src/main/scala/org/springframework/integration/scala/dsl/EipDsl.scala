@@ -30,7 +30,45 @@ import Scalaz._
  *
  */
 object IntegrationComponent {
-  private[dsl] class ConcatResponder(fromComponents: ListBuffer[Any], toComponents: Any) extends Responder[ListBuffer[Any]] {
+  
+  val name = "componentName"
+  val outputChannel = "outputChannel"
+  val inputChannelName = "inputChannelName"
+  val queueCapacity = "queueCapacity"
+  val executor = "executor"
+  val poller = "poller"
+  val using = "using"
+  val handler = "handler"
+  val errorChannelName = "errorChannelName"
+  val targetObject = "targetObject"
+  val targetMethodName = "targetMethodName"
+  val expressionString = "expressionString"
+  val applySequence = "applySequence"
+
+  // POLLER Constants
+  val maxMessagesPerPoll = "maxMessagesPerPoll"
+  val fixedRate = "fixedRate"
+  val cron = "cron"
+  val trigger = "trigger"
+  val pollerMetadata = "pollerMetadata"
+    
+  /*
+   * 
+   */
+  implicit def componentToKleisli(assembledComponent: AssembledComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+    kleisli((s1: ListBuffer[Any]) => new MessageFlowAssembler(s1, assembledComponent).map(r => r))
+  }
+  /*
+   * 
+   */
+  private[dsl] def compose(assembledComponent: AssembledComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+    kleisli((assembledComponents: ListBuffer[Any]) => new MessageFlowAssembler(assembledComponents, assembledComponent).map(r => r))
+  }
+  /**
+   * Assembles Message flow continuation while also identifying 
+   * Channels (e.g., input/output) for Integration components
+   */
+  private[dsl] class MessageFlowAssembler(fromComponents: ListBuffer[Any], toComponents: Any) extends Responder[ListBuffer[Any]] {
     private val logger = Logger.getLogger(this.getClass)
     /**
      * 
@@ -119,35 +157,6 @@ object IntegrationComponent {
       }
     }
   }
-  
-  // END 
-  implicit def componentToKleisli(x: InitializedComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
-    kleisli((s1: ListBuffer[Any]) => new ConcatResponder(s1, x).map(r => r))
-  }
-  private[dsl] def compose(e: InitializedComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
-    kleisli((s1: ListBuffer[Any]) => new ConcatResponder(s1, e).map(r => r))
-  }
-
-  val name = "componentName"
-  val outputChannel = "outputChannel"
-  val inputChannelName = "inputChannelName"
-  val queueCapacity = "queueCapacity"
-  val executor = "executor"
-  val poller = "poller"
-  val using = "using"
-  val handler = "handler"
-  val errorChannelName = "errorChannelName"
-  val targetObject = "targetObject"
-  val targetMethodName = "targetMethodName"
-  val expressionString = "expressionString"
-  val applySequence = "applySequence"
-
-  // POLLER Constants
-  val maxMessagesPerPoll = "maxMessagesPerPoll"
-  val fixedRate = "fixedRate"
-  val cron = "cron"
-  val trigger = "trigger"
-  val pollerMetadata = "pollerMetadata"
 }
 /**
  *
@@ -159,26 +168,30 @@ abstract class IntegrationComponent {
 
 }
 /**
- * Trait which defines '->' method which composes the Message Flow
+ * Trait which overrides Kleisli operator '>=>' to handle Message flow composition
  */
-trait InitializedComponent extends IntegrationComponent {
+trait AssembledComponent extends IntegrationComponent {
 
   import IntegrationComponent._
-
-  def >=>(e: InitializedComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+  /**
+   * 
+   */
+  def >=>(e: AssembledComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
     compose(this) >=> compose(e)
   }
-
-  def >=>(e: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+  /**
+   * 
+   */
+  def >=>(k: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
     val thisK = compose(this)
       val kliesliBuffer = new ListBuffer[Any]
-      for (kl <- e) {
+      for (kl <- k) {
         val listBuffer = new ListBuffer[Any]
         val b = kl.apply(listBuffer).respond(r => r)
         kliesliBuffer += listBuffer
         println()
       }
-      thisK >=> kleisli((s1: ListBuffer[Any]) => new ConcatResponder(s1, kliesliBuffer).map(r => r))
+      thisK >=> kleisli((s1: ListBuffer[Any]) => new MessageFlowAssembler(s1, kliesliBuffer).map(r => r))
   }
 }
 /**

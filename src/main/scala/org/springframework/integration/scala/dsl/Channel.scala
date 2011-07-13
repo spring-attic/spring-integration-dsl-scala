@@ -24,7 +24,7 @@ import org.springframework.util._
  * @author Oleg Zhurakousky
  *
  */
-abstract class AbstractChannel extends InitializedComponent {
+abstract class AbstractChannel extends AssembledComponent {
 
   private[dsl] var underlyingContext: ApplicationContext = null;
 

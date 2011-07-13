@@ -33,12 +33,12 @@ object transform {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new transform() with InitializedComponent{
+  def using(spel: String) = new transform() with AssembledComponent{
     require(StringUtils.hasText(spel))
     this.configMap.put(IntegrationComponent.using, spel)
   }
   
-  def using(function: _ => _) = new transform() with InitializedComponent{
+  def using(function: _ => _) = new transform() with AssembledComponent{
     this.configMap.put(IntegrationComponent.using, function)
   }
 

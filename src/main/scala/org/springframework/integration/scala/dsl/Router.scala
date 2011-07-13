@@ -46,12 +46,12 @@ object route {
     this.configMap.put(channelIdentifierMap, JavaConversions.asMap(channelMappings))
   }
 
-  def using(spel: String) = new route() with InitializedComponent{
+  def using(spel: String) = new route() with AssembledComponent{
     require(StringUtils.hasText(spel))
     this.configMap.put(IntegrationComponent.using, spel)
   }
   
-  def using(function: _ => _) = new route() with InitializedComponent{
+  def using(function: _ => _) = new route() with AssembledComponent{
     this.configMap.put(IntegrationComponent.using, function)
   }
 

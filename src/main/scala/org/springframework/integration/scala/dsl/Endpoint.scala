@@ -33,36 +33,36 @@ private[dsl] class AbstractEndpoint extends IntegrationComponent {
  */
 trait using extends IntegrationComponent {
   
-  def using(spel: String): InitializedComponent = { 
+  def using(spel: String): AssembledComponent = { 
     require(StringUtils.hasText(spel))
     this.finalize(spel)
   }
   
-  def using(function: _ => _): InitializedComponent = { 
+  def using(function: _ => _): AssembledComponent = { 
     this.finalize(function)
   }
   
-  private def finalize(usingCode: AnyRef): InitializedComponent = { 
+  private def finalize(usingCode: AnyRef): AssembledComponent = { 
     this.configMap.put(IntegrationComponent.using, usingCode)
     
     this match {
       case service:service => {
-        val sa = new service() with InitializedComponent
+        val sa = new service() with AssembledComponent
         sa.configMap.putAll(this.configMap)
         sa
       }
       case transformer:transform => {
-        val tr = new transform() with InitializedComponent
+        val tr = new transform() with AssembledComponent
         tr.configMap.putAll(this.configMap)
         tr
       }
       case fltr:filter => {
-        val fltr = new filter() with InitializedComponent
+        val fltr = new filter() with AssembledComponent
         fltr.configMap.putAll(this.configMap)
         fltr
       }
       case rt:route => {
-        val rt = new route() with InitializedComponent
+        val rt = new route() with AssembledComponent
         rt.configMap.putAll(this.configMap)
         rt
       }

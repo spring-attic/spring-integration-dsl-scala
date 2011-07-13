@@ -34,12 +34,12 @@ object service {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new service() with InitializedComponent{
+  def using(spel: String) = new service() with AssembledComponent{
     require(StringUtils.hasText(spel))
     this.configMap.put(IntegrationComponent.using, spel)
   }
   
-  def using(function: _ => _) = new service() with InitializedComponent{
+  def using(function: _ => _) = new service() with AssembledComponent{
     this.configMap.put(IntegrationComponent.using, function)
   }
 
