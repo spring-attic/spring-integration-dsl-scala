@@ -30,7 +30,7 @@ import Scalaz._
  *
  */
 object IntegrationComponent {
-  
+
   val name = "componentName"
   val outputChannel = "outputChannel"
   val inputChannelName = "inputChannelName"
@@ -51,12 +51,12 @@ object IntegrationComponent {
   val cron = "cron"
   val trigger = "trigger"
   val pollerMetadata = "pollerMetadata"
-    
-  /*
+
+  /**
    * 
    */
-  implicit def componentToKleisli(assembledComponent: AssembledComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
-    kleisli((s1: ListBuffer[Any]) => new MessageFlowAssembler(s1, assembledComponent).map(r => r))
+  implicit def componentToKleisli(assembledComponent: AssembledComponent): KleisliComponent = {
+    new KleisliComponent(kleisli((s1: ListBuffer[Any]) => new MessageFlowAssembler(s1, assembledComponent).map(r => r)))
   }
   /*
    * 
@@ -65,21 +65,21 @@ object IntegrationComponent {
     kleisli((assembledComponents: ListBuffer[Any]) => new MessageFlowAssembler(assembledComponents, assembledComponent).map(r => r))
   }
   /**
-   * Assembles Message flow continuation while also identifying 
+   * Assembles Message flow continuation while also identifying
    * Channels (e.g., input/output) for Integration components
    */
   private[dsl] class MessageFlowAssembler(fromComponents: ListBuffer[Any], toComponents: Any) extends Responder[ListBuffer[Any]] {
     private val logger = Logger.getLogger(this.getClass)
     /**
-     * 
+     *
      */
     def respond(function: (ListBuffer[Any]) => Unit) = {
       toComponents match {
-        case componentBuffer:ListBuffer[Any] => {
-          for(lbRoute <- componentBuffer){
+        case componentBuffer: ListBuffer[Any] => {
+          for (lbRoute <- componentBuffer) {
             lbRoute match {
-              case buffer:ListBuffer[IntegrationComponent] => {
-                val firstComponent:IntegrationComponent = buffer.first
+              case buffer: ListBuffer[IntegrationComponent] => {
+                val firstComponent: IntegrationComponent = buffer.first
                 this.wireComponents(fromComponents.last.asInstanceOf[IntegrationComponent], firstComponent)
               }
               case _ => {
@@ -88,30 +88,30 @@ object IntegrationComponent {
             }
           }
         }
-        case ic:IntegrationComponent => {
-          if (!fromComponents.isEmpty){
-            val fromComponent:IntegrationComponent = fromComponents.last.asInstanceOf[IntegrationComponent]
+        case ic: IntegrationComponent => {
+          if (!fromComponents.isEmpty) {
+            val fromComponent: IntegrationComponent = fromComponents.last.asInstanceOf[IntegrationComponent]
             this.wireComponents(fromComponent, ic)
           }
         }
       }
-      
+
       val s = fromComponents += toComponents
       function(s)
     }
     /*
      * 
      */
-    private def wireComponents(from:IntegrationComponent, to:IntegrationComponent) {
+    private def wireComponents(from: IntegrationComponent, to: IntegrationComponent) {
       from match {
-        case ch:AbstractChannel => {
+        case ch: AbstractChannel => {
           this.addChannel(to, ch, true)
         }
-        case ic:IntegrationComponent => {
-          var ch:AbstractChannel = null
+        case ic: IntegrationComponent => {
+          var ch: AbstractChannel = null
           var inputRequired = false
           to match {
-            case c:AbstractChannel => {
+            case c: AbstractChannel => {
               ch = c
             }
             case _ => {
@@ -120,7 +120,7 @@ object IntegrationComponent {
             }
           }
           this.addChannel(ic, ch, false)
-          if (inputRequired){
+          if (inputRequired) {
             this.addChannel(to, ch, true)
           }
         }
@@ -129,29 +129,27 @@ object IntegrationComponent {
     /*
      * 
      */
-    private def addChannel(ic:IntegrationComponent, ch:AbstractChannel, input:Boolean) {
+    private def addChannel(ic: IntegrationComponent, ch: AbstractChannel, input: Boolean) {
       ic match {
-        case gw:gateway => {
-          if (!input){
+        case gw: gateway => {
+          if (!input) {
             logger.debug(">=> Adding default-request-channel '" + ch + "' to the " + gw)
             gw.defaultRequestChannel = ch
-          }
-          else {
+          } else {
             logger.debug(">=> Adding default-reply-channel '" + ch + "' to the " + gw)
             gw.defaultReplyChannel = ch
-          } 
+          }
         }
-        case endpoint:AbstractEndpoint => {
-          if (!input){
+        case endpoint: AbstractEndpoint => {
+          if (!input) {
             logger.debug(">=> Adding output-channel '" + ch + "' to the " + endpoint)
             endpoint.outputChannel = ch
-          }
-          else {
+          } else {
             logger.debug(">=> Adding input-channel '" + ch + "' to the " + endpoint)
             endpoint.inputChannel = ch
-          } 
+          }
         }
-        case _ =>{
+        case _ => {
           throw new IllegalArgumentException("OOOOPS")
         }
       }
@@ -174,24 +172,35 @@ trait AssembledComponent extends IntegrationComponent {
 
   import IntegrationComponent._
   /**
-   * 
+   * Defines >=> as flow composition operator to add an AssembledComponent
+   * while delegating to the real Kleisli >=> operator
    */
-  def >=>(e: AssembledComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
-    compose(this) >=> compose(e)
+  def >=>(e: AssembledComponent): KleisliComponent = {
+    this match {
+      case k: KleisliComponent => {
+        new KleisliComponent(k.kleisliComponent >=> compose(e))
+      }
+      case a: AssembledComponent => {
+        new KleisliComponent(compose(this) >=> compose(e))
+      }
+      case _ => {
+        throw new IllegalArgumentException("Unrecognized component " + e)
+      }
+    }
   }
   /**
-   * 
+   * Defines >=> as flow composition operator to add a collection of assembled KleisliComponent
+   * while delegating to the real Kleisli >=> operator
    */
-  def >=>(k: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+  def >=>(components: KleisliComponent*): KleisliComponent = {
     val thisK = compose(this)
-      val kliesliBuffer = new ListBuffer[Any]
-      for (kl <- k) {
-        val listBuffer = new ListBuffer[Any]
-        val b = kl.apply(listBuffer).respond(r => r)
-        kliesliBuffer += listBuffer
-        println()
-      }
-      thisK >=> kleisli((s1: ListBuffer[Any]) => new MessageFlowAssembler(s1, kliesliBuffer).map(r => r))
+    val kliesliBuffer = new ListBuffer[Any]
+    for (kl <- components) {
+      val listBuffer = new ListBuffer[Any]
+      val b = kl.kleisliComponent.apply(listBuffer).respond(r => r)
+      kliesliBuffer += listBuffer
+    }
+    new KleisliComponent(thisK >=> kleisli((s1: ListBuffer[Any]) => new MessageFlowAssembler(s1, kliesliBuffer).map(r => r)))
   }
 }
 /**
@@ -202,4 +211,10 @@ trait andName extends IntegrationComponent with using {
     this.configMap.put(IntegrationComponent.name, componentName)
     this
   }
+}
+/**
+ * Wrapper over Kleisli composition
+ */
+private[dsl] class KleisliComponent(val k: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]) extends AssembledComponent {
+  val kleisliComponent = k
 }

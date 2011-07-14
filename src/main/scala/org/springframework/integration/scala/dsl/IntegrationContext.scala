@@ -38,14 +38,14 @@ import org.springframework.integration.scheduling._
  *
  */
 object IntegrationContext {
-  def apply(compositions: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): IntegrationContext = new IntegrationContext(null, compositions: _*)
-  def apply(parentContext: ApplicationContext, compositions: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*): IntegrationContext =
+  def apply(compositions: KleisliComponent*): IntegrationContext = new IntegrationContext(null, compositions: _*)
+  def apply(parentContext: ApplicationContext, compositions: KleisliComponent*): IntegrationContext =
     new IntegrationContext(parentContext, compositions: _*)
 }
 /**
  *
  */
-class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]*) {
+class IntegrationContext(parentContext: ApplicationContext, compositions: KleisliComponent*) {
   private val logger = Logger.getLogger(this.getClass)
   private[dsl] var context = new GenericApplicationContext()
 
@@ -55,7 +55,7 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
 
   for (composition <- compositions) {
     val compositionBuffer = new ListBuffer[Any]
-    composition.apply(compositionBuffer).respond(r => r)
+    composition.kleisliComponent.apply(compositionBuffer).respond(r => r)
     process(null, compositionBuffer)
   }
 
