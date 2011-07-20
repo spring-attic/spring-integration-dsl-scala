@@ -49,7 +49,7 @@ object DslDemo {
 
     val inputChannel = channel()
 
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
         inputChannel >=>
         service.using { m: Message[String] => { println(m.getPayload) } }
     )
@@ -64,7 +64,7 @@ object DslDemo {
     
     val inputChannel = channel.withName("inChannel")
     
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
         inputChannel >=>
         service.withName("myService").using("T(java.lang.System).out.println(payload)")
     )
@@ -78,7 +78,7 @@ object DslDemo {
     
     val inputChannel = channel.withExecutor(Executors.newFixedThreadPool(10))
     
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
     	inputChannel >=>
         service.withName("myService").using { { m: Message[String] => { println(m.getPayload) } } }
     )
@@ -94,14 +94,14 @@ object DslDemo {
     //    val outputChannel = channel.withQueue(5).andName("outputChannel")
     val outputChannel = channel.withName("outputChannel").andQueue(5)
 
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
         inputChannel >=>
         service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >=>
         outputChannel
     )
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
-    var outputMessage = outputChannel.receive
+    val outputMessage = outputChannel.receive
     println("Output Message: " + outputMessage)
   }
   /**
@@ -113,7 +113,7 @@ object DslDemo {
     val middleChannel = channel.withQueue(5).andName("middleChannel")
     val resultChannel = channel.withQueue.andName("resultChannel")
 
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
       inputChannel >=>
         service.withName("myService").using { m: Message[String] => { m.getPayload.toUpperCase() } } >=>
         middleChannel >=>
@@ -123,7 +123,7 @@ object DslDemo {
     )
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
-    var outputMessage = resultChannel.receive
+    val outputMessage = resultChannel.receive
     println("Output Message: " + outputMessage)
   }
   /**
@@ -135,7 +135,7 @@ object DslDemo {
     val middleChannel = channel.withName("middleChannel").andQueue(5)
     val resultChannel = channel.withName("resultChannel").andQueue
 
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
         inputChannel >=>
         service.using { m: Message[String] => { m.getPayload.toUpperCase() } } >=>
         middleChannel >=>
@@ -144,7 +144,7 @@ object DslDemo {
     )
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
-    var outputMessage = resultChannel.receive
+    val outputMessage = resultChannel.receive
     println("Output Message: " + outputMessage)
   }
   /**
@@ -156,7 +156,7 @@ object DslDemo {
     val middleChannel = channel.withName("middleChannel").andQueue(5)
     val resultChannel = channel.withName("resultChannel").andQueue
 
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
       inputChannel >=> ( 
         // subscriber 1
     	{
@@ -172,7 +172,7 @@ object DslDemo {
     )
 
     inputChannel.send(new GenericMessage("==> Hello from Scala"))
-    var outputMessage = resultChannel.receive
+    val outputMessage = resultChannel.receive
     println("Output Message: " + outputMessage)
   }
   /**
@@ -182,7 +182,7 @@ object DslDemo {
     
     val inputChannel = channel.withName("inputChannel")
    
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
         inputChannel >=> 
         service.using{m:Message[_] => m.getPayload + "_activator1"} >=>
         transform.using{m:Message[_] => m.getPayload + "_transformer1"} >=>
@@ -200,7 +200,7 @@ object DslDemo {
     
     val inputChannel = channel.withName("inputChannel")
    
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
         {
           channel("foo") >=>
           service.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
@@ -227,7 +227,7 @@ object DslDemo {
     val inputChannel = channel.withName("inputChannel")
     val defaultOutputChannel = channel.withName("defaultOutputChannel").andQueue
    
-    var integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(
         {
           channel("foo") >=>
           service.using{ m: Message[String] => { println("FROM FOO channel: " + m.getPayload) }}
