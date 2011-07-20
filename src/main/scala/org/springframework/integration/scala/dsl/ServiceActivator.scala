@@ -19,42 +19,50 @@ import org.springframework.util._
  * @author Oleg Zhurakousky
  *
  */
-class service extends AbstractEndpoint {
+class service(name:String) extends AbstractEndpoint {
+  if (!StringUtils.hasText(name)){
+    this.configMap.put(IntegrationComponent.name, "service-activator_" + this.hashCode)
+  }
+  
+  
   override def toString = {
-    var name = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
-    if (StringUtils.hasText(name)) name else "service-activator_" + this.hashCode
+    this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
   }
 }
 /**
  * 
  */
 object service {
-  def withName(componentName: String) = new service() with using with andPoller {
+  
+  def apply() = new service(null) with using with andPoller
+  
+  
+  def withName(componentName: String) = new service(null) with using with andPoller {
     require(StringUtils.hasText(componentName))
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new service() with AssembledComponent{
+  def using(spel: String) = new service(null) with AssembledComponent{
     require(StringUtils.hasText(spel))
     this.configMap.put(IntegrationComponent.using, spel)
   }
   
-  def using(function: _ => _) = new service() with AssembledComponent{
+  def using(function: _ => _) = new service(null) with AssembledComponent{
     this.configMap.put(IntegrationComponent.using, function)
   }
 
-  def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new service() with using with andName {
+  def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new service(null) with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))
   }
-  def withPoller(maxMessagesPerPoll: Int, cron: String) = new service() with using with andName {
+  def withPoller(maxMessagesPerPoll: Int, cron: String) = new service(null) with using with andName {
     require(StringUtils.hasText(cron))
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.cron -> cron))
   }
-  def withPoller(cron: String) = new service() with using with andName {
+  def withPoller(cron: String) = new service(null) with using with andName {
     require(StringUtils.hasText(cron))
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.cron -> cron))
   }
-  def withPoller(fixedRate: Int) = new service() with using with andName {
+  def withPoller(fixedRate: Int) = new service(null) with using with andName {
     require(fixedRate > 0)
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.fixedRate -> fixedRate))
   }

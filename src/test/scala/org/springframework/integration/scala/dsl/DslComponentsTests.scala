@@ -21,67 +21,84 @@ import java.util.concurrent._
  * @author Oleg Zhurakousky
  *
  */
-class DslComponentsTests{
-  
+class DslComponentsTests {
+
   @Test
   def testChannel() {
     val anonymousDirectChannel = channel()
-    assert(anonymousDirectChannel  != null)
-    
+    assert(anonymousDirectChannel != null)
+
     val directNamedChannel = channel.withName("someName")
-    assert(directNamedChannel  != null)
-    
+    assert(directNamedChannel != null)
+
     val anonymousQueueChannelNoCapacity = channel.withQueue()
-    assert(anonymousQueueChannelNoCapacity  != null)
-    
+    assert(anonymousQueueChannelNoCapacity != null)
+
     val anonymousQueueChannelWithCapacity = channel.withQueue(5)
-    assert(anonymousQueueChannelWithCapacity  != null)
-    
+    assert(anonymousQueueChannelWithCapacity != null)
+
     val namedQueueChannelA = channel.withName("foo").andQueue
-    assert(namedQueueChannelA  != null)
-    
+    assert(namedQueueChannelA != null)
+
     val namedQueueChannelB = channel.withQueue.andName("hjk")
-    assert(namedQueueChannelB  != null)
-    
+    assert(namedQueueChannelB != null)
+
     val anonymousAsyncChannelWithDefaultExecutor = channel.withExecutor
-    assert(anonymousAsyncChannelWithDefaultExecutor  != null)
-    
+    assert(anonymousAsyncChannelWithDefaultExecutor != null)
+
     val namedAsyncChannelWithDefaultExecutor = channel.withExecutor.andName("hjk")
-    assert(namedAsyncChannelWithDefaultExecutor  != null)
-    
+    assert(namedAsyncChannelWithDefaultExecutor != null)
+
     val namedAsyncChannelWithProvidedExecutor = channel.withName("hjk").andExecutor(Executors.newCachedThreadPool)
-    assert(namedAsyncChannelWithProvidedExecutor  != null)   
+    assert(namedAsyncChannelWithProvidedExecutor != null)
   }
-  
-   @Test
+
+  @Test
   def testGateway() {
     val a = gateway.using(classOf[OrderProcessingGateway])
-    assert(a.isInstanceOf[AssembledComponent])   
-    
+    assert(a.isInstanceOf[AssembledComponent])
+
     val b = gateway.withErrorChannel("err").using(classOf[OrderProcessingGateway])
-    assert(b.isInstanceOf[AssembledComponent])   
-    
+    assert(b.isInstanceOf[AssembledComponent])
+
     val c = gateway.withErrorChannel("err").andName("name").using(classOf[OrderProcessingGateway])
-    assert(c.isInstanceOf[AssembledComponent])   
-    
+    assert(c.isInstanceOf[AssembledComponent])
+
     val d = gateway.withName("n").andErrorChannel("hjk").using(classOf[OrderProcessingGateway])
-    assert(d.isInstanceOf[AssembledComponent]) 
-    
+    assert(d.isInstanceOf[AssembledComponent])
+
     val e = gateway.withErrorChannel("err")
-    assert(!e.isInstanceOf[AssembledComponent]) 
-    
+    assert(!e.isInstanceOf[AssembledComponent])
+
     val f = gateway.withName("hjk")
-    assert(!f.isInstanceOf[AssembledComponent]) 
-    
+    assert(!f.isInstanceOf[AssembledComponent])
+
     val g = gateway.withErrorChannel("err").andName("kjhug")
-    assert(!g.isInstanceOf[AssembledComponent]) 
-    
+    assert(!g.isInstanceOf[AssembledComponent])
+
     val h = gateway.withName("kjhu").andErrorChannel("kjhu")
-    assert(!h.isInstanceOf[AssembledComponent]) 
+    assert(!h.isInstanceOf[AssembledComponent])
+
+    trait OrderProcessingGateway {
+      def processOrder(): Unit
+    }
   }
-   
-  trait OrderProcessingGateway  {
-    def processOrder(): Unit
+
+  @Test
+  def testServiceActivator() {
+
+    val anonUnassembledService = service()
+    assert(!anonUnassembledService.isInstanceOf[AssembledComponent])
+    assert(anonUnassembledService.configMap.get(IntegrationComponent.name).asInstanceOf[String].equals("service-activator_" + anonUnassembledService.hashCode))
+    assert(!anonUnassembledService.isInstanceOf[AssembledComponent])
+
+//    val anonAssembledServiceWithSpel = service().using("payload.toUpperCase()")
+//    assert(anonAssembledServiceWithSpel.isInstanceOf[AssembledComponent])
+//    println(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.name))
+//    println(anonAssembledServiceWithSpel.hashCode)
+//    assert(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.name).asInstanceOf[String].equals("service-activator_" + anonAssembledServiceWithSpel.hashCode))
+//    assert(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.using).asInstanceOf[String].equals("payload.toUpperCase()"))
+//    assert(!anonAssembledServiceWithSpel.isInstanceOf[AssembledComponent])
   }
 
 }

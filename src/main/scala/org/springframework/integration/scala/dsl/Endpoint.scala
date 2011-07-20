@@ -47,7 +47,7 @@ trait using extends IntegrationComponent {
     
     this match {
       case service:service => {
-        val sa = new service() with AssembledComponent
+        val sa = new service(null) with AssembledComponent
         sa.configMap.putAll(this.configMap)
         sa
       }
