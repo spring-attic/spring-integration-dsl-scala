@@ -56,28 +56,29 @@ class DslComponentsTests {
   @Test
   def testGateway() {
     val a = gateway.using(classOf[OrderProcessingGateway])
-    assert(a.isInstanceOf[AssembledComponent])
+    assert(a.isInstanceOf[Composable])
+    
 
     val b = gateway.withErrorChannel("err").using(classOf[OrderProcessingGateway])
-    assert(b.isInstanceOf[AssembledComponent])
+    assert(b.isInstanceOf[Composable])
 
     val c = gateway.withErrorChannel("err").andName("name").using(classOf[OrderProcessingGateway])
-    assert(c.isInstanceOf[AssembledComponent])
+    assert(c.isInstanceOf[Composable])
 
     val d = gateway.withName("n").andErrorChannel("hjk").using(classOf[OrderProcessingGateway])
-    assert(d.isInstanceOf[AssembledComponent])
+    assert(d.isInstanceOf[Composable])
 
     val e = gateway.withErrorChannel("err")
-    assert(!e.isInstanceOf[AssembledComponent])
+    assert(!e.isInstanceOf[Composable])
 
     val f = gateway.withName("hjk")
-    assert(!f.isInstanceOf[AssembledComponent])
+    assert(!f.isInstanceOf[Composable])
 
     val g = gateway.withErrorChannel("err").andName("kjhug")
-    assert(!g.isInstanceOf[AssembledComponent])
+    assert(!g.isInstanceOf[Composable])
 
     val h = gateway.withName("kjhu").andErrorChannel("kjhu")
-    assert(!h.isInstanceOf[AssembledComponent])
+    assert(!h.isInstanceOf[Composable])
 
     trait OrderProcessingGateway {
       def processOrder(): Unit
@@ -85,20 +86,37 @@ class DslComponentsTests {
   }
 
   @Test
-  def testServiceActivator() {
+  def testAnonServiceActivatorUncomposed() {
 
     val anonUnassembledService = service()
-    assert(!anonUnassembledService.isInstanceOf[AssembledComponent])
-    assert(anonUnassembledService.configMap.get(IntegrationComponent.name).asInstanceOf[String].equals("service-activator_" + anonUnassembledService.hashCode))
-    assert(!anonUnassembledService.isInstanceOf[AssembledComponent])
+    assert(!anonUnassembledService.isInstanceOf[Composable])
+    assert(anonUnassembledService.configMap.get(IntegrationComponent.name).equals("service-activator_" + anonUnassembledService.hashCode))
+    assert(!anonUnassembledService.isInstanceOf[Composable])   
+  }
+  
+  @Test
+  def testAnonServiceActivatorComposedWithSpel() {
 
-//    val anonAssembledServiceWithSpel = service().using("payload.toUpperCase()")
-//    assert(anonAssembledServiceWithSpel.isInstanceOf[AssembledComponent])
-//    println(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.name))
-//    println(anonAssembledServiceWithSpel.hashCode)
-//    assert(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.name).asInstanceOf[String].equals("service-activator_" + anonAssembledServiceWithSpel.hashCode))
-//    assert(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.using).asInstanceOf[String].equals("payload.toUpperCase()"))
-//    assert(!anonAssembledServiceWithSpel.isInstanceOf[AssembledComponent])
+    val preAssembledService = service()
+    assert(!preAssembledService.isInstanceOf[Composable])
+    val anonAssembledServiceWithSpel = preAssembledService.using("payload.toUpperCase()")
+    assert(anonAssembledServiceWithSpel.isInstanceOf[Composable])
+    assert(preAssembledService.hashCode() == anonAssembledServiceWithSpel.hashCode())
+    assert(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.name).equals("service-activator_" + preAssembledService.hashCode))
+    assert(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.using).equals("payload.toUpperCase()"))  
+  }
+  
+  @Test
+  def testNamedServiceActivatorComposedWithFunction() {
+
+    val preAssembledService = service.withName("myService")
+    assert(!preAssembledService.isInstanceOf[Composable])
+    val function = {p:String => println(p)}
+    val anonAssembledServiceWithSpel = preAssembledService.using(function)
+    assert(anonAssembledServiceWithSpel.isInstanceOf[Composable])
+    assert(preAssembledService.hashCode() == anonAssembledServiceWithSpel.hashCode())
+    assert(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.name).asInstanceOf[String].equals("myService"))
+    assert(anonAssembledServiceWithSpel.configMap.get(IntegrationComponent.using).equals(function))  
   }
 
 }

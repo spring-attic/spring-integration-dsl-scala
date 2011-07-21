@@ -34,13 +34,17 @@ object split {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new split() with AssembledComponent{
+  def using(spel: String):Composable = {
     require(StringUtils.hasText(spel))
-    this.configMap.put(IntegrationComponent.using, spel)
+    val s = new split()
+    s.configMap.put(IntegrationComponent.using, spel)
+    new ComposableEndpoint(s)
   }
   
-  def using(function: _ => _) = new split() with AssembledComponent{
-    this.configMap.put(IntegrationComponent.using, function)
+  def using(function: _ => _):Composable = {
+    val s = new split()
+    s.configMap.put(IntegrationComponent.using, function)
+    new ComposableEndpoint(s)
   }
 
   def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new split() with using with andName {

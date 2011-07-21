@@ -24,28 +24,32 @@ class transform extends AbstractEndpoint {
     var name = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
     if (StringUtils.hasText(name)) name else "transform_" + this.hashCode
   }
-} 
+}
 /**
- * 
+ *
  */
 object transform {
   def withName(componentName: String) = new transform() with using with andPoller {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new transform() with AssembledComponent{
+  def using(spel: String): Composable = {
     require(StringUtils.hasText(spel))
-    this.configMap.put(IntegrationComponent.using, spel)
-  }
-  
-  def using(function: _ => _) = new transform() with AssembledComponent{
-    this.configMap.put(IntegrationComponent.using, function)
+    val t = new transform()
+    t.configMap.put(IntegrationComponent.using, spel)
+    new ComposableEndpoint(t)
   }
 
-  def withPoller(fixedRate: Int, maxMessagesPerPoll: Int) = new transform() with using with andName {
-    this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))
+  def using(function: _ => _): Composable = {
+    val t = new transform()
+    t.configMap.put(IntegrationComponent.using, function)
+    new ComposableEndpoint(t)
   }
-  def withPoller(fixedRate: Int) = new transform() with using with andName {
-    this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.fixedRate -> fixedRate))
-  }
+
+//  def withPoller(fixedRate: Int, maxMessagesPerPoll: Int) = new transform() with using with andName {
+//    this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))
+//  }
+//  def withPoller(fixedRate: Int) = new transform() with using with andName {
+//    this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.fixedRate -> fixedRate))
+//  }
 }

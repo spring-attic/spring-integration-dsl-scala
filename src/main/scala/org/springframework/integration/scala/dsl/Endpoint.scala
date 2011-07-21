@@ -31,45 +31,17 @@ private[dsl] class AbstractEndpoint extends IntegrationComponent {
 /**
  * Common Traits
  */
-trait using extends IntegrationComponent {
+trait using extends AbstractEndpoint {
   
-  def using(spel: String): AssembledComponent = { 
+  def using(spel: String): ComposableEndpoint = { 
     require(StringUtils.hasText(spel))
-    this.finalize(spel)
+    this.configMap.put(IntegrationComponent.using, spel)
+    new ComposableEndpoint(this)
   }
   
-  def using(function: _ => _): AssembledComponent = { 
-    this.finalize(function)
-  }
-  
-  private def finalize(usingCode: AnyRef): AssembledComponent = { 
-    this.configMap.put(IntegrationComponent.using, usingCode)
-    
-    this match {
-      case service:service => {
-        val sa = new service(null) with AssembledComponent
-        sa.configMap.putAll(this.configMap)
-        sa
-      }
-      case transformer:transform => {
-        val tr = new transform() with AssembledComponent
-        tr.configMap.putAll(this.configMap)
-        tr
-      }
-      case fltr:filter => {
-        val fltr = new filter() with AssembledComponent
-        fltr.configMap.putAll(this.configMap)
-        fltr
-      }
-      case rt:route => {
-        val rt = new route() with AssembledComponent
-        rt.configMap.putAll(this.configMap)
-        rt
-      }
-      case _ => {
-         throw new IllegalArgumentException("'using' trait is unsupported for this pattern: " + this) 
-      }
-    }
+  def using(function: _ => _): ComposableEndpoint = { 
+    this.configMap.put(IntegrationComponent.using, function)
+     new ComposableEndpoint(this)
   }
 }
 /**

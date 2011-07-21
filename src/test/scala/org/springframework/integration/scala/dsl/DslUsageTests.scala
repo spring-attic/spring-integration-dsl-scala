@@ -55,7 +55,7 @@ class DslUsageTests{
      var reply = orderGateway.processOrder("Spring Integration in Action").asInstanceOf[String]
      assert(reply.equals("SPRING INTEGRATION IN ACTION"))
   }
-  
+//  
   @Test
   def testGatewayRequestObjectReplyMessage() {
      val orderGateway = gateway.using(classOf[RequestObjectReplyMessage])

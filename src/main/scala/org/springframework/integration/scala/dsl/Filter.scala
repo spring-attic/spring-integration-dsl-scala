@@ -38,13 +38,17 @@ object filter {
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new filter() with AssembledComponent{
+  def using(spel: String):Composable = {
     require(StringUtils.hasText(spel))
-    this.configMap.put(IntegrationComponent.using, spel)
+    val f = new filter()
+    f.configMap.put(IntegrationComponent.using, spel)
+    new ComposableEndpoint(f)
   }
   
-  def using(function: _ => _) = new filter() with AssembledComponent{
-    this.configMap.put(IntegrationComponent.using, function)
+  def using(function: _ => _):Composable = {
+    val f = new filter()
+    f.configMap.put(IntegrationComponent.using, function)
+    new ComposableEndpoint(f)
   }
 
   def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new filter() with using with andName {

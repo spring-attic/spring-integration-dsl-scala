@@ -63,10 +63,10 @@ object gateway {
   /**
    *
    */
-  def using[T](serviceTrait: Class[T]): T with AssembledComponent = {
+  def using[T](serviceTrait: Class[T]): T with Composable = {
     require(serviceTrait != null)
     val proxy = generateProxy(serviceTrait, null)
-    val gw = new IntegrationComponent with gateway
+    //val gw = new IntegrationComponent with gateway
     return proxy
   }
   /*
@@ -91,9 +91,9 @@ object gateway {
   /*
    * 
    */
-  private def generateProxy[T](serviceTrait: Class[T], g: gateway): T with AssembledComponent = {
-    val gw = new IntegrationComponent with AssembledComponent with gateway
-
+  private def generateProxy[T](serviceTrait: Class[T], g: gateway): T with Composable = {
+    val gw = new ComposableGateway(new IntegrationComponent with gateway)
+    
     if (g != null) {
       gw.configMap.putAll(g.asInstanceOf[IntegrationComponent].configMap)
     }
@@ -101,7 +101,7 @@ object gateway {
     gw.configMap.put(gateway.serviceInterface, serviceTrait)
 
     var factory = new ProxyFactory()
-    factory.addInterface(classOf[AssembledComponent])
+    factory.addInterface(classOf[Composable])
     factory.addInterface(serviceTrait)
     factory.addAdvice(new MethodInterceptor {
       def invoke(invocation: MethodInvocation): Object = {
@@ -112,8 +112,9 @@ object gateway {
 
         methodName match {
           case "$greater$eq$greater" => {
-            val to = invocation.getArguments()(0).asInstanceOf[AssembledComponent]
+            val to = invocation.getArguments()(0).asInstanceOf[Composable]
             return gw >=> to
+            //return null
           }
           case _ => {
             try {
@@ -131,7 +132,7 @@ object gateway {
       }
     })
     var proxy = factory.getProxy
-    return proxy.asInstanceOf[T with AssembledComponent]
+    return proxy.asInstanceOf[T with Composable]
   }
 }
 /**
@@ -144,7 +145,7 @@ trait gateway {
 
   private[dsl] var underlyingContext: ApplicationContext = null;
 
-  def using[T](serviceTrait: Class[T]): T with AssembledComponent = {
+  def using[T](serviceTrait: Class[T]): T with Composable = {
     require(serviceTrait != null)
     gateway.generateProxy(serviceTrait, this)
   }

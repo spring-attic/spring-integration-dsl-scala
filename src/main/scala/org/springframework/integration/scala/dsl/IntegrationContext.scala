@@ -65,29 +65,28 @@ class IntegrationContext(parentContext: ApplicationContext, compositions: Kleisl
   /*
    * 
    */
-  private def process(from: IntegrationComponent, lb: ListBuffer[Any]) {
+  private def process(from: Composable, lb: ListBuffer[Any]) {
 
     val endpointsAndGateways = new ListBuffer[Any]
 
     var _from = from
 
     for (compositionElement <- lb) {
-
       compositionElement match {
         case lBuf: ListBuffer[Any] => {
 
           process(_from, lBuf)
 
         }
-        case ic: IntegrationComponent => {
+        case ic: Composable => {
           
           _from = ic
           
           ic match {
-            case toEndpoint: AbstractEndpoint => {
+            case toEndpoint: ComposableEndpoint => {
               this.wireEndpoint(toEndpoint)
             }
-            case gw: gateway with IntegrationComponent => {
+            case gw: ComposableGateway  => {
               gw.underlyingContext = context
               if (gw.defaultRequestChannel != null) {
                 if (!context.containsBeanDefinition(gw.defaultRequestChannel.configMap.get(IntegrationComponent.name).asInstanceOf[String])) {

@@ -19,14 +19,14 @@ import org.springframework.integration.Message
 import scala.collection.JavaConversions
 import java.util.Random
 import java.util.concurrent._
-
+import org.junit._
 /**
  * @author Oleg Zhurakousky
  *
  */
-object OrderProcessing {
-  
-  def main(args: Array[String]): Unit = {
+class OrderProcessing {
+  @Test
+  def runDemo() = {
     val validOrder = PurchaseOrder(List(
       PurchaseOrderItem("books", "Spring Integration in Action"),
       PurchaseOrderItem("books", "DSLs in Action"),
@@ -37,7 +37,7 @@ object OrderProcessing {
     val orderGateway = gateway.withErrorChannel("errorFlowChannel").using(classOf[OrderProcessingGateway])
     val aggregationChannel = channel.withName("aggregationChannel")
     
-    val integrationContext = IntegrationContext(
+    val integrationContext = IntegrationContext(   
         {
           orderGateway >=>
           filter.withName("orderValidator").andErrorOnRejection(true).using{p:PurchaseOrder => !p.items.isEmpty} >=>
@@ -68,7 +68,6 @@ object OrderProcessing {
     val reply = orderGateway.processOrder(validOrder)
     println("Reply: " + reply)
 //    orderGateway.processOrder(invalidOrder)
-    //integrationContext.stop
   }
   
   trait OrderProcessingGateway  {

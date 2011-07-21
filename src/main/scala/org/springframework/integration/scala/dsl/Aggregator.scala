@@ -29,30 +29,38 @@ class aggregate extends AbstractEndpoint {
  * 
  */
 object aggregate {
-  def apply(): aggregate with AssembledComponent = new aggregate() with AssembledComponent
-  
-  def apply(name:String): aggregate with AssembledComponent = {
-    require(StringUtils.hasText(name))
-    aggregate.withName(name)
+  def apply():Composable = {
+    val a = new aggregate()   
+    new ComposableEndpoint(a)
   }
   
-  def withName(componentName: String) = new aggregate() with using with andPoller with AssembledComponent{
+  def apply(name:String):Composable = {
+    require(StringUtils.hasText(name))
+    val a = aggregate.withName(name)
+    new ComposableEndpoint(a)
+  }
+  
+  def withName(componentName: String) = new aggregate() with using with andPoller{
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new aggregate() with AssembledComponent{
+  def using(spel: String):Composable = {
     require(StringUtils.hasText(spel))
-    this.configMap.put(IntegrationComponent.using, spel)
+    val a = new aggregate()
+    a.configMap.put(IntegrationComponent.using, spel)
+    new ComposableEndpoint(a)
   }
   
-  def using(function: _ => _) = new aggregate() with AssembledComponent{
-    this.configMap.put(IntegrationComponent.using, function)
+  def using(function: _ => _):Composable = {
+    val a = new aggregate()
+    a.configMap.put(IntegrationComponent.using, function)
+    new ComposableEndpoint(a)
   }
 
-  def withPoller(fixedRate: Int, maxMessagesPerPoll: Int) = new aggregate() with using with andName with AssembledComponent{
+  def withPoller(fixedRate: Int, maxMessagesPerPoll: Int) = new aggregate() with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.maxMessagesPerPoll -> maxMessagesPerPoll, IntegrationComponent.fixedRate -> fixedRate))
   }
-  def withPoller(fixedRate: Int) = new aggregate() with using with andName with AssembledComponent{
+  def withPoller(fixedRate: Int) = new aggregate() with using with andName {
     this.configMap.put(IntegrationComponent.poller, Map(IntegrationComponent.fixedRate -> fixedRate))
   }
 }

@@ -24,7 +24,7 @@ import org.springframework.util._
  * @author Oleg Zhurakousky
  *
  */
-abstract class AbstractChannel extends AssembledComponent {
+abstract class AbstractChannel extends IntegrationComponent{
 
   private[dsl] var underlyingContext: ApplicationContext = null;
 
@@ -57,6 +57,8 @@ object channel {
     channel.withName(name)
   }
 
+  implicit def toComposable(component: AbstractChannel): Composable = new ComposableChannel(component)
+  
   def withQueue(capacity: Int) = new channel() with buffered {
     require(capacity > -1)
     this.configMap.put(IntegrationComponent.queueCapacity, capacity)
@@ -154,7 +156,7 @@ trait andExecutor extends channel {
 /**
  *
  */
-trait buffered extends channel {
+trait buffered extends AbstractChannel {
   def receive(): Message[_] = {
     val underlyingChannelName = this.configMap.get(IntegrationComponent.name).asInstanceOf[String]
     var queueChannel = this.underlyingContext.getBean(underlyingChannelName, classOf[PollableChannel])

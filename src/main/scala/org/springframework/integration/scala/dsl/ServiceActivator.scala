@@ -36,19 +36,22 @@ object service {
   
   def apply() = new service(null) with using with andPoller
   
-  
   def withName(componentName: String) = new service(null) with using with andPoller {
     require(StringUtils.hasText(componentName))
     this.configMap.put(IntegrationComponent.name, componentName)
   }
 
-  def using(spel: String) = new service(null) with AssembledComponent{
+  def using(spel: String): Composable = {
     require(StringUtils.hasText(spel))
-    this.configMap.put(IntegrationComponent.using, spel)
+    val s = new service(null)
+    s.configMap.put(IntegrationComponent.using, spel)
+    ComposableEndpoint(s)
   }
-  
-  def using(function: _ => _) = new service(null) with AssembledComponent{
-    this.configMap.put(IntegrationComponent.using, function)
+ 
+  def using(function: _ => _): Composable = {
+    val s = new service(null)
+    s.configMap.put(IntegrationComponent.using, function)
+    ComposableEndpoint(s)
   }
 
   def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new service(null) with using with andName {

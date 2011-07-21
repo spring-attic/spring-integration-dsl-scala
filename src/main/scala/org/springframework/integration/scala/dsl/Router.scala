@@ -46,13 +46,17 @@ object route {
     this.configMap.put(channelIdentifierMap, JavaConversions.asMap(channelMappings))
   }
 
-  def using(spel: String) = new route() with AssembledComponent{
+  def using(spel: String):Composable = {
     require(StringUtils.hasText(spel))
-    this.configMap.put(IntegrationComponent.using, spel)
+    val r = new route()
+    r.configMap.put(IntegrationComponent.using, spel)
+    new ComposableEndpoint(r)
   }
   
-  def using(function: _ => _) = new route() with AssembledComponent{
-    this.configMap.put(IntegrationComponent.using, function)
+  def using(function: _ => _):Composable = {
+    val r = new route()
+    r.configMap.put(IntegrationComponent.using, function)
+    new ComposableEndpoint(r)
   }
 
   def withPoller(maxMessagesPerPoll: Int, fixedRate: Int) = new route() with using with andName {
