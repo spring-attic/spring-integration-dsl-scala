@@ -206,8 +206,8 @@ trait AssembledComponent extends IntegrationComponent {
 /**
  *
  */
-trait andName extends IntegrationComponent with using {
-  def andName(componentName: String): IntegrationComponent with using = {
+trait andName extends IntegrationComponent {
+  def andName(componentName: String): IntegrationComponent = {
     this.configMap.put(IntegrationComponent.name, componentName)
     this
   }
