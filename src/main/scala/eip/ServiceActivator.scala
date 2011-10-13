@@ -15,13 +15,14 @@
  */
 package eip
 import org.springframework.util.StringUtils
+import scala.collection.mutable.Map
 
 /**
  * @author Oleg Zhurakousky
  *
  */
 
-class ServiceActivator(name: String = null, order: Int = 0) extends EipComponent(name, EipType.SERVICE_ACTIVATOR) with Using {
+class ServiceActivator(name: String = null, order: Int = 0) extends EipComponent(name, EipType.SERVICE_ACTIVATOR) {
   
   if (order != 0) {
 	  this.configMap += (EipComponent.order -> order)
@@ -32,22 +33,49 @@ object process {
 
   val eipType = EipType.SERVICE_ACTIVATOR
 
-  def apply() = doApply(null)
-
-  def apply(name: String = null, order: Int = 0) = new ServiceActivator(name, order)
-
-  def apply(name: String) = doApply(name)
+//  def apply() = doApply(null)
+//
+//  def apply(name: String = null, order: Int = 0) = new ServiceActivator(name, order)
+//
+//  def apply(name: String) = doApply(name)
   /**
    *
    */
-  def name(name: String) = doApply(name)
+//  def name(name: String) = doApply(name)
   
-  def using(target: AnyRef) = new EipComponent(null,eipType){ 
-    this.configMap += EipComponent.eipType -> eipType
-    def where(): EipComponent = {
-      this.configMap += "s" -> "d"
-      this
+//  def using(target: AnyRef) = new EipComponent(null,eipType){ 
+//    this.configMap += EipComponent.eipType -> eipType
+//    def where(): EipComponent = {
+//      this.configMap += "s" -> "d"
+//      this
+//    }
+//  }
+  
+
+  
+  def using(target: AnyRef): Composable with Where = {
+    val eipComponent = new EipComponent(null, eipType) {
+      this.configMap += EipComponent.eipType -> eipType
     }
+    new Composable(eipComponent) with Where {
+      def where(name:String, order:Int, requireReply:Boolean): Composable = {
+         eipComponent.configMap += "where" -> "where"
+         if (StringUtils.hasText(name)){
+           eipComponent.configMap += EipComponent.name -> name
+         }
+         if (order != 0){
+           eipComponent.configMap += EipComponent.order -> order
+         }
+         if (requireReply){
+           eipComponent.configMap += "requireReply" -> true
+         }
+         this
+      }
+    }
+  }
+  
+  private[process] trait Where {
+    def where(name:String=null, order:Int=0, requireReply:Boolean=false): ComposableEipComponent
   }
 
 //  /**
@@ -88,21 +116,21 @@ object process {
 //  }
 //
   //============== PRIVATE ==============
-  private def doApply(name: String) = new Endpoint(name, eipType) with Using {
-    def order(order: Int) = new Endpoint(name, eipType) with Using {
-      setOrder(order)
-      def requireReply(requireReply: Boolean = true) = new Endpoint(name, eipType) with Using {
-        // setRequireReply
-        def foo() = new Endpoint(name, eipType) with Using // remove
-      }
-    }
-    def requireReply(requireReply: Boolean = true) = new Endpoint(name, eipType) with Using {
-      // setRequireReply
-      def order(order: Int) = new Endpoint(name, eipType) with Using {
-        setOrder(order)
-      }
-    }
-  }
+//  private def doApply(name: String) = new Endpoint(name, eipType) {
+//    def order(order: Int) = new Endpoint(name, eipType)  {
+//      setOrder(order)
+//      def requireReply(requireReply: Boolean = true) = new Endpoint(name, eipType) {
+//        // setRequireReply
+//        def foo() = new Endpoint(name, eipType)// remove
+//      }
+//    }
+//    def requireReply(requireReply: Boolean = true) = new Endpoint(name, eipType) {
+//      // setRequireReply
+//      def order(order: Int) = new Endpoint(name, eipType)  {
+//        setOrder(order)
+//      }
+//    }
+//  }
 }
 
 

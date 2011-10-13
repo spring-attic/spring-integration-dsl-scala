@@ -22,18 +22,12 @@ import Scalaz._
  * @author Oleg Zhurakousky
  *
  */
-object Composable {
+private[eip] object Composable {
 
-  def apply(component: EipComponent) = new Composable(component)
-  
   implicit def toComposable(component: EipComponent): Composable = new Composable(component){}
     
   implicit def fromComposable(composableComponent: Composable): EipComponent = {
     composableComponent.self
-  }
-  
-  implicit def componentToKleisli(assembledComponent: Composable): Composition = {
-    new Composition(kleisli((s1: ListBuffer[Any]) => new MessageFlowComposer(s1, assembledComponent).map(r => r)))
   }
 }
 
@@ -46,6 +40,13 @@ private[eip] class Composable(val self: EipComponent) extends ComposableEipCompo
  *
  */
 private[eip] class ComposableChannel(override val self: Channel) extends Composable(self) {}
+
+/**
+ *
+ */
+final class Composition(val k: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]) extends ComposableEipComponent {
+  def self = k
+}
 
 /**
  *
@@ -182,10 +183,4 @@ private class MessageFlowComposer(fromComponents: ListBuffer[Any], toComponents:
       }
     }
   }
-}
-/**
- *
- */
-final class Composition(val k: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]) extends ComposableEipComponent {
-  def self = k
 }
