@@ -21,68 +21,72 @@ import org.springframework.util.StringUtils
  *
  */
 
-class ServiceActivator (name: String = null, order: Int = 0) extends EipComponent(name, EipType.SERVICE_ACTIVATOR) with Using {
-	//this.setOrder(order)
+class ServiceActivator(name: String = null, order: Int = 0) extends EipComponent(name, EipType.SERVICE_ACTIVATOR) with Using {
+  
+  if (order != 0) {
+	  this.configMap += (EipComponent.order -> order)
+  }
 }
 
-object ServiceActivator {
+object process {
 
   val eipType = EipType.SERVICE_ACTIVATOR
 
   def apply() = doApply(null)
-  
-  def apply(name: String = null, order: Int = 0) = new EipComponent(name, eipType) with Using {
-//      if (StringUtils.hasText(name)){
-//        this.setName(name)
-//      }
-//      if (order != 0){
-//        this.setOrder(order)
-//      }
-  }
- 
+
+  def apply(name: String = null, order: Int = 0) = new ServiceActivator(name, order)
+
   def apply(name: String) = doApply(name)
   /**
    *
    */
   def name(name: String) = doApply(name)
-
-  /**
-   *
-   */
-  def requireReply(requireReply: Boolean = true) = new Endpoint(null, eipType) with Using {
-    // setRequireReply
-    def order(order: Int) = new Endpoint(name, eipType) with Using {
-      setOrder(order)
-      def name(name: String) = new Endpoint(name, eipType) with Using {
-        setName(name)
-      }
-    }
-    def name(name: String) = new Endpoint(name, eipType) with Using {
-      setName(name)
-      def order(order: Int) = new Endpoint(name, eipType) with Using {
-        setOrder(order)
-      }
-    }
-  }
-  /**
-   *
-   */
-  def order(order: Int) = new Endpoint(null, eipType) with Using {
-    //setOrder(order, this)
-    def name(name: String) = new Endpoint(name, eipType) with Using {
-      this.setName(name)
-      def requireReply(requireReply: Boolean = true) = new Endpoint(name, eipType) with Using {
-        // setRequireReply
-      }
-    }
-    def requireReply(requireReply: Boolean = true) = new Endpoint(name, eipType) with Using {
-      // setRequireReply
-      def name(name: String) = new Endpoint(name, eipType) with Using {
-        setName(name)
-      }
+  
+  def using(target: AnyRef) = new EipComponent(null,eipType){ 
+    this.configMap += EipComponent.eipType -> eipType
+    def where(): EipComponent = {
+      this.configMap += "s" -> "d"
+      this
     }
   }
 
+//  /**
+//   *
+//   */
+//  def requireReply(requireReply: Boolean = true) = new Endpoint(null, eipType) with Using {
+//    // setRequireReply
+//    def order(order: Int) = new Endpoint(name, eipType) with Using {
+//      setOrder(order)
+//      def name(name: String) = new Endpoint(name, eipType) with Using {
+//        setName(name)
+//      }
+//    }
+//    def name(name: String) = new Endpoint(name, eipType) with Using {
+//      setName(name)
+//      def order(order: Int) = new Endpoint(name, eipType) with Using {
+//        setOrder(order)
+//      }
+//    }
+//  }
+//  /**
+//   *
+//   */
+//  def order(order: Int) = new Endpoint(null, eipType) with Using {
+//    //setOrder(order, this)
+//    def name(name: String) = new Endpoint(name, eipType) with Using {
+//      this.setName(name)
+//      def requireReply(requireReply: Boolean = true) = new Endpoint(name, eipType) with Using {
+//        // setRequireReply
+//      }
+//    }
+//    def requireReply(requireReply: Boolean = true) = new Endpoint(name, eipType) with Using {
+//      // setRequireReply
+//      def name(name: String) = new Endpoint(name, eipType) with Using {
+//        setName(name)
+//      }
+//    }
+//  }
+//
   //============== PRIVATE ==============
   private def doApply(name: String) = new Endpoint(name, eipType) with Using {
     def order(order: Int) = new Endpoint(name, eipType) with Using {

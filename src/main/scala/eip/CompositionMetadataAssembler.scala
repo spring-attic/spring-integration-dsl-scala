@@ -17,7 +17,7 @@ class CompositionMetadataAssembler extends Function1[ListBuffer[Any], Unit]{
            case composableChannel: ComposableChannel => {
              configBuffer += composableChannel.configMap
            }
-           case composableEndpoint: ComposableEipComponent => {
+           case composableEndpoint: Composable => {
               configBuffer += composableEndpoint.configMap
            }
          }

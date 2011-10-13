@@ -22,56 +22,51 @@ import Scalaz._
  * @author Oleg Zhurakousky
  *
  */
-private[eip] object ComposableEipComponent {
+object Composable {
 
-  def apply(component: EipComponent) = new ComposableEipComponent(component)
+  def apply(component: EipComponent) = new Composable(component)
   
-  implicit def toComposable(component: EipComponent): Composable = new ComposableEipComponent(component)
-  
-  implicit def fromComposable(composableComponent: ComposableEipComponent): EipComponent = {
+  implicit def toComposable(component: EipComponent): Composable = new Composable(component){}
+    
+  implicit def fromComposable(composableComponent: Composable): EipComponent = {
     composableComponent.self
   }
-}
-
-/**
- *
- */
-private[eip] class ComposableEipComponent(val self: EipComponent) extends Composable {}
-
-/**
- *
- */
-private[eip] class ComposableChannel(override val self: Channel) extends ComposableEipComponent(self) {}
-
-/**
- *
- */
-private[eip] object Composable {
   
   implicit def componentToKleisli(assembledComponent: Composable): Composition = {
     new Composition(kleisli((s1: ListBuffer[Any]) => new MessageFlowComposer(s1, assembledComponent).map(r => r)))
   }
-  
 }
 
 /**
  *
  */
-private[eip] trait Composable extends Proxy {
+private[eip] class Composable(val self: EipComponent) extends ComposableEipComponent {}
 
-  private[eip] def compose(composable: Composable): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
+/**
+ *
+ */
+private[eip] class ComposableChannel(override val self: Channel) extends Composable(self) {}
+
+/**
+ *
+ */
+private[eip] trait ComposableEipComponent extends Proxy {
+
+  private[eip] def compose(composable: ComposableEipComponent): Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]] = {
     kleisli((assembledComponents: ListBuffer[Any]) => new MessageFlowComposer(assembledComponents, composable).map(r => r))
   }
   /**
    * Defines >=> as flow composition operator to add an AssembledComponent
    * while delegating to the real Kleisli >=> operator
    */
-  def >=>(e: Composable): Composition = {
+  def >=>(e: ComposableEipComponent): Composition = {
     this match {
       case k: Composition => {
+        println("Composition")
         new Composition(k.self >=> compose(e))
       }
-      case a: Composable => {
+      case a: ComposableEipComponent => {
+        println("ComposableEipComponent")
         new Composition(compose(this) >=> compose(e))
       }
       case _ => {
@@ -80,20 +75,20 @@ private[eip] trait Composable extends Proxy {
     }
   }
   //
-  /**
-   * Defines >=> as flow composition operator to add a collection of assembled KleisliComponent
-   * while delegating to the real Kleisli >=> operator
-   */
-  def >=>(components: Composition*): Composition = {
-    val thisK = compose(this)
-    val kliesliBuffer = new ListBuffer[Any]
-    for (kl <- components) {
-      val listBuffer = new ListBuffer[Any]
-      val b = kl.self.apply(listBuffer).respond(r => r)
-      kliesliBuffer += listBuffer
-    }
-    new Composition(thisK >=> kleisli((s1: ListBuffer[Any]) => new MessageFlowComposer(s1, kliesliBuffer).map(r => r)))
-  }
+//  /**
+//   * Defines >=> as flow composition operator to add a collection of assembled KleisliComponent
+//   * while delegating to the real Kleisli >=> operator
+//   */
+//  def >=>(components: Composition*): Composition = {
+//    val thisK = compose(this)
+//    val kliesliBuffer = new ListBuffer[Any]
+//    for (kl <- components) {
+//      val listBuffer = new ListBuffer[Any]
+//      val b = kl.self.apply(listBuffer).respond(r => r)
+//      kliesliBuffer += listBuffer
+//    }
+//    new Composition(thisK >=> kleisli((s1: ListBuffer[Any]) => new MessageFlowComposer(s1, kliesliBuffer).map(r => r)))
+//  }
 
 }
 
@@ -149,7 +144,7 @@ private class MessageFlowComposer(fromComponents: ListBuffer[Any], toComponents:
           }
           case _ => {
             inputRequired = true
-            ch = new ComposableChannel(p2p())
+            ch = new ComposableChannel(new P2PChannel(null))
           }
         }
         this.addChannel(ic, ch, false)
@@ -162,7 +157,7 @@ private class MessageFlowComposer(fromComponents: ListBuffer[Any], toComponents:
   /*
      * 
      */
-  private def addChannel(ic: Composable, ch: ComposableChannel, input: Boolean) {
+  private def addChannel(ic: Composable, ch: EipComponent, input: Boolean) {
     ic match {
       //      case gw: ComposableGateway => {
       //        if (!input) {
@@ -191,6 +186,6 @@ private class MessageFlowComposer(fromComponents: ListBuffer[Any], toComponents:
 /**
  *
  */
-final class Composition(val k: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]) extends Composable {
+final class Composition(val k: Kleisli[Responder, ListBuffer[Any], ListBuffer[Any]]) extends ComposableEipComponent {
   def self = k
 }

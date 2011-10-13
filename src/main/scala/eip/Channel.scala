@@ -19,24 +19,28 @@ import EipType._
  * @author Oleg Zhurakousky
  *
  */
-private[eip] class P2PChannel(name: String, eipType:EipType) extends Channel(name, eipType){
+private[eip] class Channel(name: String, eipType:EipType) extends EipComponent(name, eipType) {
+  
+}
+
+private[eip] class P2PChannel(name: String) extends Channel(name, EipType.P2P_CHANNEL) {
 
 }
 
 object p2p {
   
-  def apply():P2PChannel = new P2PChannel(null, EipType.P2P_CHANNEL)
+  def apply():ComposableChannel = new ComposableChannel(new P2PChannel(null))
   
 }
 
-class PubSubChannel(name:String) extends Channel(name, EipType.PUB_SUB_CHANNEL){
-
-}
-
-object pubSub {
-
-  def apply():PubSubChannel = new PubSubChannel(null)
-  
-  def apply(name:String):PubSubChannel = new PubSubChannel(name)
-  
-}
+//class PubSubChannel(name:String) extends Channel(name, EipType.PUB_SUB_CHANNEL){
+//
+//}
+//
+//object pubSub {
+//
+//  def apply():PubSubChannel = new PubSubChannel(null)
+//  
+//  def apply(name:String):PubSubChannel = new PubSubChannel(name)
+//  
+//}

@@ -86,7 +86,7 @@ private[eip] trait Using { //extends Endpoint {
       case decoratedEndpoint:EipComponent => {
         decoratedEndpoint.configMap += (EipComponent.using ->target)
         decoratedEndpoint.configMap.put(EipComponent.eipType, decoratedEndpoint.eipType)
-        ComposableEipComponent(decoratedEndpoint)
+        Composable(decoratedEndpoint)
       }
       case _ =>{
         throw new IllegalArgumentException("Configured component is not an Endpoint: " + this)
@@ -95,17 +95,3 @@ private[eip] trait Using { //extends Endpoint {
   }
 }
 
-/* CHANNEL */
-
-/**
- *
- */
-private[eip] object Channel {
-  implicit def toComposable(component: Channel): ComposableChannel = new ComposableChannel(component)
-}
-/**
- *
- */
-private[eip] abstract class Channel(name: String, eipType: EipType) extends EipComponent(name, eipType) {
-
-}
