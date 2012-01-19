@@ -15,6 +15,8 @@
  */
 package org.springframework.eip.dsl
 
+import org.springframework.integration.MessageChannel
+
 /**
  * @author Oleg Zhurakousky
  * Date: 1/18/12
@@ -23,6 +25,24 @@ package org.springframework.eip.dsl
 object route {
 
   def onPayloadType(conditionCompositions:PayloadTypeConditionComposition*) = new Router(null, null) with Where {
+    def where(name:String): Router  = {
+      this
+    }
+  }
+
+  def onValueOfHeader(headerName:String)(conditionCompositions:HeaderValueConditionComposition*) = new Router(null, null) with Where {
+    def where(name:String): Router  = {
+      this
+    }
+  }
+
+  def using(spelExpression:String) = new Router(null, null) with Where {
+    def where(name:String): Router  = {
+      this
+    }
+  }
+
+  def using(function:Function1[_,AnyRef]) = new Router(null, null) with Where {
     def where(name:String): Router  = {
       this
     }

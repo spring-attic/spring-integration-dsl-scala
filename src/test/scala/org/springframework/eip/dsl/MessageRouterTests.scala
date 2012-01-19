@@ -16,6 +16,8 @@
 package org.springframework.eip.dsl
 
 import org.junit.{Assert, Test}
+import org.springframework.integration.Message
+
 /**
  * @author Oleg Zhurakousky
  * Date: 1/18/12
@@ -40,8 +42,11 @@ class MessageRouterTests {
     Assert.assertFalse(wComp3.isInstanceOf[ConditionComposition])
   }
 
+  /**
+   * Demonstrates PayloadTypeRouter
+   */
   @Test
-  def validateRouterConfig(){
+  def validatePayloadTypeRouterConfig(){
 
     // the below would be illegal since it is not an ConditionComposition
 //    route.onPayloadType(
@@ -70,20 +75,51 @@ class MessageRouterTests {
         handle.using{s:String => s}
 
     ) where(name = "myRouter")
-    
-//    route(
-//       whenPayloadTypeIs(classOf[String]) -->
-//         Channel("stringChannel")  -->
-//         handle.using{s:String => s},
-//       whenPayloadTypeIs(classOf[Int]) -->
-//         Channel("stringChannel")  -->
-//         handle.using{s:String => s}
-//    )
-    
-    
-    
-    
-    
-    
+  }
+
+  /**
+   * Demonstrates HeaderValueRouter
+   */
+  @Test
+  def validateHeaderValueRouterConfig(){
+
+    route.onValueOfHeader("someHeaderName") (
+      when("foo") -->
+        Channel("stringChannel")  -->
+        handle.using{s:String => s},
+      when("bar") -->
+        Channel("stringChannel")  -->
+        handle.using{s:String => s}
+    )
+  }
+
+  /**
+   * Demonstrates SpEL Router
+   */
+  @Test
+  def validateSpELRouterConfig(){
+
+    route.using("'someChannelName'")
+
+    route using("'someChannelName'")
+
+    route.using("'someChannelName'").where(name = "myRouter")
+
+    route using("'someChannelName'") where(name = "myRouter")
+  }
+
+  /**
+   * Demonstrates Function based  Router
+   */
+  @Test
+  def validateFunctionRouterConfig(){
+
+    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}
+
+    route using{m:Message[_] => m.getHeaders.get("routeToChannel")}
+
+    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}.where(name = "myRouter")
+
+    route using{m:Message[_] => m.getHeaders.get("routeToChannel")} where(name = "myRouter")
   }
 }
