@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 package demo
-import org.springframework.integration.scala.dsl._
-import org.springframework.integration.Message
-import scala.collection.JavaConversions
-import java.util.Random
-import java.util.concurrent._
-import org.junit._
+//import org.springframework.integration.scala.dsl._
+//import org.springframework.integration.Message
+//import scala.collection.JavaConversions
+//import java.util.Random
+//import java.util.concurrent._
+//import org.junit._
 /**
  * @author Oleg Zhurakousky
  *

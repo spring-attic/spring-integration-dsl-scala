@@ -1,3 +1,7 @@
 target
 .scala_dependencies
+.idea
+.settings
+.cache
+.idea_modules/
 
