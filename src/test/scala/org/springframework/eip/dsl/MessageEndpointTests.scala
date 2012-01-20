@@ -167,7 +167,7 @@ class MessageEndpointTests {
 
     split.using{s:String => List(1, 2, 3)} where(name = "mySplitter")
 
-    split using{s:String => List(1, 2, 3)} where(name = "mySplitter")
+    split using{s:String => List(1, 2, 3)} where(name = "mySplitter", applySequence = false)
 
     // with SpEL
     split.using("1, 2, 3")
@@ -193,5 +193,36 @@ class MessageEndpointTests {
     Assert.assertNotNull(anotherSplitter.parentComposition)
     Assert.assertEquals("bSplitter", anotherSplitter.parentComposition.target.asInstanceOf[MessageSplitter].name)
     Assert.assertEquals("cSplitter", anotherSplitter.target.asInstanceOf[MessageSplitter].name)
+  }
+
+  @Test
+  def validAggregatorConfigurationSyntax{
+
+    aggregate()
+    
+    aggregate().where(name = "myAggregator")
+
+    aggregate() where(name = "myAggregator")
+
+    aggregate.where(name = "myAggregator")
+
+    aggregate  where(name = "myAggregator")
+
+    aggregate.correlatingOn("foo")
+
+    aggregate correlatingOn("foo")
+
+    aggregate.correlatingOn("foo").where(name = "myAggregator", keepReleasedMessages = true)
+
+    aggregate.correlatingOn("foo") where(name = "myAggregator", keepReleasedMessages = true)
+
+    //the below is invalid (will throw compilation error) since releasingWhen function must return Boolean
+    // aggregate.releasingWhen{l:List[_] => l}
+
+    aggregate.releasingWhen{l:List[_] => l.size > 3}
+    
+    aggregate.releasingWhen{l:List[_] => l.size > 3}.where(name = "myAggregator", keepReleasedMessages = true)
+
+    aggregate releasingWhen{l:List[_] => l.size > 3} where(name = "myAggregator", keepReleasedMessages = true)
   }
 }

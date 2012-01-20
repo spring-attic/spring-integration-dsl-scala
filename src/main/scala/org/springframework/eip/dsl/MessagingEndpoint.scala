@@ -15,6 +15,9 @@
  */
 package org.springframework.eip.dsl
 
+import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
+
+
 /**
  * @author Oleg Zhurakousky
  */
@@ -78,16 +81,48 @@ object filter {
  */
 object split {
 
-  def using(function:Function1[_,List[_]]) = new SimpleComposition(null, new MessageSplitter(null, function)) with Where {
-    def where(name:String)= new SimpleComposition(null, new MessageSplitter(name, function))
+  def using(function:Function1[_,List[_]]) = new SimpleComposition(null, new MessageSplitter(null, target=function)) with Where {
+    def where(name:String, applySequence:Boolean)= new SimpleComposition(null, new MessageSplitter(name, applySequence, function))
   }
 
-  def using(spelExpression:String) = new SimpleComposition(null, new MessageSplitter(null, spelExpression)) with Where {
-    def where(name:String)= new SimpleComposition(null, new MessageSplitter(name, spelExpression))
+  def using(spelExpression:String) = new SimpleComposition(null, new MessageSplitter(null, target = spelExpression)) with Where {
+    def where(name:String, applySequence:Boolean)= new SimpleComposition(null, new MessageSplitter(name, applySequence, spelExpression))
   }
 
   private[split] trait Where {
-    def where(name:String): SimpleComposition
+    def where(name:String, applySequence:Boolean = true): SimpleComposition
+  }
+}
+
+/**
+* AGGREGATOR
+*/
+object aggregate {
+
+  def apply() = new SimpleComposition(null, new MessageAggregator()) with Where {
+    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+  }
+
+  def correlatingOn(correlatioinFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+  }
+
+  def correlatingOn(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+  }
+
+  def releasingWhen(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+  }
+
+  def releasingWhen(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+  }
+
+  def where(name:String, keepReleasedMessages:Boolean = true)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+
+  private[aggregate] trait Where {
+    def where(name:String, keepReleasedMessages:Boolean = true): SimpleComposition
   }
 }
 
@@ -97,5 +132,11 @@ private[dsl] case class Transformer(val name:String, val target:Any)
 
 private[dsl] case class MessageFilter(val name:String, val target:Any)
 
-private[dsl] case class MessageSplitter(val name:String, val target:Any)
+private[dsl] case class MessageSplitter(val name:String, val applySequence:Boolean = false, val target:Any)
+
+private[dsl] case class MessageAggregator(val name:String = null,
+                                          val keepReleasedMessages:Boolean = true,
+                                          val messageStore:MessageStore = new SimpleMessageStore,
+                                          val sendPartialResultsOnExpiry:Boolean = false,
+                                          val expireGroupsUponCompletion:Boolean = false)
 
