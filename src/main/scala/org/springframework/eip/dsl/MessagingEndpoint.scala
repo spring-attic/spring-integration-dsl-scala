@@ -73,11 +73,29 @@ object filter {
   }
 }
 
+/**
+ * SPLITTER
+ */
+object split {
+
+  def using(function:Function1[_,List[_]]) = new SimpleComposition(null, new MessageSplitter(null, function)) with Where {
+    def where(name:String)= new SimpleComposition(null, new MessageSplitter(name, function))
+  }
+
+  def using(spelExpression:String) = new SimpleComposition(null, new MessageSplitter(null, spelExpression)) with Where {
+    def where(name:String)= new SimpleComposition(null, new MessageSplitter(name, spelExpression))
+  }
+
+  private[split] trait Where {
+    def where(name:String): SimpleComposition
+  }
+}
+
 private[dsl] case class ServiceActivator(val name:String, val target:Any)
 
 private[dsl] case class Transformer(val name:String, val target:Any)
 
-private[dsl] case class MessageFilter(val name:String, val target:Any) {
+private[dsl] case class MessageFilter(val name:String, val target:Any)
 
-}
+private[dsl] case class MessageSplitter(val name:String, val target:Any)
 

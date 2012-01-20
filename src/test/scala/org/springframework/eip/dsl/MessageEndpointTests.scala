@@ -149,4 +149,49 @@ class MessageEndpointTests {
     Assert.assertEquals("bFilter", anotherFilter.parentComposition.target.asInstanceOf[MessageFilter].name)
     Assert.assertEquals("cFilter", anotherFilter.target.asInstanceOf[MessageFilter].name)
   }
+
+  @Test
+  def validSplitterConfigurationSyntax{
+    // with Function
+    split.using{s:String => List(1, 2, 3)}
+
+    split.using{s:String => List("1", "2", "3")}
+
+
+//    // the below is invalid (will throw compilation error) since splitter function must return List[_]
+//    //split.using{s:String => println(s)}
+
+    split using {s:String => List(1, 2, 3)}
+
+    split.using{s:String => List(1, 2, 3)}.where(name = "mySplitter")
+
+    split.using{s:String => List(1, 2, 3)} where(name = "mySplitter")
+
+    split using{s:String => List(1, 2, 3)} where(name = "mySplitter")
+
+    // with SpEL
+    split.using("1, 2, 3")
+
+    split using("1, 2, 3")
+
+    split.using("1, 2, 3").where(name = "mySplitter")
+
+    split.using("1, 2, 3") where(name = "mySplitter")
+
+    split using("1, 2, 3") where(name = "mySplitter")
+
+    val splitter = split.using{s:String => List(1, 2, 3)}.where(name = "aSplitter")
+
+    Assert.assertNull(splitter.parentComposition)
+    Assert.assertEquals("aSplitter", splitter.target.asInstanceOf[MessageSplitter].name)
+
+    val anotherSplitter =
+      splitter -->
+        split.using{s:String => List(1, 2, 3)}.where(name = "bSplitter") -->
+        split.using{s:String => List(1, 2, 3)}.where(name = "cSplitter")
+
+    Assert.assertNotNull(anotherSplitter.parentComposition)
+    Assert.assertEquals("bSplitter", anotherSplitter.parentComposition.target.asInstanceOf[MessageSplitter].name)
+    Assert.assertEquals("cSplitter", anotherSplitter.target.asInstanceOf[MessageSplitter].name)
+  }
 }
