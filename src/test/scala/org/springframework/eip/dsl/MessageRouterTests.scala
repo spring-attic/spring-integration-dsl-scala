@@ -17,6 +17,7 @@ package org.springframework.eip.dsl
 
 import org.junit.{Assert, Test}
 import org.springframework.integration.Message
+import org.springframework.core.task.SimpleAsyncTaskExecutor
 
 /**
  * @author Oleg Zhurakousky
@@ -53,7 +54,7 @@ class MessageRouterTests {
 //      Channel("hello")  -->
 //      handle.using{s:String => s})
 
-    route.onPayloadType(
+    val routerA =  route.onPayloadType(
 
       when(classOf[String]) -->
         Channel("stringChannel")  -->
@@ -63,6 +64,12 @@ class MessageRouterTests {
         handle.using{s:String => s}
 
     ).where(name = "myRouter")
+    
+    Assert.assertTrue(routerA.isInstanceOf[Composition])
+    val targetRouter = routerA.target.asInstanceOf[Router]
+    Assert.assertTrue(targetRouter.name equals "myRouter")
+    Assert.assertNotNull(targetRouter.compositions)
+    Assert.assertEquals(2, targetRouter.compositions.size)
 
     // infix notation
     route onPayloadType(
@@ -106,6 +113,23 @@ class MessageRouterTests {
     route.using("'someChannelName'").where(name = "myRouter")
 
     route using("'someChannelName'") where(name = "myRouter")
+  }
+
+  @Test
+  def routerUsageDemo(){
+    
+    val compositionWithRouter = 
+      Channel("inputChannel") -->
+      handle.using {m:Message[String] => m.getPayload.toUpperCase} -->
+      route.onValueOfHeader ("myRoutingHeader") (
+        when("FOO") --> 
+          Channel("queueChannel").withQueue().-->(poll.usingFixedRate(8)) -->
+          handle.using("someSpEL"),
+        when("Bar") -->
+          Channel("executorChannel").withDispatcher (taskExecutor = new SimpleAsyncTaskExecutor) -->
+          handle.using("someSpEL")
+      )
+      
   }
 
   /**

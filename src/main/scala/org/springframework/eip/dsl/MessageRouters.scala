@@ -24,32 +24,28 @@ import org.springframework.integration.MessageChannel
 
 object route {
 
-  def onPayloadType(conditionCompositions:PayloadTypeConditionComposition*) = new Router(null, null) with Where {
-    def where(name:String): Router  = {
-      this
-    }
+  def onPayloadType(conditionCompositions:PayloadTypeConditionComposition*) =
+              new SimpleComposition(null, new Router(null, null, conditionCompositions)) with Where {
+
+    def where(name:String) = new SimpleComposition(null, new Router(name, null, conditionCompositions))
   }
 
-  def onValueOfHeader(headerName:String)(conditionCompositions:HeaderValueConditionComposition*) = new Router(null, null) with Where {
-    def where(name:String): Router  = {
-      this
-    }
+  def onValueOfHeader(headerName:String)(conditionCompositions:HeaderValueConditionComposition*) =
+              new SimpleComposition(null, new Router(null, null, conditionCompositions)) with Where {
+
+    def where(name:String) = new SimpleComposition(null, new Router(name, null, conditionCompositions))
   }
 
-  def using(spelExpression:String) = new Router(null, null) with Where {
-    def where(name:String): Router  = {
-      this
-    }
+  def using(spelExpression:String) = new SimpleComposition(null, new Router(null, spelExpression, null)) with Where {
+    def where(name:String) = new SimpleComposition(null, new Router(name, spelExpression, null))
   }
 
-  def using(function:Function1[_,AnyRef]) = new Router(null, null) with Where {
-    def where(name:String): Router  = {
-      this
-    }
+  def using(function:Function1[_,AnyRef]) = new SimpleComposition(null, new Router(null, function, null)) with Where {
+    def where(name:String) = new SimpleComposition(null, new Router(name, function, null))
   }
 
   private[route] trait Where {
-    def where(name:String): Router
+    def where(name:String): SimpleComposition
   }
 }
 
@@ -61,7 +57,7 @@ object when {
 
 }
 
-private[dsl] case class Router(val name:String, val targetProcesor:Any)
+private[dsl] case class Router(val name:String, val targetProcesor:Any, val compositions:Seq[ConditionComposition])
 
 private[dsl] class PayloadTypeCondition(val payloadType:Class[_])
 
