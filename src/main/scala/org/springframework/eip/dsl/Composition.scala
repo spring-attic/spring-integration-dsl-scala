@@ -28,12 +28,10 @@ private[dsl] case class SimpleComposition(override val parentComposition:Composi
   extends Composition(parentComposition, target){
 
   def -->(composition: SimpleComposition) = {
-    println("1-receiving: " + composition)
     composition.copy(this, composition.target)
   }
 
   def -->(composition: PollableComposition) = {
-    println("2-receiving: " + composition)
     composition.copy(this, composition.target)
   }
 }
@@ -49,7 +47,7 @@ private[dsl] abstract class ConditionComposition(override val parentComposition:
 
 }
 
-private[dsl] class PayloadTypeConditionComposition(override val parentComposition:Composition, override val target:Any)
+private[dsl] case class PayloadTypeConditionComposition(override val parentComposition:Composition, override val target:Any)
       extends ConditionComposition(parentComposition, target)   {
 
   def -->(composition: SimpleComposition) = new PayloadTypeConditionComposition(this, composition.target)
@@ -57,7 +55,7 @@ private[dsl] class PayloadTypeConditionComposition(override val parentCompositio
   def -->(composition: PollableComposition) = new PayloadTypeConditionComposition(this, composition.target)
 }
 
-private[dsl] class HeaderValueConditionComposition(override val parentComposition:Composition, override val target:Any)
+private[dsl] case class HeaderValueConditionComposition(override val parentComposition:Composition, override val target:Any)
       extends ConditionComposition(parentComposition, target) {
 
   def -->(composition: SimpleComposition) = new HeaderValueConditionComposition(this, composition.target)
@@ -71,7 +69,6 @@ private[dsl] class HeaderValueConditionComposition(override val parentCompositio
 private[dsl] case class PollableComposition(override val parentComposition:Composition, override val target:Any) extends Composition(parentComposition, target){
 
   def -->(poller: Poller):SimpleComposition = {
-    println("receiving poler: " + poller)
     new SimpleComposition(this, poller)
   }
 

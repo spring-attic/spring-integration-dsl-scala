@@ -4,6 +4,7 @@ import org.junit._
 import org.springframework.integration.store.SimpleMessageStore
 import org.springframework.integration.message.GenericMessage
 import org.springframework.integration.Message
+import org.springframework.core.task.SimpleAsyncTaskExecutor
 
 /**
  * @author Oleg Zhurakousky
@@ -15,6 +16,8 @@ class DslDemo {
 
     channelConfigsDemo
     println("### End demo\n")
+    routerUsageDemo
+    println("### End routerUsageDemo \n")
 //    directChannelAndServiceWithSpel
 //    println("### End demo\n")
 //    asyncChannelWithService
@@ -33,6 +36,24 @@ class DslDemo {
 //    println("### End demo\n")
 //    withRouterAndDefaultOutputChannel
 //    println("### End demo\n")
+  }
+
+  def routerUsageDemo(){
+
+    val compositionWithRouter =
+      Channel("inputChannel") -->
+        handle.using {m:Message[String] => m.getPayload.toUpperCase} -->
+        route.onValueOfHeader ("myRoutingHeader") (
+          when("FOO") {
+            Channel("queueChannel").withQueue() --> poll.usingFixedRate(8) -->
+              handle.using("someSpEL")
+          },
+          when("Bar") {
+            Channel("executorChannel").withDispatcher (taskExecutor = new SimpleAsyncTaskExecutor) -->
+              handle.using("someSpEL")
+          }
+        )
+
   }
   /**
    *

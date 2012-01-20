@@ -29,18 +29,13 @@ class MessageRouterTests {
   @Test
   def validateConditionComposition(){
 
-    val wComp = when(classOf[String])
+    val wComp = when(classOf[String])(Channel("hello"))
     Assert.assertTrue(wComp.isInstanceOf[ConditionComposition])
 
-    val wComp1 = wComp --> Channel("hello")
-    Assert.assertTrue(wComp1.isInstanceOf[ConditionComposition])
-
-    val wComp2 = when(classOf[String]) --> Channel("hello")  --> handle.using{s:String => s}
+    val wComp2 = when(classOf[String]) {
+      Channel("hello")  --> handle.using{s:String => s}
+    }
     Assert.assertTrue(wComp2.isInstanceOf[ConditionComposition])
-
-
-    val wComp3 = Channel("hello")  --> handle.using{s:String => s}
-    Assert.assertFalse(wComp3.isInstanceOf[ConditionComposition])
   }
 
   /**
@@ -56,12 +51,14 @@ class MessageRouterTests {
 
     val routerA =  route.onPayloadType(
 
-      when(classOf[String]) -->
+      when(classOf[String]) {
         Channel("stringChannel")  -->
-        handle.using{s:String => s},
-      when(classOf[Int]) -->
+        handle.using{s:String => s}
+      },
+      when(classOf[Int]) {
         Channel("intChannel")  -->
         handle.using{s:String => s}
+      }
 
     ).where(name = "myRouter")
     
@@ -74,12 +71,10 @@ class MessageRouterTests {
     // infix notation
     route onPayloadType(
 
-      when(classOf[String]) -->
+      when(classOf[String]) {
         Channel("stringChannel")  -->
-        handle.using{s:String => s},
-      when(classOf[Int]) -->
-        Channel("intChannel")  -->
         handle.using{s:String => s}
+      }
 
     ) where(name = "myRouter")
   }
@@ -91,12 +86,14 @@ class MessageRouterTests {
   def validateHeaderValueRouterConfig(){
 
     route.onValueOfHeader("someHeaderName") (
-      when("foo") -->
-        Channel("stringChannel")  -->
-        handle.using{s:String => s},
-      when("bar") -->
+      when("foo") {
         Channel("stringChannel")  -->
         handle.using{s:String => s}
+      },
+      when("bar") {
+        Channel("intChannel")  -->
+        handle.using{s:String => s}
+      }
     )
   }
 
@@ -113,23 +110,6 @@ class MessageRouterTests {
     route.using("'someChannelName'").where(name = "myRouter")
 
     route using("'someChannelName'") where(name = "myRouter")
-  }
-
-  @Test
-  def routerUsageDemo(){
-    
-    val compositionWithRouter = 
-      Channel("inputChannel") -->
-      handle.using {m:Message[String] => m.getPayload.toUpperCase} -->
-      route.onValueOfHeader ("myRoutingHeader") (
-        when("FOO") --> 
-          Channel("queueChannel").withQueue().-->(poll.usingFixedRate(8)) -->
-          handle.using("someSpEL"),
-        when("Bar") -->
-          Channel("executorChannel").withDispatcher (taskExecutor = new SimpleAsyncTaskExecutor) -->
-          handle.using("someSpEL")
-      )
-      
   }
 
   /**

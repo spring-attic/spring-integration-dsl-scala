@@ -51,9 +51,9 @@ object route {
 
 object when {
 
-  def apply(payloadType:Class[_]) = new PayloadTypeConditionComposition(null, new PayloadTypeCondition(payloadType))
+  def apply(payloadType:Class[_])(c:Composition) = new PayloadTypeConditionComposition(null, new PayloadTypeCondition(payloadType))
 
-  def apply(headerValue:AnyRef) = new HeaderValueConditionComposition(null, new HeaderValueConDition(headerValue))
+  def apply(headerValue:AnyRef)(c:Composition) = new HeaderValueConditionComposition(null, new HeaderValueConDition(headerValue))
 
 }
 
