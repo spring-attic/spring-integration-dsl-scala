@@ -44,11 +44,6 @@ class MessageRouterTests {
   @Test
   def validatePayloadTypeRouterConfig(){
 
-    // the below would be illegal since it is not an ConditionComposition
-//    route.onPayloadType(
-//      Channel("hello")  -->
-//      handle.using{s:String => s})
-
     val routerA =  route.onPayloadType(
 
       when(classOf[String]) {

@@ -46,11 +46,11 @@ class DslDemo {
         route.onValueOfHeader ("myRoutingHeader") (
           when("FOO") {
             Channel("queueChannel").withQueue() --> poll.usingFixedRate(8) -->
-              handle.using("someSpEL")
+            handle.using("someSpEL")
           },
           when("Bar") {
             Channel("executorChannel").withDispatcher (taskExecutor = new SimpleAsyncTaskExecutor) -->
-              handle.using("someSpEL")
+            handle.using("someSpEL")
           }
         )
 

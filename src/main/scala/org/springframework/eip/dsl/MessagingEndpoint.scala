@@ -55,6 +55,29 @@ object transform {
   }
 }
 
+/**
+ * FILTER
+ */
+object filter {
+
+  def using(function:Function1[_,Boolean]) = new SimpleComposition(null, new MessageFilter(null, function)) with Where {
+    def where(name:String)= new SimpleComposition(null, new MessageFilter(name, function))
+  }
+
+  def using(spelExpression:String) = new SimpleComposition(null, new MessageFilter(null, spelExpression)) with Where {
+    def where(name:String)= new SimpleComposition(null, new MessageFilter(name, spelExpression))
+  }
+
+  private[filter] trait Where {
+    def where(name:String): SimpleComposition
+  }
+}
+
 private[dsl] case class ServiceActivator(val name:String, val target:Any)
 
 private[dsl] case class Transformer(val name:String, val target:Any)
+
+private[dsl] case class MessageFilter(val name:String, val target:Any) {
+
+}
+

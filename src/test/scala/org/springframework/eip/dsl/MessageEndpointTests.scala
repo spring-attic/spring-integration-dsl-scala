@@ -75,11 +75,11 @@ class MessageEndpointTests {
 
     transform using {s:String => s}
 
-    transform.using{s:String => s}.where(name = "myService")
+    transform.using{s:String => s}.where(name = "myTransformer")
 
-    transform.using{s:String => s} where(name = "myService")
+    transform.using{s:String => s} where(name = "myTransformer")
 
-    transform using{s:String => s} where(name = "myService")
+    transform using{s:String => s} where(name = "myTransformer")
 
     // with SpEL
     // with SpEL
@@ -87,11 +87,11 @@ class MessageEndpointTests {
 
     transform using("'foo'")
 
-    transform.using("'foo'").where(name = "myService")
+    transform.using("'foo'").where(name = "myTransformer")
 
-    transform.using("'foo'") where(name = "myService")
+    transform.using("'foo'") where(name = "myTransformer")
 
-    transform using("'foo'") where(name = "myService")
+    transform using("'foo'") where(name = "myTransformer")
 
     val transformer = transform.using{s:String => s}.where(name = "aTransformer")
 
@@ -109,19 +109,44 @@ class MessageEndpointTests {
   }
 
   @Test
-  def integrationCompositionDemo: Unit = {
+  def validFilterConfigurationSyntax{
+    // with Function
+    filter.using{s:String => 3 < 4}
 
-    val pollableChannel = Channel("pol").withQueue()
+    // the below is invalid (will throw compilation error) since filter function must return boolean
+    //filter.using{s:String => println(s)}
 
+    filter using {s:String => 3 < 4}
 
+    filter.using{s:String => 3 < 4}.where(name = "myFilter")
 
-    val v =
-      Channel("directChannel") -->
-      handle.using{s:String => s}  -->
-      pollableChannel --> poll.usingTrigger(new PeriodicTrigger(5)) -->
-      transform.using{s:String => s}
+    filter.using{s:String => 3 < 4} where(name = "myFilter")
 
-    println(v)
+    filter using{s:String => 3 < 4} where(name = "myFilter")
 
+    // with SpEL
+    filter.using("'foo'.equals('bar')")
+
+    filter using("'foo'.equals('bar')")
+
+    filter.using("'foo'.equals('bar')").where(name = "myFilter")
+
+    filter.using("'foo'.equals('bar')") where(name = "myFilter")
+
+    filter using("'foo'.equals('bar')") where(name = "myFilter")
+
+    val aFilter = filter.using{s:String => 3 < 4}.where(name = "aFilter")
+
+    Assert.assertNull(aFilter.parentComposition)
+    Assert.assertEquals("aFilter", aFilter.target.asInstanceOf[MessageFilter].name)
+
+    val anotherFilter =
+      aFilter -->
+        filter.using{s:String => 3 < 4}.where(name = "bFilter") -->
+        filter.using{s:String => 3 < 4}.where(name = "cFilter")
+
+    Assert.assertNotNull(anotherFilter.parentComposition)
+    Assert.assertEquals("bFilter", anotherFilter.parentComposition.target.asInstanceOf[MessageFilter].name)
+    Assert.assertEquals("cFilter", anotherFilter.target.asInstanceOf[MessageFilter].name)
   }
 }
