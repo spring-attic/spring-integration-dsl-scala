@@ -18,6 +18,7 @@ package org.springframework.eip.dsl
 import org.junit.{Assert, Test}
 import org.springframework.scheduling.support.PeriodicTrigger
 import org.springframework.core.task.{SyncTaskExecutor, SimpleAsyncTaskExecutor, AsyncTaskExecutor}
+import org.springframework.integration.Message
 
 /**
  * @author Oleg Zhurakousky
@@ -215,6 +216,37 @@ class MessageEndpointTests {
     aggregate.correlatingOn("foo").where(name = "myAggregator", keepReleasedMessages = true)
 
     aggregate.correlatingOn("foo") where(name = "myAggregator", keepReleasedMessages = true)
+
+    aggregate.correlatingOn("foo").releasingWhen{l:List[_] => l.size > 3}
+
+    aggregate correlatingOn("foo") releasingWhen{l:List[_] => l.size > 3}
+
+    aggregate.correlatingOn{m:Message[_] => m.getHeaders.get("myCorrelationId")}.releasingWhen{l:List[_] => l.size > 3}
+
+    aggregate correlatingOn{m:Message[_] => m.getHeaders.get("myCorrelationId")} releasingWhen{l:List[_] => l.size > 3}
+
+    // few more coding styles for complex cases
+    aggregate.
+      correlatingOn{m:Message[_] => m.getHeaders.get("myCorrelationId")}.
+      releasingWhen{l:List[_] => l.size > 3}.
+      where(name = "myAggregator", keepReleasedMessages = true)
+
+    aggregate correlatingOn{
+      m:Message[_] => m.getHeaders.get("myCorrelationId")
+    } releasingWhen{
+      l:List[_] => l.size > 3
+    } where(name = "myAggregator", keepReleasedMessages = true)
+
+    aggregate.
+      releasingWhen{l:List[_] => l.size > 3}.
+      correlatingOn{m:Message[_] => m.getHeaders.get("myCorrelationId")}.
+      where(name = "myAggregator", keepReleasedMessages = true)
+
+    aggregate releasingWhen{
+      l:List[_] => l.size > 3
+    } correlatingOn{
+      m:Message[_] => m.getHeaders.get("myCorrelationId")
+    } where(name = "myAggregator", keepReleasedMessages = true)
 
     //the below is invalid (will throw compilation error) since releasingWhen function must return Boolean
     // aggregate.releasingWhen{l:List[_] => l}

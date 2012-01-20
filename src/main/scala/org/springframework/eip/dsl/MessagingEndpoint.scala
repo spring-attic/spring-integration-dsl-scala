@@ -103,26 +103,70 @@ object aggregate {
     def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
   }
 
-  def correlatingOn(correlatioinFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+  def correlatingOn(correlationFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null)) with ReleaseStrategy with Where {
     def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+
+    def releasingWhen(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    }
+
+    def releasingWhen(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    }
   }
 
-  def correlatingOn(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+  def correlatingOn(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null)) with ReleaseStrategy with Where {
     def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+
+    def releasingWhen(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    }
+
+    def releasingWhen(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    }
   }
 
-  def releasingWhen(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+  def releasingWhen(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with CorrelationStrategy with Where {
     def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+
+    def correlatingOn(correlationFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
+      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    }
+
+    def correlatingOn(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
+      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    }
   }
 
   def releasingWhen(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
     def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+
+    def correlatingOn(correlationFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
+      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    }
+
+    def correlatingOn(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
+      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    }
   }
 
   def where(name:String, keepReleasedMessages:Boolean = true)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
 
   private[aggregate] trait Where {
     def where(name:String, keepReleasedMessages:Boolean = true): SimpleComposition
+  }
+
+  private[aggregate] trait ReleaseStrategy {
+    def releasingWhen(releaseFunction:Function1[_,Boolean]): SimpleComposition
+
+    def releasingWhen(releaseExpression:String): SimpleComposition
+  }
+
+  private[aggregate] trait CorrelationStrategy {
+    def correlatingOn(correlationKey:AnyRef): SimpleComposition
+
+    def correlatingOn(correlationFunction:Function1[_,AnyRef]): SimpleComposition
   }
 }
 
