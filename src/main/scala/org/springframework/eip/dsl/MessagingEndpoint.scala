@@ -100,61 +100,191 @@ object split {
 object aggregate {
 
   def apply() = new SimpleComposition(null, new MessageAggregator()) with Where {
-    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    def where(name:String,
+              keepReleasedMessages:Boolean,
+              messageStore:MessageStore,
+              sendPartialResultsOnExpiry:Boolean,
+              expireGroupsUponCompletion:Boolean) =
+      new SimpleComposition(null, new MessageAggregator(name = name,
+                                                        keepReleasedMessages = keepReleasedMessages,
+                                                        messageStore = messageStore,
+                                                        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                        expireGroupsUponCompletion = expireGroupsUponCompletion))
   }
 
   def correlatingOn(correlationFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null)) with ReleaseStrategy with Where {
-    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    def where(name:String,
+              keepReleasedMessages:Boolean,
+              messageStore:MessageStore,
+              sendPartialResultsOnExpiry:Boolean,
+              expireGroupsUponCompletion:Boolean) =
+      new SimpleComposition(null, new MessageAggregator(name = name,
+                                                        keepReleasedMessages = keepReleasedMessages,
+                                                        messageStore = messageStore,
+                                                        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                        expireGroupsUponCompletion = expireGroupsUponCompletion))
 
     def releasingWhen(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+      def where(name:String,
+                keepReleasedMessages:Boolean,
+                messageStore:MessageStore,
+                sendPartialResultsOnExpiry:Boolean,
+                expireGroupsUponCompletion:Boolean) =
+        new SimpleComposition(null, new MessageAggregator(name = name,
+                                                          keepReleasedMessages = keepReleasedMessages,
+                                                          messageStore = messageStore,
+                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
     def releasingWhen(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+      def where(name:String,
+                keepReleasedMessages:Boolean,
+                messageStore:MessageStore,
+                sendPartialResultsOnExpiry:Boolean,
+                expireGroupsUponCompletion:Boolean) =
+        new SimpleComposition(null, new MessageAggregator(name = name,
+                                                          keepReleasedMessages = keepReleasedMessages,
+                                                          messageStore = messageStore,
+                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
   }
 
   def correlatingOn(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null)) with ReleaseStrategy with Where {
-    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    def where(name:String,
+              keepReleasedMessages:Boolean,
+              messageStore:MessageStore,
+              sendPartialResultsOnExpiry:Boolean,
+              expireGroupsUponCompletion:Boolean) =
+      new SimpleComposition(null, new MessageAggregator(name = name,
+                                                        keepReleasedMessages = keepReleasedMessages,
+                                                        messageStore = messageStore,
+                                                        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                        expireGroupsUponCompletion = expireGroupsUponCompletion))
 
     def releasingWhen(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+      def where(name:String,
+                keepReleasedMessages:Boolean,
+                messageStore:MessageStore,
+                sendPartialResultsOnExpiry:Boolean,
+                expireGroupsUponCompletion:Boolean) =
+        new SimpleComposition(null, new MessageAggregator(name = name,
+                                                          keepReleasedMessages = keepReleasedMessages,
+                                                          messageStore = messageStore,
+                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                           expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
     def releasingWhen(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+      def where(name:String,
+                keepReleasedMessages:Boolean,
+                messageStore:MessageStore,
+                sendPartialResultsOnExpiry:Boolean,
+                expireGroupsUponCompletion:Boolean) =
+        new SimpleComposition(null, new MessageAggregator(name = name,
+                                                          keepReleasedMessages = keepReleasedMessages,
+                                                          messageStore = messageStore,
+                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
   }
 
   def releasingWhen(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with CorrelationStrategy with Where {
-    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    def where(name:String,
+              keepReleasedMessages:Boolean,
+              messageStore:MessageStore,
+              sendPartialResultsOnExpiry:Boolean,
+              expireGroupsUponCompletion:Boolean) =
+      new SimpleComposition(null, new MessageAggregator(name = name,
+                                                        keepReleasedMessages = keepReleasedMessages,
+                                                        messageStore = messageStore,
+                                                        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                        expireGroupsUponCompletion = expireGroupsUponCompletion))
 
     def correlatingOn(correlationFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
-      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+      def where(name:String,
+                keepReleasedMessages:Boolean,
+                messageStore:MessageStore,
+                sendPartialResultsOnExpiry:Boolean,
+                expireGroupsUponCompletion:Boolean) =
+        new SimpleComposition(null, new MessageAggregator(name = name,
+                                                          keepReleasedMessages = keepReleasedMessages,
+                                                          messageStore = messageStore,
+                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
     def correlatingOn(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
-      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+      def where(name:String,
+                keepReleasedMessages:Boolean,
+                messageStore:MessageStore,
+                sendPartialResultsOnExpiry:Boolean,
+                expireGroupsUponCompletion:Boolean) =
+        new SimpleComposition(null, new MessageAggregator(name = name,
+                                                          keepReleasedMessages = keepReleasedMessages,
+                                                          messageStore = messageStore,
+                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
   }
 
   def releasingWhen(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-    def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+    def where(name:String,
+              keepReleasedMessages:Boolean,
+              messageStore:MessageStore,
+              sendPartialResultsOnExpiry:Boolean,
+              expireGroupsUponCompletion:Boolean) =
+      new SimpleComposition(null, new MessageAggregator(name = name,
+                                                        keepReleasedMessages = keepReleasedMessages,
+                                                        messageStore = messageStore,
+                                                        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                        expireGroupsUponCompletion = expireGroupsUponCompletion))
 
     def correlatingOn(correlationFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
-      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+      def where(name:String,
+                keepReleasedMessages:Boolean,
+                messageStore:MessageStore,
+                sendPartialResultsOnExpiry:Boolean,
+                expireGroupsUponCompletion:Boolean) =
+        new SimpleComposition(null, new MessageAggregator(name = name,
+                                                          keepReleasedMessages = keepReleasedMessages,
+                                                          messageStore = messageStore,
+                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
     def correlatingOn(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
-      def where(name:String, keepReleasedMessages:Boolean)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+      def where(name:String,
+                keepReleasedMessages:Boolean,
+                messageStore:MessageStore,
+                sendPartialResultsOnExpiry:Boolean,
+                expireGroupsUponCompletion:Boolean) =
+        new SimpleComposition(null, new MessageAggregator(name = name,
+                                                          keepReleasedMessages = keepReleasedMessages,
+                                                          messageStore = messageStore,
+                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
   }
 
-  def where(name:String, keepReleasedMessages:Boolean = true)= new SimpleComposition(null, new MessageAggregator(name = name, keepReleasedMessages = keepReleasedMessages))
+  def where(name:String = null,
+            keepReleasedMessages:Boolean = true,
+            messageStore:MessageStore = new SimpleMessageStore,
+            sendPartialResultsOnExpiry:Boolean = false,
+            expireGroupsUponCompletion:Boolean = false) =
+    new SimpleComposition(null, new MessageAggregator(name = name,
+                                                      keepReleasedMessages = keepReleasedMessages,
+                                                      messageStore = messageStore,
+                                                      sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                      expireGroupsUponCompletion = expireGroupsUponCompletion))
 
   private[aggregate] trait Where {
-    def where(name:String, keepReleasedMessages:Boolean = true): SimpleComposition
+    def where(name:String = null,
+              keepReleasedMessages:Boolean = true,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = false,
+              expireGroupsUponCompletion:Boolean = false): SimpleComposition
   }
 
   private[aggregate] trait ReleaseStrategy {
