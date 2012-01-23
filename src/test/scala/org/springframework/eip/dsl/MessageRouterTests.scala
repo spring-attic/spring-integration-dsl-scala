@@ -80,7 +80,11 @@ class MessageRouterTests {
   @Test
   def validateHeaderValueRouterConfig(){
 
+    val sChannel = Channel("stringChannel")
+
+    Channel("A") -->
     route.onValueOfHeader("someHeaderName") (
+
       when("foo") {
         Channel("stringChannel")  -->
         handle.using{s:String => s}

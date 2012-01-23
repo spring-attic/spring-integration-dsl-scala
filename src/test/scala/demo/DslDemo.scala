@@ -40,20 +40,19 @@ class DslDemo {
 
   def routerUsageDemo(){
 
-    val compositionWithRouter =
-      Channel("inputChannel") -->
-        handle.using {m:Message[String] => m.getPayload.toUpperCase} -->
-        route.onValueOfHeader ("myRoutingHeader") (
-          when("FOO") {
-            Channel("queueChannel").withQueue() --> poll.usingFixedRate(8) -->
-            handle.using("someSpEL")
-          },
-          when("Bar") {
-            Channel("executorChannel").withDispatcher (taskExecutor = new SimpleAsyncTaskExecutor) -->
-            handle.using("someSpEL")
-          }
-        )
-
+//    val compositionWithRouter =
+//      Channel("inputChannel") -->
+//        handle.using {m:Message[String] => m.getPayload.toUpperCase} -->
+//        route on payloadType  (
+//          when("FOO") {
+//            Channel("queueChannel").withQueue() --> poll.usingFixedRate(8) -->
+//            handle.using("someSpEL")
+//          },
+//          when("Bar") {
+//            Channel("executorChannel").withDispatcher (taskExecutor = new SimpleAsyncTaskExecutor) -->
+//            handle.using("someSpEL")
+//          }
+//        )
   }
   /**
    *
@@ -72,11 +71,11 @@ class DslDemo {
     println(messageBridge)
 
 
-    directChannel.send(new GenericMessage[String]("Hello"))
-
-    queueChannel.send(new GenericMessage[String]("Hello"))
-
-    queueChannel.receive()
+//    directChannel.send(new GenericMessage[String]("Hello"))
+//
+//    queueChannel.send(new GenericMessage[String]("Hello"))
+//
+//    queueChannel.receive()
 
   }
 //

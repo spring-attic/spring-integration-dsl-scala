@@ -15,11 +15,69 @@
  */
 package org.springframework.eip.dsl
 
+import org.springframework.integration.Message
+import org.springframework.integration.message.GenericMessage
+import org.springframework.beans.factory.BeanFactory
+import org.springframework.beans.factory.support.{BeanDefinitionBuilder, DefaultListableBeanFactory}
+import org.springframework.integration.config.TransformerFactoryBean
+
 /**
  * @author Oleg Zhurakousky
  * Date: 1/12/12
  */
-private[dsl] abstract class Composition(val parentComposition:Composition, val target:Any)
+private[dsl] abstract class Composition(val parentComposition:Composition, val target:Any) {
+  private var started = false
+
+  def exposeChannel(channel:MessageChannelComposition with PollableComposition): Receivable =  {
+    if (!started){
+      this.start()
+    }
+    new Receivable {
+      def receive(): Message[_]  = {
+        println("stubbing out receive")
+        new GenericMessage[String]("hello")
+      }
+
+      def receive(timeout:Int): Message[_] = {
+        println("stubbing out receive with timeout")
+        new GenericMessage[String]("hello")
+      }
+
+      def send(message:Message[_]) = {
+        println("stubbing out send")
+      }
+    }
+  }
+
+  def exposeChannel(channel:MessageChannelComposition with Composition): Sendable =  {
+    if (!started){
+      this.start()
+    }
+    new Sendable {
+      def send(message:Message[_]) = {
+        println("stubbing out send")
+      }
+    }
+  }
+
+  def start(): Unit = {
+    this.doStart(new DefaultListableBeanFactory)
+    started = true
+  }
+  
+  private def doStart(beanFactory:BeanFactory): Unit = {
+    println(this.target)
+    this.target match {
+      case xfmr:Transformer => {
+        //BeanDefinitionBuilder transformerBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[TransformerFactoryBean]);
+      }
+    }
+
+    if (this.parentComposition != null){
+      this.parentComposition.doStart(beanFactory)
+    }
+  }
+}
 
 /**
  *
@@ -66,7 +124,7 @@ private[dsl] case class HeaderValueConditionComposition(override val parentCompo
 /**
  *
  */
-private[dsl] case class PollableComposition(override val parentComposition:Composition, override val target:Any) extends Composition(parentComposition, target){
+private[dsl] case class PollableComposition(override val parentComposition:Composition, override val target:Channel) extends Composition(parentComposition, target){
 
   def -->(poller: Poller):SimpleComposition = {
     new SimpleComposition(this, poller)

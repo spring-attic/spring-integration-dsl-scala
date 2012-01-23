@@ -26,18 +26,17 @@ import org.springframework.integration.message.GenericMessage
 
 object Channel {
 
-  def apply(name:String) = new SimpleComposition(null, new Channel(name = name)) with WithQueue with WithDispatcher with Sendable {
+  def apply(name:String) = new SimpleComposition(null, new Channel(name = name)) with WithQueue with WithDispatcher with MessageChannelComposition{    //with Sendable
 
     def withQueue(capacity: Int, messageStore: MessageStore) =
-          new PollableComposition(null, this.doWithQueue(capacity, messageStore))  with Sendable with Receivable
+          new PollableComposition(null, this.doWithQueue(capacity, messageStore)) with MessageChannelComposition
 
-    def withQueue() = new PollableComposition(null, this.doWithQueue(0, new SimpleMessageStore))  with Sendable with Receivable
+    def withQueue() = new PollableComposition(null, this.doWithQueue(0, new SimpleMessageStore)) with MessageChannelComposition
 
     def withDispatcher(failover: Boolean, loadBalancer:String, taskExecutor:Executor) =
-          new SimpleComposition(null, this.doWithDispatcher(failover, loadBalancer, taskExecutor))  with Sendable
+          new SimpleComposition(null, this.doWithDispatcher(failover, loadBalancer, taskExecutor)) with MessageChannelComposition
 
-
-    private def doWithQueue(capacity: Int, messageStore: MessageStore): Channel = {
+    private def doWithQueue(capacity: Int, messageStore: MessageStore): Channel  = {
       new Channel(name, capacity = capacity, messageStore = messageStore)
     }
 
@@ -47,34 +46,19 @@ object Channel {
   }
 
   private[Channel] trait WithQueue {
-    def withQueue(capacity: Int = 0, messageStore: MessageStore = new SimpleMessageStore): PollableComposition
-          with Sendable with Receivable
+    def withQueue(capacity: Int = 0, messageStore: MessageStore = new SimpleMessageStore): PollableComposition with MessageChannelComposition
 
-    def withQueue(): PollableComposition with Sendable with Receivable
+
+    def withQueue(): PollableComposition with  MessageChannelComposition
   }
 
-  private[Channel] trait Receivable {
-    def receive(): Message[_]  = {
-      println("stubbing out receive")
-      new GenericMessage[String]("hello")
-    }
-
-    def receive(timeout:Int): Message[_] = {
-      println("stubbing out receive with timeout")
-      new GenericMessage[String]("hello")
-    }
-  }
-  
-  private[Channel] trait Sendable {
-    def send(message:Message[_]) = {
-      println("stubbing out send")
-    }
-  }
 
   private[Channel] trait WithDispatcher {
     def withDispatcher(failover: Boolean = true, loadBalancer:String = "round-robin", taskExecutor:Executor = null): SimpleComposition
   }
 }
+
+private[dsl] trait MessageChannelComposition
 
 /**
  *
@@ -85,3 +69,13 @@ private[dsl] case class Channel(val name:String,
                            val taskExecutor:Executor = null,
                            val capacity: Int = Integer.MIN_VALUE,
                            val messageStore: MessageStore = null)
+
+private[dsl] trait Receivable extends Sendable{
+  def receive(): Message[_]
+
+  def receive(timeout:Int): Message[_]
+}
+
+private[dsl] trait Sendable {
+  def send(message:Message[_]): Unit
+}

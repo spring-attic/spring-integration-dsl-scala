@@ -209,52 +209,56 @@ class MessageEndpointTests {
 
     aggregate  where(name = "myAggregator")
 
-    aggregate.correlatingOn("foo")
+    aggregate.on("foo")  // header
 
-    aggregate correlatingOn("foo")
+    aggregate on("foo")
 
-    aggregate.correlatingOn("foo").where(name = "myAggregator", keepReleasedMessages = true)
+    aggregate.on("foo").where(name = "myAggregator", keepReleasedMessages = true)
 
-    aggregate.correlatingOn("foo") where(name = "myAggregator", keepReleasedMessages = true)
+    aggregate.on("foo") where(name = "myAggregator", keepReleasedMessages = true)
 
-    aggregate.correlatingOn("foo").releasingWhen{l:List[_] => l.size > 3}
+    aggregate.on("foo").until{l:List[_] => l.size > 3}
 
-    aggregate correlatingOn("foo") releasingWhen{l:List[_] => l.size > 3}
+    aggregate on("foo") until{l:List[_] => l.size > 3}
 
-    aggregate.correlatingOn{m:Message[_] => m.getHeaders.get("myCorrelationId")}.releasingWhen{l:List[_] => l.size > 3}
+    aggregate.on{m:Message[_] => m.getHeaders.get("myCorrelationId")}.until{l:List[_] => l.size > 3}
 
-    aggregate correlatingOn{m:Message[_] => m.getHeaders.get("myCorrelationId")} releasingWhen{l:List[_] => l.size > 3}
+    aggregate on{m:Message[_] => m.getHeaders.get("myCorrelationId")} until{l:List[_] => l.size > 3}
+
+    aggregate.until{l:List[_] => l.size > 3}
+
+    aggregate  until{l:List[_] => l.size > 3}
 
     // few more coding styles for complex cases
     aggregate.
-      correlatingOn{m:Message[_] => m.getHeaders.get("myCorrelationId")}.
-      releasingWhen{l:List[_] => l.size > 3}.
+      on{m:Message[_] => m.getHeaders.get("myCorrelationId")}.
+      until{l:List[_] => l.size > 3}.
       where(name = "myAggregator", keepReleasedMessages = true)
 
-    aggregate correlatingOn{
+    aggregate on{
       m:Message[_] => m.getHeaders.get("myCorrelationId")
-    } releasingWhen{
+    } until {
       l:List[_] => l.size > 3
     } where(name = "myAggregator", keepReleasedMessages = true)
 
-    aggregate.
-      releasingWhen{l:List[_] => l.size > 3}.
-      correlatingOn{m:Message[_] => m.getHeaders.get("myCorrelationId")}.
-      where(name = "myAggregator", keepReleasedMessages = true)
+//    aggregate.
+//      until{l:List[_] => l.size > 3}.
+//      on{m:Message[_] => m.getHeaders.get("myCorrelationId")}.
+//      where(name = "myAggregator", keepReleasedMessages = true)
 
-    aggregate releasingWhen{
-      l:List[_] => l.size > 3
-    } correlatingOn{
-      m:Message[_] => m.getHeaders.get("myCorrelationId")
-    } where(name = "myAggregator", keepReleasedMessages = true)
+//    aggregate until{
+//      l:List[_] => l.size > 3
+//    } on {
+//      m:Message[_] => m.getHeaders.get("myCorrelationId")
+//    } where(name = "myAggregator", keepReleasedMessages = true)
 
     //the below is invalid (will throw compilation error) since releasingWhen function must return Boolean
     // aggregate.releasingWhen{l:List[_] => l}
 
-    aggregate.releasingWhen{l:List[_] => l.size > 3}
+    aggregate.until{l:List[_] => l.size > 3}
     
-    aggregate.releasingWhen{l:List[_] => l.size > 3}.where(name = "myAggregator", keepReleasedMessages = true)
+    aggregate.until{l:List[_] => l.size > 3}.where(name = "myAggregator", keepReleasedMessages = true)
 
-    aggregate releasingWhen{l:List[_] => l.size > 3} where(name = "myAggregator", keepReleasedMessages = true)
+    aggregate until{l:List[_] => l.size > 3} where(name = "myAggregator", keepReleasedMessages = true)
   }
 }
