@@ -15,11 +15,8 @@
  */
 package org.springframework.eip.dsl
 import org.junit.{Assert, Test}
-import org.springframework.integration.message.GenericMessage
 import org.springframework.integration.channel.DirectChannel
-import org.springframework.integration.{MessageChannel, Message}
 import org.springframework.integration.core.PollableChannel
-import org.springframework.context.ApplicationContext
 import org.springframework.context.support.GenericApplicationContext
 
 /**
@@ -139,6 +136,9 @@ class CompositionInitializationTests {
     )
 
     val channelA = context.channel("a")
+    channelA.send{s:String => s}
+    channelA.send("hello")
+    channelA.send(new Object)
     Assert.assertTrue(channelA.isInstanceOf[DirectChannel])
 
     val channelC = context.channel(channelConfigC)

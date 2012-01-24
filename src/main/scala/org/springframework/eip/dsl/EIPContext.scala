@@ -22,16 +22,24 @@ object EIPContext {
 
 class EIPContext {
   
-  def channel(name:String):MessageChannel = {
-    new DirectChannel()
-  }
+  def channel(name:String) = new DirectChannel() with SimpeSendable
 
-  def channel(name:ChannelComposition):MessageChannel = {
-    new DirectChannel()
-  }
+  def channel(name:ChannelComposition) = new DirectChannel() with SimpeSendable
 
-  def channel(name:PollableComposition):PollableChannel = {
-    new QueueChannel()
+  def channel(name:PollableComposition) = new QueueChannel() with SimpeSendable
+
+  private[EIPContext] trait SimpeSendable {
+    def send(payload:AnyRef):Boolean = {
+       true
+    }
+
+//    def send(payload:AnyVal):Boolean = {
+//      true
+//    }
+
+    def send(payload:String, timeout:Long):Boolean = {
+       true
+    }
   }
 
 }
