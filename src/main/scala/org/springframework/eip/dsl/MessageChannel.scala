@@ -31,21 +31,27 @@ object Channel {
   def apply(name:String) = new SimpleComposition(null, new Channel(name = name))
     with WithQueue
     with WithDispatcher
-    with CompletableComposition {
+    with ChannelComposition
+    with CompletableEIPConfigurationComposition {
 
     override def -->(composition: SimpleComposition) = {
       println("in Channel - " + composition)
-      new SimpleCompletableComposition(this, composition.target) with CompletableComposition
+      new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
     }
 
     def withQueue(capacity: Int, messageStore: MessageStore) =
-          new PollableComposition(null, this.doWithQueue(capacity, messageStore)) with CompletableComposition
+          new PollableComposition(null, this.doWithQueue(capacity, messageStore)) 
+              with CompletableEIPConfigurationComposition
 
-    def withQueue() = new PollableComposition(null, this.doWithQueue(0, new SimpleMessageStore)) with CompletableComposition
+    def withQueue() = new PollableComposition(null, this.doWithQueue(0, new SimpleMessageStore)) 
+              with CompletableEIPConfigurationComposition
 
     def withDispatcher(failover: Boolean, loadBalancer:String, taskExecutor:Executor) =
-          new SimpleComposition(null, this.doWithDispatcher(failover, loadBalancer, taskExecutor)) with CompletableComposition {
-            override def -->(composition: SimpleComposition) = new SimpleComposition(this, composition.target) with CompletableComposition
+          new SimpleComposition(null, this.doWithDispatcher(failover, loadBalancer, taskExecutor)) 
+                    with CompletableEIPConfigurationComposition with ChannelComposition{
+
+            override def -->(composition: SimpleComposition) =
+              new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
           }
 
     private def doWithQueue(capacity: Int, messageStore: MessageStore): Channel  = {
@@ -58,10 +64,11 @@ object Channel {
   }
 
   private[Channel] trait WithQueue {
-    def withQueue(capacity: Int = 0, messageStore: MessageStore = new SimpleMessageStore): PollableComposition with CompletableComposition
+    def withQueue(capacity: Int = 0, messageStore: MessageStore = new SimpleMessageStore): PollableComposition 
+                  with CompletableEIPConfigurationComposition
 
 
-    def withQueue(): PollableComposition with  CompletableComposition
+    def withQueue(): PollableComposition with CompletableEIPConfigurationComposition
   }
 
 
@@ -89,3 +96,5 @@ private[dsl] trait Receivable extends Sendable{
 private[dsl] trait Sendable {
   def send(message:Message[_]): Unit
 }
+
+private[dsl] trait ChannelComposition

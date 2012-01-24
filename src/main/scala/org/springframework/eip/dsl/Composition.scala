@@ -20,17 +20,17 @@ package org.springframework.eip.dsl
  * @author Oleg Zhurakousky
  * Date: 1/12/12
  */
-private[dsl] abstract class Composition(val parentComposition:Composition, val target:Any)
+private[dsl] abstract class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposition, val target:Any)
 
 /**
  *
  */
-private[dsl] trait CompletableComposition
+private[dsl] trait CompletableEIPConfigurationComposition
 /**
  *
  */
-private[dsl] case class SimpleComposition(override val parentComposition:Composition, override val target:Any)
-  extends Composition(parentComposition, target){
+private[dsl] case class SimpleComposition(override val parentComposition:EIPConfigurationComposition, override val target:Any)
+  extends EIPConfigurationComposition(parentComposition, target){
 
   def -->(composition: SimpleComposition) = {
     composition.copy(this, composition.target)
@@ -44,18 +44,19 @@ private[dsl] case class SimpleComposition(override val parentComposition:Composi
 /**
  *
  */
-private[dsl] case class SimpleCompletableComposition(override val parentComposition:Composition, override val target:Any)
+private[dsl] case class SimpleCompletableComposition(override val parentComposition:EIPConfigurationComposition, override val target:Any)
   extends SimpleComposition(parentComposition, target){
 
   override def -->(composition: SimpleComposition) = {
-    new SimpleCompletableComposition(this, composition.target) with CompletableComposition
+    new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
   }
 }
 
 /**
  *
  */
-private[dsl] abstract class ConditionComposition(override val parentComposition:Composition, override val target:Any) extends Composition(parentComposition, target){
+private[dsl] abstract class ConditionComposition(override val parentComposition:EIPConfigurationComposition, override val target:Any)
+  extends EIPConfigurationComposition(parentComposition, target){
 
   def -->(composition: SimpleComposition): ConditionComposition
 
@@ -63,7 +64,7 @@ private[dsl] abstract class ConditionComposition(override val parentComposition:
 
 }
 
-private[dsl] case class PayloadTypeConditionComposition(override val parentComposition:Composition, override val target:Any)
+private[dsl] case class PayloadTypeConditionComposition(override val parentComposition:EIPConfigurationComposition, override val target:Any)
       extends ConditionComposition(parentComposition, target)   {
 
   def -->(composition: SimpleComposition) = new PayloadTypeConditionComposition(this, composition.target)
@@ -71,7 +72,7 @@ private[dsl] case class PayloadTypeConditionComposition(override val parentCompo
   def -->(composition: PollableComposition) = new PayloadTypeConditionComposition(this, composition.target)
 }
 
-private[dsl] case class HeaderValueConditionComposition(override val parentComposition:Composition, override val target:Any)
+private[dsl] case class HeaderValueConditionComposition(override val parentComposition:EIPConfigurationComposition, override val target:Any)
       extends ConditionComposition(parentComposition, target) {
 
   def -->(composition: SimpleComposition) = new HeaderValueConditionComposition(this, composition.target)
@@ -82,10 +83,12 @@ private[dsl] case class HeaderValueConditionComposition(override val parentCompo
 /**
  *
  */
-private[dsl] case class PollableComposition(override val parentComposition:Composition, override val target:Channel) extends Composition(parentComposition, target){
+private[dsl] case class PollableComposition(override val parentComposition:EIPConfigurationComposition, override val target:Channel)
+  extends EIPConfigurationComposition(parentComposition, target){
 
   def -->(poller: Poller) = new SimpleComposition(this, poller)  {
-    override def -->(composition: SimpleComposition) = new SimpleComposition(this, composition.target) with CompletableComposition
+    override def -->(composition: SimpleComposition) = new SimpleComposition(this, composition.target)
+      with CompletableEIPConfigurationComposition
   }
 
 

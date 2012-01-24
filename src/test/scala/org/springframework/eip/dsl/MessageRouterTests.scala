@@ -57,7 +57,7 @@ class MessageRouterTests {
 
     ).where(name = "myRouter")
     
-    Assert.assertTrue(routerA.isInstanceOf[Composition])
+    Assert.assertTrue(routerA.isInstanceOf[EIPConfigurationComposition])
     val targetRouter = routerA.target.asInstanceOf[Router]
     Assert.assertTrue(targetRouter.name equals "myRouter")
     Assert.assertNotNull(targetRouter.compositions)

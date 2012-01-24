@@ -19,6 +19,8 @@ import org.springframework.integration.message.GenericMessage
 import org.springframework.integration.channel.DirectChannel
 import org.springframework.integration.{MessageChannel, Message}
 import org.springframework.integration.core.PollableChannel
+import org.springframework.context.ApplicationContext
+import org.springframework.context.support.GenericApplicationContext
 
 /**
  * @author Oleg Zhurakousky
@@ -28,70 +30,72 @@ class CompositionInitializationTests {
   @Test
   def validateEnterableComposition(){
     val compositionA = Channel("foo")
-    Assert.assertTrue(compositionA.isInstanceOf[CompletableComposition])
+    Assert.assertTrue(compositionA.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionB = Channel("foo").withDispatcher(failover = true)
-    Assert.assertTrue(compositionB.isInstanceOf[CompletableComposition])
+    Assert.assertTrue(compositionB.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionC = Channel("foo").withQueue()
-    Assert.assertTrue(compositionC.isInstanceOf[CompletableComposition])
+    Assert.assertTrue(compositionC.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionD = compositionA --> handle.using("spel")
-    Assert.assertTrue(compositionD.isInstanceOf[CompletableComposition])
+    Assert.assertTrue(compositionD.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionE = compositionB --> handle.using("spel")
-    Assert.assertTrue(compositionE.isInstanceOf[CompletableComposition])
+    Assert.assertTrue(compositionE.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionF = compositionC --> poll.usingFixedRate(4) --> transform.using("spel")
-    Assert.assertTrue(compositionF.isInstanceOf[CompletableComposition])
+    Assert.assertTrue(compositionF.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionG = Channel("a") --> Channel("b")
-    Assert.assertTrue(compositionG.isInstanceOf[CompletableComposition])
+    Assert.assertTrue(compositionG.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionH = Channel("a") --> handle.using("") --> transform.using("")  --> handle.using("")
-    Assert.assertTrue(compositionH.isInstanceOf[CompletableComposition])
+    Assert.assertTrue(compositionH.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionI = Channel("a") --> (handle.using("") --> transform.using(""))  --> handle.using("")
-    Assert.assertTrue(compositionI.isInstanceOf[CompletableComposition])
+    Assert.assertTrue(compositionI.isInstanceOf[CompletableEIPConfigurationComposition])
 
     // non-CompletableComposition
     val compositionAn = Channel("a").withQueue() --> poll.usingFixedDelay(5)
-    Assert.assertFalse(compositionAn.isInstanceOf[CompletableComposition])
+    Assert.assertFalse(compositionAn.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionBn = handle.using("") --> transform.using("")
-    Assert.assertFalse(compositionBn.isInstanceOf[CompletableComposition])
+    Assert.assertFalse(compositionBn.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionCn = handle.using("") --> Channel("")
-    Assert.assertFalse(compositionCn.isInstanceOf[CompletableComposition])
+    Assert.assertFalse(compositionCn.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionDn = handle.using("") --> transform.using("")--> Channel("")
-    Assert.assertFalse(compositionDn.isInstanceOf[CompletableComposition])
+    Assert.assertFalse(compositionDn.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionEn = handle.using("") --> Channel("") --> transform.using("")--> Channel("")
-    Assert.assertFalse(compositionEn.isInstanceOf[CompletableComposition])
+    Assert.assertFalse(compositionEn.isInstanceOf[CompletableEIPConfigurationComposition])
 
     val compositionFn = handle.using("") --> Channel("").withQueue() --> poll.usingFixedDelay(3) --> transform.using("")--> Channel("")
-    Assert.assertFalse(compositionFn.isInstanceOf[CompletableComposition])
+    Assert.assertFalse(compositionFn.isInstanceOf[CompletableEIPConfigurationComposition])
   }
   @Test
-  def validateEIPConfig(){
+  def validateEIPContext(){
 
     // the below should be illegal since it is not a completable composition
-    // EIPConfig(handle.using("spel"))
-    // EIPConfig(handle.using("spel") --> transform.using("spel"))
+    // EIPContext(handle.using("spel"))
+    // EIPContext(handle.using("spel") --> transform.using("spel"))
 
-    EIPConfig(Channel("foo"))
+    //implicit val ac:ApplicationContext = null
 
-    EIPConfig(Channel("foo"), Channel("bar").withQueue())
+    EIPContext(Channel("foo"))
 
-    EIPConfig(
+    EIPContext(Channel("foo"), Channel("bar").withQueue())
+
+    EIPContext(
       Channel("a") --> 
         handle.using("") --> 
         transform.using("spel")  --> 
         handle.using("spel")
     )
 
-    EIPConfig(
+    EIPContext(
       Channel("a") --> 
         handle.using("") --> 
         transform.using("spel")  --> 
@@ -100,6 +104,45 @@ class CompositionInitializationTests {
       Channel("bar").withQueue(4) --> poll.usingFixedDelay(5) -->
         handle.using("spel")
     )
+
+    EIPContext(new GenericApplicationContext)(
+      Channel("a") -->
+        handle.using("") -->
+        transform.using("spel")  -->
+        handle.using("spel"),
+
+      Channel("bar").withQueue(4) --> poll.usingFixedDelay(5) -->
+        handle.using("spel")
+    )
+  }
+  
+  @Test
+  def eipChannelInitializationTest() {
+    val channelConfigA = Channel("a")
+
+    val channelConfigC = Channel("c").withQueue(5)
+
+    val channelConfigD = Channel("d").withDispatcher(failover = true)
+
+    val context = EIPContext(
+      channelConfigA -->
+        handle.using("spel") -->
+        transform.using("spel")  -->
+        handle.using("spel"),
+
+      channelConfigC --> poll.usingFixedDelay(5) -->
+        handle.using("spel"),
+
+      channelConfigD -->
+        handle.using("spel") -->
+        transform.using("spel")
+    )
+
+    val channelA = context.channel("a")
+    Assert.assertTrue(channelA.isInstanceOf[DirectChannel])
+
+    val channelC = context.channel(channelConfigC)
+    Assert.assertTrue(channelC.isInstanceOf[PollableChannel])
   }
 
 }
