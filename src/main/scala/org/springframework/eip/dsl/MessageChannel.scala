@@ -24,17 +24,29 @@ import org.springframework.integration.message.GenericMessage
  * @author Oleg Zhurakousky
  */
 
+
+
 object Channel {
 
-  def apply(name:String) = new SimpleComposition(null, new Channel(name = name)) with WithQueue with WithDispatcher with MessageChannelComposition{    //with Sendable
+  def apply(name:String) = new SimpleComposition(null, new Channel(name = name))
+    with WithQueue
+    with WithDispatcher
+    with CompletableComposition {
+
+    override def -->(composition: SimpleComposition) = {
+      println("in Channel - " + composition)
+      new SimpleCompletableComposition(this, composition.target) with CompletableComposition
+    }
 
     def withQueue(capacity: Int, messageStore: MessageStore) =
-          new PollableComposition(null, this.doWithQueue(capacity, messageStore)) with MessageChannelComposition
+          new PollableComposition(null, this.doWithQueue(capacity, messageStore)) with CompletableComposition
 
-    def withQueue() = new PollableComposition(null, this.doWithQueue(0, new SimpleMessageStore)) with MessageChannelComposition
+    def withQueue() = new PollableComposition(null, this.doWithQueue(0, new SimpleMessageStore)) with CompletableComposition
 
     def withDispatcher(failover: Boolean, loadBalancer:String, taskExecutor:Executor) =
-          new SimpleComposition(null, this.doWithDispatcher(failover, loadBalancer, taskExecutor)) with MessageChannelComposition
+          new SimpleComposition(null, this.doWithDispatcher(failover, loadBalancer, taskExecutor)) with CompletableComposition {
+            override def -->(composition: SimpleComposition) = new SimpleComposition(this, composition.target) with CompletableComposition
+          }
 
     private def doWithQueue(capacity: Int, messageStore: MessageStore): Channel  = {
       new Channel(name, capacity = capacity, messageStore = messageStore)
@@ -46,10 +58,10 @@ object Channel {
   }
 
   private[Channel] trait WithQueue {
-    def withQueue(capacity: Int = 0, messageStore: MessageStore = new SimpleMessageStore): PollableComposition with MessageChannelComposition
+    def withQueue(capacity: Int = 0, messageStore: MessageStore = new SimpleMessageStore): PollableComposition with CompletableComposition
 
 
-    def withQueue(): PollableComposition with  MessageChannelComposition
+    def withQueue(): PollableComposition with  CompletableComposition
   }
 
 
@@ -57,8 +69,6 @@ object Channel {
     def withDispatcher(failover: Boolean = true, loadBalancer:String = "round-robin", taskExecutor:Executor = null): SimpleComposition
   }
 }
-
-private[dsl] trait MessageChannelComposition
 
 /**
  *
