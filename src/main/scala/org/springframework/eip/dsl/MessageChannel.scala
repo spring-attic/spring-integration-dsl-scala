@@ -23,9 +23,6 @@ import org.springframework.integration.message.GenericMessage
 /**
  * @author Oleg Zhurakousky
  */
-
-
-
 object Channel {
 
   def apply(name:String) = new SimpleComposition(null, new Channel(name = name))
@@ -35,7 +32,6 @@ object Channel {
     with CompletableEIPConfigurationComposition {
 
     override def -->(composition: SimpleComposition) = {
-      println("in Channel - " + composition)
       new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
     }
 

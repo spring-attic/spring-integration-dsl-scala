@@ -15,12 +15,17 @@ import org.springframework.integration.channel.{QueueChannel, DirectChannel}
 
 object EIPContext {
 
-  def apply(compositions:CompletableEIPConfigurationComposition*) = new EIPContext
+  def apply(compositions:CompletableEIPConfigurationComposition*) = new EIPContext(compositions: _*)
 
-  def apply(parentApplicationContext:ApplicationContext)(compositions:CompletableEIPConfigurationComposition*) = new EIPContext
+  def apply(parentApplicationContext:ApplicationContext)(compositions:CompletableEIPConfigurationComposition*) =
+            new EIPContext(compositions: _*)
 }
 
-class EIPContext {
+class EIPContext(val compositions:CompletableEIPConfigurationComposition*) {
+  
+  for (composition <- compositions){
+    println(composition)
+  }
   
   def channel(name:String) = new DirectChannel() with SimpeSendable
 
@@ -32,10 +37,6 @@ class EIPContext {
     def send(payload:AnyRef):Boolean = {
        true
     }
-
-//    def send(payload:AnyVal):Boolean = {
-//      true
-//    }
 
     def send(payload:String, timeout:Long):Boolean = {
        true
