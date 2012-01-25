@@ -115,16 +115,16 @@ class CompositionInitializationTests {
   
   @Test
   def eipChannelInitializationTest() {
-    val channelConfigA = Channel("a")
 
-    val channelConfigC = Channel("c").withQueue(5)
+    val channelConfigC = Channel("cChannel").withQueue(5)
 
-    val channelConfigD = Channel("d").withDispatcher(failover = true)
+    val channelConfigD = Channel("dChannel").withDispatcher(failover = true)
 
     val context = EIPContext(
-      channelConfigA -->
+      Channel("aChannel") -->
         handle.using("spel") -->
         transform.using("spel")  -->
+        Channel("myChannel") -->
         handle.using("spel"),
 
       channelConfigC --> poll.usingFixedDelay(5) -->

@@ -57,7 +57,7 @@ object when {
 
 }
 
-private[dsl] case class Router(val name:String, val targetProcesor:Any, val compositions:Seq[ConditionComposition])
+private[dsl] case class Router(val name:String, val targetProcesor:Any, val compositions:Seq[ConditionComposition]) extends Endpoint
 
 private[dsl] class PayloadTypeCondition(val payloadType:Class[_])
 

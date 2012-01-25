@@ -300,17 +300,19 @@ object aggregate {
   }
 }
 
-private[dsl] case class ServiceActivator(val name:String, val target:Any)
+private[dsl] case class ServiceActivator(val name:String, val target:Any) extends Endpoint
 
-private[dsl] case class Transformer(val name:String, val target:Any)
+private[dsl] case class Transformer(val name:String, val target:Any) extends Endpoint
 
-private[dsl] case class MessageFilter(val name:String, val target:Any)
+private[dsl] case class MessageFilter(val name:String, val target:Any) extends Endpoint
 
-private[dsl] case class MessageSplitter(val name:String, val applySequence:Boolean = false, val target:Any)
+private[dsl] case class MessageSplitter(val name:String, val applySequence:Boolean = false, val target:Any) extends Endpoint
 
 private[dsl] case class MessageAggregator(val name:String = null,
                                           val keepReleasedMessages:Boolean = true,
                                           val messageStore:MessageStore = new SimpleMessageStore,
                                           val sendPartialResultsOnExpiry:Boolean = false,
-                                          val expireGroupsUponCompletion:Boolean = false)
+                                          val expireGroupsUponCompletion:Boolean = false) extends Endpoint
+
+private[dsl] trait Endpoint
 
