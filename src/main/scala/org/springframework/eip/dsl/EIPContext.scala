@@ -17,8 +17,6 @@ package org.springframework.eip.dsl
 
 import org.springframework.context.ApplicationContext
 import org.springframework.integration.channel.{QueueChannel, DirectChannel}
-import java.util.UUID
-import org.springframework.context.support.GenericApplicationContext
 
 /**
  * @author Oleg Zhurakousky

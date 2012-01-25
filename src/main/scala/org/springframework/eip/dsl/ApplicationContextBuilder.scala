@@ -44,35 +44,104 @@ private[dsl] object ApplicationContextBuilder {
    */
   private def init(composition:EIPConfigurationComposition, outputChannel:Channel):Unit = {
 
-    val inputChannel:Channel = if (composition.parentComposition == null) {
-      null
+    val inputChannel:Channel = this.determineInputChannel(composition)
+    if (inputChannel != null){
+      // TODO: CREATE CHANNEL in BeanFactory
     }
-    else {
-      composition.parentComposition.target match {
-        case ch:Channel => {
-          ch
-        }
-        case _ => {
-          Channel("$ch_" + UUID.randomUUID().toString.substring(0,8))
-        }
-      }
-    }
-    // TODO CREATE CHANNEL
 
-    val nextOutputChannel = composition.target match {
-      case ch:Channel => {
-        ch
-      }
-      case _ => {
-        // TODO CREATE ENDPOINT (with input/output-channel)
-        println(inputChannel.name + " --> " + composition.target + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
-        inputChannel
+    val nextOutputChannel:Channel = this.determineNextOutputChannel(composition, inputChannel)
+    
+    if (composition.parentComposition != null){
+      composition.target match {
+        case channel:Channel => {
+          composition.parentComposition.target match {
+            case parentChannel:Channel => {
+              println(inputChannel.name +  " --> bridge --> " + composition.target.asInstanceOf[Channel].name)
+            }
+            case poller:Poller => {
+              println(composition.parentComposition.parentComposition.target.asInstanceOf[Channel].name
+                +  " --> pollable bridge --> " + composition.target.asInstanceOf[Channel].name)
+            }
+            case _ =>
+          }
+        }
+        case endpoint:Endpoint => {
+          println(inputChannel.name + " --> " + composition.target + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
+        }
+        case _ =>
       }
     }
+
 
     if (composition.parentComposition != null){
       this.init(composition.parentComposition, nextOutputChannel)
     }
   }
 
+  private def determineInputChannel(composition:EIPConfigurationComposition):Channel = {
+    val inputChannel:Channel = if (composition.parentComposition != null) {
+      composition.parentComposition.target match {
+        case ch:Channel => {
+          ch
+        }
+        case endpoint:Endpoint => {
+          Channel("$ch_" + UUID.randomUUID().toString.substring(0,8))
+        }
+        case _ => null
+      }
+    }
+    else {
+      null
+    }
+    inputChannel
+  }
+  /**
+   *
+   */
+  private def determineNextOutputChannel(composition:EIPConfigurationComposition, previousInputChannel:Channel):Channel = {
+    composition.target match {
+      case ch:Channel => {
+        ch
+      }
+      case _ => {
+        previousInputChannel
+      }
+    }
+  }
 }
+
+//  private def buildChannel(x: AbstractChannel): Unit = {
+//    var channelBuilder: BeanDefinitionBuilder = null
+//    x.underlyingContext = context
+//    x match {
+//      case psChannel: pub_sub_channel => {
+//        channelBuilder =
+//          BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
+//        if (psChannel.configMap.containsKey(IntegrationComponent.executor)) {
+//          channelBuilder.addConstructorArg(psChannel.configMap.get(IntegrationComponent.executor));
+//        }
+//        if (psChannel.configMap.containsKey("applySequence")) {
+//          channelBuilder.addPropertyValue("applySequence", psChannel.configMap.get("applySequence"));
+//        }
+//      }
+//      case _ =>
+//      {
+//        if (x.configMap.containsKey(IntegrationComponent.queueCapacity)) {
+//          channelBuilder =
+//            BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
+//          var queueCapacity: Int = x.configMap.get(IntegrationComponent.queueCapacity).asInstanceOf[Int]
+//          if (queueCapacity > 0) {
+//            channelBuilder.addConstructorArg(queueCapacity)
+//          }
+//        } else if (x.configMap.containsKey(IntegrationComponent.executor)) {
+//          channelBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ExecutorChannel])
+//          channelBuilder.addConstructorArg(x.configMap.get(IntegrationComponent.executor))
+//        } else {
+//          channelBuilder =
+//            BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
+//        }
+//      }
+//    }
+//    channelBuilder.addPropertyValue(IntegrationComponent.name, x.configMap.get(IntegrationComponent.name))
+//    context.registerBeanDefinition(x.configMap.get(IntegrationComponent.name).asInstanceOf[String], channelBuilder.getBeanDefinition)
+//  }

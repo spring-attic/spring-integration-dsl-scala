@@ -87,8 +87,7 @@ private[dsl] case class PollableComposition(override val parentComposition:EIPCo
   extends EIPConfigurationComposition(parentComposition, target){
 
   def -->(poller: Poller) = new SimpleComposition(this, poller)  {
-    override def -->(composition: SimpleComposition) = new SimpleComposition(this, composition.target)
-      with CompletableEIPConfigurationComposition
+    override def -->(composition: SimpleComposition) = new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
   }
 
 

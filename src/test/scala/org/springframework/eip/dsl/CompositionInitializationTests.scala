@@ -53,6 +53,18 @@ class CompositionInitializationTests {
     val compositionI = Channel("a") --> (handle.using("") --> transform.using(""))  --> handle.using("")
     Assert.assertTrue(compositionI.isInstanceOf[CompletableEIPConfigurationComposition])
 
+    val compositionJ = Channel("a") --> handle.using("spel") --> Channel("b") --> handle.using("spel")
+    Assert.assertTrue(compositionJ.isInstanceOf[CompletableEIPConfigurationComposition])
+
+    val compositionK = Channel("a")  --> Channel("b") --> handle.using("spel")
+    Assert.assertTrue(compositionK.isInstanceOf[CompletableEIPConfigurationComposition])
+
+    val compositionL = Channel("a").withQueue() --> poll.usingFixedRate(4)  --> Channel("b")
+    Assert.assertTrue(compositionL.isInstanceOf[CompletableEIPConfigurationComposition])
+
+    val compositionM = Channel("a").withQueue() --> poll.usingFixedRate(4)  --> Channel("b") --> handle.using("spel")
+    Assert.assertTrue(compositionM.isInstanceOf[CompletableEIPConfigurationComposition])
+
     // non-CompletableComposition
     val compositionAn = Channel("a").withQueue() --> poll.usingFixedDelay(5)
     Assert.assertFalse(compositionAn.isInstanceOf[CompletableEIPConfigurationComposition])
@@ -69,7 +81,7 @@ class CompositionInitializationTests {
     val compositionEn = handle.using("") --> Channel("") --> transform.using("")--> Channel("")
     Assert.assertFalse(compositionEn.isInstanceOf[CompletableEIPConfigurationComposition])
 
-    val compositionFn = handle.using("") --> Channel("").withQueue() --> poll.usingFixedDelay(3) --> transform.using("")--> Channel("")
+    val compositionFn = handle.using("") --> Channel("").withQueue(8) --> poll.usingFixedDelay(3)
     Assert.assertFalse(compositionFn.isInstanceOf[CompletableEIPConfigurationComposition])
   }
   @Test
@@ -121,16 +133,23 @@ class CompositionInitializationTests {
     val channelConfigD = Channel("dChannel").withDispatcher(failover = true)
 
     val context = EIPContext(
-      Channel("aChannel") -->
-        handle.using("spel") -->
-        transform.using("spel")  -->
-        Channel("myChannel") -->
-        handle.using("spel"),
+//      Channel("aChannel") -->
+//        handle.using("spel") -->
+//        transform.using("spel")  -->
+//        Channel("myChannel") -->
+//        handle.using("spel")
+//
+//      channelConfigC --> poll.usingFixedDelay(5) -->
+//        handle.using("spel"),
+//
+//      channelConfigD -->
+//        Channel("hello") -->        // bridge
+//        transform.using("spel")
 
-      channelConfigC --> poll.usingFixedDelay(5) -->
-        handle.using("spel"),
-
-      channelConfigD -->
+      Channel("queueChannel").withQueue(5) --> poll.usingFixedDelay(5) -->
+        Channel("fromQueueChannel") -->        // pollable bridge
+        transform.using("spel") -->
+        Channel("foo") -->
         handle.using("spel") -->
         transform.using("spel")
     )
