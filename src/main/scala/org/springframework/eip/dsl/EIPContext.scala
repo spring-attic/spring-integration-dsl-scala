@@ -18,60 +18,39 @@ package org.springframework.eip.dsl
 import org.springframework.context.ApplicationContext
 import org.springframework.integration.channel.{QueueChannel, DirectChannel}
 import java.util.UUID
+import org.springframework.context.support.GenericApplicationContext
 
 /**
  * @author Oleg Zhurakousky
  */
-
 object EIPContext {
 
-  def apply(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) = new EIPContext(compositions: _*)
+  def apply(compositions:CompletableEIPConfigurationComposition*) = new EIPContext(null, compositions: _*)
 
-  def apply(parentApplicationContext:ApplicationContext)(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) =
-            new EIPContext(compositions: _*)
+  def apply(parentApplicationContext:ApplicationContext)(compositions:CompletableEIPConfigurationComposition*) =
+            new EIPContext(parentApplicationContext, compositions: _*)
 }
 
-class EIPContext(val compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) {
-  
-  for (composition <- compositions){
-    this.init(composition.asInstanceOf[EIPConfigurationComposition], null)
-  }
-  
-  private def init(composition:EIPConfigurationComposition, outputChannel:Channel):Unit = {
+/**
+ *
+ */
+class EIPContext(parentContext:ApplicationContext, compositions:CompletableEIPConfigurationComposition*) {
 
-    val inputChannel:Channel = if (composition.parentComposition == null) {
-      null
-    }
-    else {
-      composition.parentComposition.target match {
-        case ch:Channel => {
-          ch
-        }
-        case _ => {
-          Channel("$ch_" + UUID.randomUUID().toString.substring(0,8))
-        }
-      }
-    }
+  val applicationContext = ApplicationContextBuilder.build(parentContext, compositions: _*)
 
-    val nextOutputChannel = composition.target match {
-      case ch:Channel => {
-        ch
-      }
-      case _ => {
-        println(inputChannel.name + " --> " + composition.target + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
-        inputChannel
-      }
-    }
-
-    if (composition.parentComposition != null){
-      this.init(composition.parentComposition, nextOutputChannel)
-    }
-  }
-  
+  /**
+   *
+   */
   def channel(name:String) = new DirectChannel() with SimpeSendable
 
+  /**
+   *
+   */
   def channel(name:ChannelComposition) = new DirectChannel() with SimpeSendable
 
+  /**
+   *
+   */
   def channel(name:PollableComposition) = new QueueChannel() with SimpeSendable
 
   private[EIPContext] trait SimpeSendable {
