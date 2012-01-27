@@ -18,6 +18,7 @@ package org.springframework.eip.dsl
 import org.springframework.context.ApplicationContext
 import org.springframework.context.support.GenericApplicationContext
 import java.util.UUID
+import java.lang.IllegalStateException
 
 /**
  * @author Oleg Zhurakousky
@@ -66,7 +67,14 @@ private[dsl] object ApplicationContextBuilder {
           }
         }
         case endpoint:Endpoint => {
-          println(inputChannel.name + " --> " + composition.target + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
+          composition.parentComposition.target match {
+            case poller:Poller => {
+              println(inputChannel.name + " --> Polling(" + composition.target + ")" + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
+            }
+            case _ => {
+              println(inputChannel.name + " --> " + composition.target + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
+            }
+          }
         }
         case _ =>
       }
@@ -87,7 +95,10 @@ private[dsl] object ApplicationContextBuilder {
         case endpoint:Endpoint => {
           Channel("$ch_" + UUID.randomUUID().toString.substring(0,8))
         }
-        case _ => null
+        case poller:Poller => {
+          composition.parentComposition.parentComposition.target.asInstanceOf[Channel]
+        }
+        case _ => throw new IllegalStateException("unrecognized component " + composition)
       }
     }
     else {

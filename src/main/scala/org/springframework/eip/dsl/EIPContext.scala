@@ -36,29 +36,5 @@ class EIPContext(parentContext:ApplicationContext, compositions:CompletableEIPCo
 
   val applicationContext = ApplicationContextBuilder.build(parentContext, compositions: _*)
 
-  /**
-   *
-   */
-  def channel(name:String) = new DirectChannel() with SimpeSendable
-
-  /**
-   *
-   */
-  def channel(name:ChannelComposition) = new DirectChannel() with SimpeSendable
-
-  /**
-   *
-   */
-  def channel(name:PollableComposition) = new QueueChannel() with SimpeSendable
-
-  private[EIPContext] trait SimpeSendable {
-    def send(payload:AnyRef):Boolean = {
-       true
-    }
-
-    def send(payload:String, timeout:Long):Boolean = {
-       true
-    }
-  }
 
 }

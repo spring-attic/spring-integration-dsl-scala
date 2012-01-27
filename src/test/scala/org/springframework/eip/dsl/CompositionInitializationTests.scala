@@ -18,6 +18,7 @@ import org.junit.{Assert, Test}
 import org.springframework.integration.channel.DirectChannel
 import org.springframework.integration.core.PollableChannel
 import org.springframework.context.support.GenericApplicationContext
+import java.lang.Thread
 
 /**
  * @author Oleg Zhurakousky
@@ -84,84 +85,174 @@ class CompositionInitializationTests {
     val compositionFn = handle.using("") --> Channel("").withQueue(8) --> poll.usingFixedDelay(3)
     Assert.assertFalse(compositionFn.isInstanceOf[CompletableEIPConfigurationComposition])
   }
-  @Test
-  def validateEIPContext(){
-
-    // the below should be illegal since it is not a completable composition
-    // EIPContext(handle.using("spel"))
-    // EIPContext(handle.using("spel") --> transform.using("spel"))
-
-    //implicit val ac:ApplicationContext = null
-
-    EIPContext(Channel("foo"))
-
-    EIPContext(Channel("foo"), Channel("bar").withQueue())
-
-    EIPContext(
-      Channel("a") --> 
-        handle.using("") --> 
-        transform.using("spel")  --> 
-        handle.using("spel")
-    )
-
-    EIPContext(
-      Channel("a") --> 
-        handle.using("") --> 
-        transform.using("spel")  --> 
-        handle.using("spel"),
-      
-      Channel("bar").withQueue(4) --> poll.usingFixedDelay(5) -->
-        handle.using("spel")
-    )
-
-    EIPContext(new GenericApplicationContext)(
-      Channel("a") -->
-        handle.using("") -->
-        transform.using("spel")  -->
-        handle.using("spel"),
-
-      Channel("bar").withQueue(4) --> poll.usingFixedDelay(5) -->
-        handle.using("spel")
-    )
-  }
-  
-  @Test
-  def eipChannelInitializationTest() {
-
-    val channelConfigC = Channel("cChannel").withQueue(5)
-
-    val channelConfigD = Channel("dChannel").withDispatcher(failover = true)
-
-    val context = EIPContext(
+//  @Test
+//  def validateEIPContext(){
+//
+//    // the below should be illegal since it is not a completable composition
+//    // EIPContext(handle.using("spel"))
+//    // EIPContext(handle.using("spel") --> transform.using("spel"))
+//
+//    //implicit val ac:ApplicationContext = null
+//
+//    EIPContext(Channel("foo"))
+//
+//    EIPContext(Channel("foo"), Channel("bar").withQueue())
+//
+//    EIPContext(
+//      Channel("a") -->
+//        handle.using("") -->
+//        transform.using("spel")  -->
+//        handle.using("spel")
+//    )
+//
+//    EIPContext(
+//      Channel("a") -->
+//        handle.using("") -->
+//        transform.using("spel")  -->
+//        handle.using("spel"),
+//
+//      Channel("bar").withQueue(4) --> poll.usingFixedDelay(5) -->
+//        handle.using("spel")
+//    )
+//
+//    EIPContext(new GenericApplicationContext)(
+//      Channel("a") -->
+//        handle.using("") -->
+//        transform.using("spel")  -->
+//        handle.using("spel"),
+//
+//      Channel("bar").withQueue(4) --> poll.usingFixedDelay(5) -->
+//        handle.using("spel")
+//    )
+//  }
+//
+//  @Test
+//  def eipChannelInitializationTest() {
+//
+//    val channelConfigC = Channel("cChannel").withQueue(5)
+//
+//    val channelConfigD = Channel("dChannel").withDispatcher(failover = true)
+//
+//    val context = EIPContext(
 //      Channel("aChannel") -->
 //        handle.using("spel") -->
 //        transform.using("spel")  -->
 //        Channel("myChannel") -->
-//        handle.using("spel")
+//        handle.using("spel"),
 //
 //      channelConfigC --> poll.usingFixedDelay(5) -->
 //        handle.using("spel"),
 //
 //      channelConfigD -->
 //        Channel("hello") -->        // bridge
+//        transform.using("spel"),
+//
+//      Channel("queueChannel").withQueue(5) --> poll.usingFixedDelay(5) -->
+//        Channel("fromQueueChannel") -->        // pollable bridge
+//        transform.using("spel") -->
+//        Channel("foo") -->
+//        handle.using("spel") -->
 //        transform.using("spel")
+//    )
+//
+//
+//
+//   // context.send("aChannel")("ghgjgj")
+//
+//    /*
+//    So we can fail on context.send() but. . .
+//    we can determine the type of payload and as long as Channels are data-type-channels we cna route internally to the appropriate channel
+//    and only fail if ambiguity is detected
+//     */
+//
+////    context.using("aChannel").send("")
+////
+////    context.send("")
+//
+////    val channelA = context.channel("aChannel")
+////    channelA.send{s:String => s}
+////    channelA.send("hello")
+////    channelA.send(new Object)
+////    Assert.assertTrue(channelA.isInstanceOf[DirectChannel])
+////
+////    val channelC = context.channel(channelConfigC)
+////    Assert.assertTrue(channelC.isInstanceOf[PollableChannel])
+//  }
 
-      Channel("queueChannel").withQueue(5) --> poll.usingFixedDelay(5) -->
-        Channel("fromQueueChannel") -->        // pollable bridge
-        transform.using("spel") -->
-        Channel("foo") -->
-        handle.using("spel") -->
-        transform.using("spel")
-    )
+  @Test
+  def foo(){
+    
+//    class Bar
+//
+    val messageFlowA = Channel("foo") --> handle.using("spel")
+    val messageFlowB = transform.using("SPEL") --> handle.using("spel")
+    val mergedComp =  messageFlowA --> messageFlowB
+    EIPContext(mergedComp)
+    println()
 
-    val channelA = context.channel("a")
-    channelA.send{s:String => s}
-    channelA.send("hello")
-    channelA.send(new Object)
-    Assert.assertTrue(channelA.isInstanceOf[DirectChannel])
+//   EIPContext(messageFlowA --> messageFlowB)
+//
+//    messageFlowA.send("")
+//    messageFlowA.send("")
+//    messageFlowB.send("")
+//
+//    val messageFlowC =  handle.using("SPEL-A") --> transform.using("SPEL-B") --> handle.using("SPEL-C")
+//    messageFlowC.send("")
+//    messageFlowC.send("")
+    
+//    val compA = Channel("foo") --> handle.using("A")
+//    val compB = handle.using("B") --> transform.using("C")
+//    val compC = compB.copy(compB.parentComposition, compB.target)
+//
+//
+//    println("compB - " + compB)
+//    println("compC - " + compC)
+//    val field = classOf[EIPConfigurationComposition].getDeclaredField("parentComposition")
+//    field.setAccessible(true)
+//    field.set(compC, null)
+//
+//    println("compB - " + compB)
+//    println("compC - " + compC)
 
-    val channelC = context.channel(channelConfigC)
-    Assert.assertTrue(channelC.isInstanceOf[PollableChannel])
+
+//    new Thread(new Runnable{
+//       def run(){
+//         messageFlowA.send("")
+//       }
+//    }).start();
+    //messageFlowA.sendAndReceive[Int]("hello").to
+
+//    flow.send("")
+//
+//    flow.name("s").send("")
+    //GOOD
+//    val flow = Channel("foo") --> handle.using("spel") --> Channel("queue").withQueue(5)
+//    flow.send("")
+//
+//    flow.name("s").send("")
+//
+//    val reply = flow.receive("")
+//
+//    val reply = flow.sendAndReceive("")    // an equivalent of MessagingGateway where its even more
+//    // since we cna have request only or request/reply gateway (unlike in SI XML)
+    // sendAndReceiveLater() would return Future  (a.k.a, asyncSendAndReceive())
+//   // GOOD
+    
+//    val myService = handle.using("spel").where(name="myService")
+//
+//    val flowA = Channel("foo") --> handle.using("spel")
+//
+//    val flowB = Channel("bar") --> myService --> Channel("queue").withQueue(5)
+//
+//    val mainFlow = flowA --> flowB
+//
+//
+//    mainFlow.send()
+//
+//    mainFlow.using("").send()
+//
+//    flowB.send()
   }
 
 }
+
