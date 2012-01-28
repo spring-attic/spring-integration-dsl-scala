@@ -181,14 +181,28 @@ class CompositionInitializationTests {
 
   @Test
   def foo(){
-    
-//    class Bar
+
+    val messageFlowA = Channel("A") --> handle.using("B")
+
+    val messageFlowB = handle.using("C")  --> handle.using("D")
+
+    val comp = messageFlowA --> messageFlowB
+
+    comp.send("")
+
+
+//    val field = classOf[EIPConfigurationComposition].getDeclaredField("parentComposition")
+//    field.setAccessible(true)
+//    field.set(copy, messageFlowA)
 //
-    val messageFlowA = Channel("foo") --> handle.using("spel")
-    val messageFlowB = transform.using("SPEL") --> handle.using("spel")
-    val mergedComp =  messageFlowA --> messageFlowB
-    EIPContext(mergedComp)
-    println()
+//    println(messageFlowB)
+//    println(copy)
+//    val messageFlowB = transform.using("B") --> handle.using("C")
+//    val mergedComp = messageFlowA --> messageFlowB
+//
+//    mergedComp.send("")
+    
+    //println("parent: " + messageFlowB.parentComposition)
 
 //   EIPContext(messageFlowA --> messageFlowB)
 //
