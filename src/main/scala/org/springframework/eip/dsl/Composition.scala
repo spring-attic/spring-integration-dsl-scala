@@ -15,8 +15,8 @@
  */
 package org.springframework.eip.dsl
 
-import java.lang.{IllegalStateException, ThreadLocal}
 import java.util.UUID
+import java.lang.{IllegalStateException, ThreadLocal}
 
 
 /**
@@ -51,6 +51,15 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
   def sendAndReceive[T](payload:Any): T = {
     null.asInstanceOf[T]
   }
+
+  def copy(): EIPConfigurationComposition = {
+    if (this.parentComposition != null){
+      new EIPConfigurationComposition(this.parentComposition.copy(), this.target)
+    }
+    else {
+      new EIPConfigurationComposition(null, this.target)
+    }
+  }
   
   private def getContext():EIPContext = {
 
@@ -61,13 +70,14 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
         }
         case _ => {
           println("normaliziing composition ")
+          val newComposition = this.copy()
 
-          val startingComposition = this.getStartingComposition()
+          val startingComposition = newComposition.getStartingComposition()
           val field = classOf[EIPConfigurationComposition].getDeclaredField("parentComposition")
           field.setAccessible(true)
           field.set(startingComposition, Channel("$ch_" + UUID.randomUUID().toString.substring(0,8)))
 
-          new EIPConfigurationComposition(this.parentComposition, this.target)
+          new EIPConfigurationComposition(newComposition.parentComposition, newComposition.target)
         }
       }
     }
@@ -80,6 +90,19 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
       case _ => {
         println("creating context")
         val normalizedComposition = normalizeComposition()
+        normalizedComposition.target match {
+          case poller:Poller => {
+            throw new IllegalStateException("The resulting message flow configuration ends with Poller with no Consumer: " + poller)
+          }
+          case ch:Channel => {
+            if (ch.capacity == Integer.MIN_VALUE){
+              throw new IllegalStateException("The resulting message flow configuration ends with " +
+                "Direct or PubSub Channel but no subscribers were configured: " + ch)
+            }
+          }
+          case _ =>
+        }
+        
         val eipContext = EIPContext(
           new SimpleCompletableComposition(normalizedComposition.parentComposition, normalizedComposition.target)
               with CompletableEIPConfigurationComposition
@@ -106,14 +129,21 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
     field.setAccessible(true)
     field.set(startingComposition, this)
   }
+  
+  private[dsl] def toListOfTargets():List[Any] = {
 
-  def copy(): EIPConfigurationComposition = {
-    if (this.parentComposition != null){
-      new EIPConfigurationComposition(this.parentComposition.copy(), this.target)
+    def toSet(comp:EIPConfigurationComposition): Set[Any] = {
+      if (comp.parentComposition != null){
+        var l = toSet(comp.parentComposition)
+        l += comp.target
+        l
+      }
+      else {
+        Set(comp.target)
+      }
     }
-    else {
-      new EIPConfigurationComposition(null, this.target)
-    }
+
+    toSet(this).toList
   }
 }
 
@@ -151,9 +181,8 @@ private[dsl] case class SimpleComposition(override val parentComposition:EIPConf
   }
 
   override def copy(): SimpleComposition = {
-    println("copying SimpleComposition")
     if (this.parentComposition != null){
-      new SimpleComposition(this.parentComposition.asInstanceOf[SimpleComposition].copy(), this.target)
+      new SimpleComposition(this.parentComposition.copy(), this.target)
     }
     else {
       new SimpleComposition(null, this.target)
@@ -171,11 +200,7 @@ private[dsl] case class SimpleCompletableComposition(override val parentComposit
     if (composition.parentComposition != null){
 
       val copyComposition = composition.copy()
-      println("1-parent: " + composition.parentComposition)
-      println("1-copy: " + copyComposition.parentComposition)
       this.merge(this, copyComposition)
-      println("2-parent: " + composition.parentComposition)
-      println("2-copy: " + copyComposition.parentComposition)
       new SimpleCompletableComposition(copyComposition.parentComposition, copyComposition.target) with CompletableEIPConfigurationComposition
     }
     else {
@@ -184,7 +209,6 @@ private[dsl] case class SimpleCompletableComposition(override val parentComposit
   }
 
   override def copy(): SimpleCompletableComposition = {
-    println("copying SimpleCompletableComposition")
     if (this.parentComposition != null){
       new SimpleCompletableComposition(this.parentComposition.copy(), this.target)
     }
@@ -233,7 +257,6 @@ private[dsl] case class PollableComposition(override val parentComposition:EIPCo
   }
 
   override def copy(): PollableComposition = {
-    println("copying")
     if (this.parentComposition != null){
       new PollableComposition(this.parentComposition.copy(), this.target)
     }

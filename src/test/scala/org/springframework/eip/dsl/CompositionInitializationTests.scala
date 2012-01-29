@@ -166,18 +166,32 @@ class CompositionInitializationTests {
     // although below would not work for explicit creation of EIPContext
     // this flow clearly has a starting point so the inlut channel will be autocreated
     val messageFlowA = handle.using("A")  --> handle.using("B")
+    Assert.assertEquals(2, messageFlowA.toListOfTargets().size)
     messageFlowA.send("hello")
 
+    val messageFlowB = Channel("inputChannel")  --> handle.using("serviceFromChanel")
+    val mergedCompositionA = messageFlowB --> messageFlowA
+    mergedCompositionA.send("hello")
 
-//    val messageFlowA = Channel("A") --> handle.using("B")
-//
-//
-//
-//    val comp = messageFlowA --> messageFlowB
-//
-//    comp.send("")
+    val mergedCompositionB = messageFlowA --> messageFlowB
+    mergedCompositionB.send("hello")
 
+  }
 
+  @Test(expected = classOf[IllegalStateException])
+  def validateFailureWhenFlowEndsWithPoller(){
+    val messageFlowA = handle.using("A")  --> handle.using("B")
+    val messageFlowC = Channel("inputChannel").withQueue() --> poll.usingFixedRate(3)
+    val mergedCompositionC = messageFlowA --> messageFlowC
+    mergedCompositionC.send("hello")
+  }
+
+  @Test(expected = classOf[IllegalStateException])
+  def validateFailureWhenFlowEndsWithDirectChannel(){
+    val messageFlowA = handle.using("A")  --> handle.using("B")
+    val messageFlowC = Channel("inputChannel")
+    val mergedCompositionC = messageFlowA --> messageFlowC
+    mergedCompositionC.send("hello")
   }
 
 }
