@@ -19,6 +19,8 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.support.GenericApplicationContext
 import java.util.UUID
 import java.lang.IllegalStateException
+import org.springframework.beans.factory.support.BeanDefinitionBuilder
+import org.springframework.integration.channel.{DirectChannel, ExecutorChannel, QueueChannel}
 
 /**
  * @author Oleg Zhurakousky
@@ -28,7 +30,7 @@ private[dsl] object ApplicationContextBuilder {
    *
    */
   def build(parentContext:ApplicationContext, compositions:CompletableEIPConfigurationComposition*):ApplicationContext= {
-    val applicationContext = new GenericApplicationContext()
+    implicit val applicationContext = new GenericApplicationContext()
 
     if (parentContext != null) {
       applicationContext.setParent(parentContext)
@@ -37,17 +39,18 @@ private[dsl] object ApplicationContextBuilder {
     for (composition <- compositions){
       this.init(composition.asInstanceOf[EIPConfigurationComposition], null)
     }
+    applicationContext.refresh()
     applicationContext
   }
 
   /**
    *
    */
-  private def init(composition:EIPConfigurationComposition, outputChannel:Channel):Unit = {
+  private def init(composition:EIPConfigurationComposition, outputChannel:Channel)(implicit applicationContext:GenericApplicationContext):Unit = {
 
     val inputChannel:Channel = this.determineInputChannel(composition)
     if (inputChannel != null){
-      // TODO: CREATE CHANNEL in BeanFactory
+      this.buildChannel(inputChannel)
     }
 
     val nextOutputChannel:Channel = this.determineNextOutputChannel(composition, inputChannel)
@@ -119,40 +122,31 @@ private[dsl] object ApplicationContextBuilder {
       }
     }
   }
+
+  private def buildChannel(channelDefinition: Channel)(implicit applicationContext:GenericApplicationContext): Unit = {
+
+    val channelBuilder: BeanDefinitionBuilder = 
+      if (channelDefinition.capacity == Integer.MIN_VALUE){   // DirectChannel
+        val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
+        builder
+      }
+      else if (channelDefinition.capacity > Integer.MIN_VALUE){
+        val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
+        builder.addConstructorArgValue(channelDefinition.capacity)
+        builder
+      }
+      else if (channelDefinition.taskExecutor != null){
+        val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ExecutorChannel])
+        builder.addConstructorArgValue(channelDefinition.taskExecutor)
+        builder
+      }
+      else {
+        throw new IllegalArgumentException("Unsupported Channel type: " + channelDefinition)
+      }
+
+    channelBuilder.addPropertyValue("beanName", channelDefinition.name)
+    applicationContext.registerBeanDefinition(channelDefinition.name, channelBuilder.getBeanDefinition)
+  }
 }
 
-//  private def buildChannel(x: AbstractChannel): Unit = {
-//    var channelBuilder: BeanDefinitionBuilder = null
-//    x.underlyingContext = context
-//    x match {
-//      case psChannel: pub_sub_channel => {
-//        channelBuilder =
-//          BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
-//        if (psChannel.configMap.containsKey(IntegrationComponent.executor)) {
-//          channelBuilder.addConstructorArg(psChannel.configMap.get(IntegrationComponent.executor));
-//        }
-//        if (psChannel.configMap.containsKey("applySequence")) {
-//          channelBuilder.addPropertyValue("applySequence", psChannel.configMap.get("applySequence"));
-//        }
-//      }
-//      case _ =>
-//      {
-//        if (x.configMap.containsKey(IntegrationComponent.queueCapacity)) {
-//          channelBuilder =
-//            BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
-//          var queueCapacity: Int = x.configMap.get(IntegrationComponent.queueCapacity).asInstanceOf[Int]
-//          if (queueCapacity > 0) {
-//            channelBuilder.addConstructorArg(queueCapacity)
-//          }
-//        } else if (x.configMap.containsKey(IntegrationComponent.executor)) {
-//          channelBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ExecutorChannel])
-//          channelBuilder.addConstructorArg(x.configMap.get(IntegrationComponent.executor))
-//        } else {
-//          channelBuilder =
-//            BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
-//        }
-//      }
-//    }
-//    channelBuilder.addPropertyValue(IntegrationComponent.name, x.configMap.get(IntegrationComponent.name))
-//    context.registerBeanDefinition(x.configMap.get(IntegrationComponent.name).asInstanceOf[String], channelBuilder.getBeanDefinition)
-//  }
+

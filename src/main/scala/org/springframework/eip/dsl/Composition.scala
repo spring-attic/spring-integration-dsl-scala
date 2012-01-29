@@ -36,8 +36,8 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
   }
 
   def send(message:Any):Boolean = {
-    this.getContext()
-    true
+    val context = this.getContext()
+    context.send(message)
   }
 
   def send(message:Any, timeout:Long, channelName:String="default"):Boolean = {

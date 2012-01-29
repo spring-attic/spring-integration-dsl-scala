@@ -169,12 +169,12 @@ class CompositionInitializationTests {
     Assert.assertEquals(2, messageFlowA.toListOfTargets().size)
     messageFlowA.send("hello")
 
-    val messageFlowB = Channel("inputChannel")  --> handle.using("serviceFromChanel")
-    val mergedCompositionA = messageFlowB --> messageFlowA
-    mergedCompositionA.send("hello")
-
-    val mergedCompositionB = messageFlowA --> messageFlowB
-    mergedCompositionB.send("hello")
+//    val messageFlowB = Channel("inputChannel")  --> handle.using("serviceFromChanel")
+//    val mergedCompositionA = messageFlowB --> messageFlowA
+//    mergedCompositionA.send("hello")
+//
+//    val mergedCompositionB = messageFlowA --> messageFlowB
+//    mergedCompositionB.send("hello")
 
   }
 

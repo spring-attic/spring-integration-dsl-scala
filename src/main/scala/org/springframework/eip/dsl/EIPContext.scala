@@ -17,6 +17,9 @@ package org.springframework.eip.dsl
 
 import org.springframework.context.ApplicationContext
 import org.springframework.integration.channel.{QueueChannel, DirectChannel}
+import java.lang.IllegalStateException
+import org.springframework.integration.MessageChannel
+import org.springframework.integration.message.GenericMessage
 
 /**
  * @author Oleg Zhurakousky
@@ -36,5 +39,20 @@ class EIPContext(parentContext:ApplicationContext, compositions:CompletableEIPCo
 
   val applicationContext = ApplicationContextBuilder.build(parentContext, compositions: _*)
 
+  def send(message:Any):Boolean = {
+    if (compositions.size > 1){
+      throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
+    }
+    
+    val inputChannelName = compositions(0).asInstanceOf[EIPConfigurationComposition].getStartingComposition().target match {
+      case ch:Channel => {
+        ch.name
+      }
+      case _ => throw new IllegalStateException("Can not determine starting channel for composition: " + compositions(0))
+    }
+
+    val inputChannel = this.applicationContext.getBean[MessageChannel](inputChannelName, classOf[MessageChannel])
+    inputChannel.send(new GenericMessage(message))
+  }
 
 }
