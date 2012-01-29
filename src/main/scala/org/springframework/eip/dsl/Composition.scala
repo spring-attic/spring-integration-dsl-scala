@@ -54,7 +54,7 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
   
   private def getContext():EIPContext = {
 
-    def normalizeComposition(): CompletableEIPConfigurationComposition = {
+    def normalizeComposition(): EIPConfigurationComposition = {
       this match {
         case cmp:CompletableEIPConfigurationComposition =>   {
           cmp
@@ -62,12 +62,12 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
         case _ => {
           println("normaliziing composition ")
 
-          val startingComosition = this.getStartingComposition(this)
+          val startingComposition = this.getStartingComposition()
           val field = classOf[EIPConfigurationComposition].getDeclaredField("parentComposition")
           field.setAccessible(true)
-          field.set(startingComosition, Channel("$ch_" + UUID.randomUUID().toString.substring(0,8)))
+          field.set(startingComposition, Channel("$ch_" + UUID.randomUUID().toString.substring(0,8)))
 
-          new SimpleCompletableComposition(this.parentComposition, this.target) with CompletableEIPConfigurationComposition
+          new EIPConfigurationComposition(this.parentComposition, this.target)
         }
       }
     }
@@ -79,29 +79,41 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
       }
       case _ => {
         println("creating context")
-        val eipContext = EIPContext(normalizeComposition())
+        val normalizedComposition = normalizeComposition()
+        val eipContext = EIPContext(
+          new SimpleCompletableComposition(normalizedComposition.parentComposition, normalizedComposition.target)
+              with CompletableEIPConfigurationComposition
+        )
         threadLocal.set(eipContext)
         eipContext
       }
     }
   }
 
-  def getStartingComposition(composition:EIPConfigurationComposition):EIPConfigurationComposition = {
-    if (composition.parentComposition != null){
-      getStartingComposition(composition.parentComposition)
+  private[dsl] def getStartingComposition():EIPConfigurationComposition = {
+    if (this.parentComposition != null){
+      this.parentComposition.getStartingComposition
     }
     else {
-      composition
+      this
     }
   }
 
   
-  def merge(fromComposition:EIPConfigurationComposition, toComposition:EIPConfigurationComposition) = {
-    val startingComposition = getStartingComposition(toComposition)
-    //val startingCompositionC = new EIPConfigurationComposition(null, startingComposition.target)
+  private[dsl] def merge(fromComposition:EIPConfigurationComposition, toComposition:EIPConfigurationComposition) = {
+    val startingComposition = toComposition.getStartingComposition
     val field = classOf[EIPConfigurationComposition].getDeclaredField("parentComposition")
     field.setAccessible(true)
     field.set(startingComposition, this)
+  }
+
+  def copy(): EIPConfigurationComposition = {
+    if (this.parentComposition != null){
+      new EIPConfigurationComposition(this.parentComposition.copy(), this.target)
+    }
+    else {
+      new EIPConfigurationComposition(null, this.target)
+    }
   }
 }
 
@@ -138,7 +150,7 @@ private[dsl] case class SimpleComposition(override val parentComposition:EIPConf
     }
   }
 
-  def copy(): SimpleComposition = {
+  override def copy(): SimpleComposition = {
     println("copying SimpleComposition")
     if (this.parentComposition != null){
       new SimpleComposition(this.parentComposition.asInstanceOf[SimpleComposition].copy(), this.target)
@@ -147,8 +159,6 @@ private[dsl] case class SimpleComposition(override val parentComposition:EIPConf
       new SimpleComposition(null, this.target)
     }
   }
-
-
 }
 
 /**
@@ -176,7 +186,7 @@ private[dsl] case class SimpleCompletableComposition(override val parentComposit
   override def copy(): SimpleCompletableComposition = {
     println("copying SimpleCompletableComposition")
     if (this.parentComposition != null){
-      new SimpleCompletableComposition(this.parentComposition.asInstanceOf[SimpleComposition].copy(), this.target)
+      new SimpleCompletableComposition(this.parentComposition.copy(), this.target)
     }
     else {
       new SimpleCompletableComposition(null, this.target)
@@ -222,10 +232,10 @@ private[dsl] case class PollableComposition(override val parentComposition:EIPCo
     override def -->(composition: SimpleComposition) = new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
   }
 
-  def copy(): PollableComposition = {
+  override def copy(): PollableComposition = {
     println("copying")
     if (this.parentComposition != null){
-      new PollableComposition(this.parentComposition.asInstanceOf[SimpleComposition].copy(), this.target)
+      new PollableComposition(this.parentComposition.copy(), this.target)
     }
     else {
       new PollableComposition(null, this.target)
