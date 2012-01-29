@@ -21,6 +21,10 @@ import java.util.UUID
 import java.lang.IllegalStateException
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.channel.{DirectChannel, ExecutorChannel, QueueChannel}
+import org.springframework.integration.config.{ServiceActivatorFactoryBean, ConsumerEndpointFactoryBean}
+import org.springframework.integration.Message
+import java.lang.reflect.Method
+import org.apache.log4j.Logger
 
 /**
  * @author Oleg Zhurakousky
@@ -75,6 +79,7 @@ private[dsl] object ApplicationContextBuilder {
               println(inputChannel.name + " --> Polling(" + composition.target + ")" + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
             }
             case _ => {
+              this.wireEndpoint(endpoint, inputChannel.name, (if (outputChannel != null) outputChannel.name else null))
               println(inputChannel.name + " --> " + composition.target + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
             }
           }
@@ -146,6 +151,162 @@ private[dsl] object ApplicationContextBuilder {
 
     channelBuilder.addPropertyValue("beanName", channelDefinition.name)
     applicationContext.registerBeanDefinition(channelDefinition.name, channelBuilder.getBeanDefinition)
+  }
+
+  private def wireEndpoint(endpoint: Endpoint, inputChannelName:String,  outputChannelName:String)(implicit applicationContext:GenericApplicationContext) {
+
+
+    val consumerBuilder =
+      BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
+    var handlerBuilder = this.getHandlerDefinitionBuilder(endpoint)
+
+//    if (endpoint.inputChannel.configMap.containsKey(IntegrationComponent.queueCapacity)) {
+//      this.configurePoller(endpoint, consumerBuilder)
+//    }
+
+    consumerBuilder.addPropertyValue("inputChannelName", inputChannelName)
+
+//    if (endpoint.isInstanceOf[route]) {
+//      if (endpoint.outputChannel != null) {
+//        handlerBuilder.addPropertyReference(route.defaultOutputChannel, this.resolveChannelName(endpoint.outputChannel));
+//      }
+//    } else {
+      if (outputChannelName != null) {
+        handlerBuilder.addPropertyReference("outputChannel", outputChannelName);
+      }
+//    }
+
+    consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
+    //val consumerName = endpoint.configMap.get(IntegrationComponent.name).asInstanceOf[String]
+    applicationContext.registerBeanDefinition(UUID.randomUUID().toString, consumerBuilder.getBeanDefinition)
+  }
+
+  private def getHandlerDefinitionBuilder(endpoint: Endpoint): BeanDefinitionBuilder = {
+    var handlerBuilder: BeanDefinitionBuilder = null
+
+    endpoint match {
+      case sa: ServiceActivator => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
+        this.defineHandlerTarget(sa.target, handlerBuilder)
+      }
+//      case xfmr: transform => {
+//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
+//      }
+//      case router: route => {
+//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
+//        handlerBuilder.addPropertyValue(route.ignoreChannelNameResolutionFailures, true)
+//        val channelMappings = router.configMap.get(route.channelIdentifierMap)
+//        if (channelMappings != null) {
+//          handlerBuilder.addPropertyValue(route.channelIdentifierMap, channelMappings)
+//        }
+//      }
+//      case fltr: filter => {
+//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])
+//        val errorOnRejection = fltr.configMap.get(filter.throwExceptionOnRejection)
+//        if (errorOnRejection != null) {
+//          handlerBuilder.addPropertyValue(filter.throwExceptionOnRejection, errorOnRejection)
+//        }
+//      }
+//      case splitter: split => {
+//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
+//      }
+//      case aggregator: aggregate => {
+//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[CorrelatingMessageHandler])
+//        val processorBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[DefaultAggregatingMessageGroupProcessor]);
+//        handlerBuilder.addConstructorArgValue(processorBuilder.getBeanDefinition());
+//      }
+      case _ => {
+        throw new IllegalArgumentException("handler is not currently supported: " + endpoint)
+      }
+    }
+    handlerBuilder
+  }
+
+  private def defineHandlerTarget(target: Any, handlerBuilder: BeanDefinitionBuilder) = {
+
+    target match {
+      case function: Function[_, _] => {
+        var functionInvoker = new FunctionInvoker(function)
+        handlerBuilder.addPropertyValue("targetObject", functionInvoker);
+        handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
+      }
+      case spel: String => {
+        handlerBuilder.addPropertyValue("expressionString", spel);
+      }
+      case _ => {
+        throw new IllegalArgumentException("Unsupported value for 'target' - " + target)
+      }
+    }
+  }
+
+  private[dsl] final class FunctionInvoker(val f: Function[_, _]) {
+    private val logger = Logger.getLogger(this.getClass)
+    var methodName: String = ""
+
+    var method: Method = null
+    val methods = f.getClass().getDeclaredMethods()
+    if (methods.size > 1) {
+      for (m <- f.getClass().getDeclaredMethods()) {
+        var returnType = m.getReturnType()
+        val inputParameter = m.getParameterTypes()(0)
+        if (!(returnType.isAssignableFrom(classOf[Object]) && inputParameter.isAssignableFrom(classOf[Object]))) {
+          if (logger.isDebugEnabled) {
+            logger.debug("Selecting method: " + m)
+          }
+          method = m
+          if (returnType.isAssignableFrom(Void.TYPE) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+            methodName = "sendMessage"
+          } else if (returnType.isAssignableFrom(Void.TYPE) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+            methodName = "sendPayload"
+          } else if (returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+            methodName = "sendMessageAndReceiveMessage"
+          } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+            methodName = "sendMessageAndReceivePayload"
+          } else if (returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+            methodName = "sendPayloadAndReceiveMessage"
+          } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+            methodName = "sendPayloadAndReceivePayload"
+          }
+        }
+      }
+    } else {
+      method = f.getClass.getDeclaredMethod("apply", classOf[Object])
+      methodName = "sendPayoadAndReceive"
+      if (logger.isDebugEnabled) {
+        logger.debug("Selecting method: " + method)
+      }
+    }
+    if (logger.isDebugEnabled) {
+      logger.debug("FunctionInvoker method name: " + methodName)
+    }
+    def sendPayload(m: Object): Unit = {
+      method.setAccessible(true)
+      method.invoke(f, m)
+    }
+    def sendMessage(m: Message[_]): Unit = {
+      method.setAccessible(true)
+      method.invoke(f, m)
+    }
+    def sendPayloadAndReceivePayload(m: Object): Object = {
+      var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+      method.setAccessible(true)
+      method.invoke(f, m)
+    }
+    def sendPayloadAndReceiveMessage(m: Object): Message[_] = {
+      var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+      method.setAccessible(true)
+      method.invoke(f, m).asInstanceOf[Message[_]]
+    }
+    def sendMessageAndReceivePayload(m: Message[_]): Object = {
+      var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+      method.setAccessible(true)
+      method.invoke(f, m)
+    }
+    def sendMessageAndReceiveMessage(m: Message[_]): Message[_] = {
+      var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
+      method.setAccessible(true)
+      method.invoke(f, m).asInstanceOf[Message[_]]
+    }
   }
 }
 

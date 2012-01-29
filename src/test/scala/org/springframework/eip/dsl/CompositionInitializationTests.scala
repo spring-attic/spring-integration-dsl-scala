@@ -165,8 +165,8 @@ class CompositionInitializationTests {
 
     // although below would not work for explicit creation of EIPContext
     // this flow clearly has a starting point so the inlut channel will be autocreated
-    val messageFlowA = handle.using("A")  --> handle.using("B")
-    Assert.assertEquals(2, messageFlowA.toListOfTargets().size)
+    val messageFlowA = handle.using("payload.toUpperCase()") --> handle.using("T(java.lang.System).out.println('Received message: ' + #this)")
+   // Assert.assertEquals(2, messageFlowA.toListOfTargets().size)
     messageFlowA.send("hello")
 
 //    val messageFlowB = Channel("inputChannel")  --> handle.using("serviceFromChanel")
