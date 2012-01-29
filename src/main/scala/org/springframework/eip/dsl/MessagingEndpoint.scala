@@ -82,11 +82,11 @@ object filter {
 object split {
 
   def using(function:Function1[_,List[_]]) = new SimpleComposition(null, new MessageSplitter(null, target=function)) with Where {
-    def where(name:String, applySequence:Boolean)= new SimpleComposition(null, new MessageSplitter(name, applySequence, function))
+    def where(name:String, applySequence:Boolean)= new SimpleComposition(null, new MessageSplitter(name, function, applySequence))
   }
 
   def using(spelExpression:String) = new SimpleComposition(null, new MessageSplitter(null, target = spelExpression)) with Where {
-    def where(name:String, applySequence:Boolean)= new SimpleComposition(null, new MessageSplitter(name, applySequence, spelExpression))
+    def where(name:String, applySequence:Boolean)= new SimpleComposition(null, new MessageSplitter(name, spelExpression, applySequence))
   }
 
   private[split] trait Where {
@@ -300,19 +300,26 @@ object aggregate {
   }
 }
 
-private[dsl] case class ServiceActivator(val name:String, val target:Any) extends Endpoint
+private[dsl] case class ServiceActivator(override val name:String, override val target:Any)
+            extends SimpleEndpoint(name, target)
 
-private[dsl] case class Transformer(val name:String, val target:Any) extends Endpoint
+private[dsl] case class Transformer( override val name:String, override val target:Any)
+            extends SimpleEndpoint(name, target)
 
-private[dsl] case class MessageFilter(val name:String, val target:Any) extends Endpoint
+private[dsl] case class MessageFilter(override val name:String, override val target:Any)
+            extends SimpleEndpoint(name, target)
 
-private[dsl] case class MessageSplitter(val name:String, val applySequence:Boolean = false, val target:Any) extends Endpoint
+private[dsl] case class MessageSplitter(override val name:String, override val target:Any, val applySequence:Boolean = false)
+            extends SimpleEndpoint(name, target)
 
-private[dsl] case class MessageAggregator(val name:String = null,
+private[dsl] case class MessageAggregator(override val name:String = null,
                                           val keepReleasedMessages:Boolean = true,
                                           val messageStore:MessageStore = new SimpleMessageStore,
                                           val sendPartialResultsOnExpiry:Boolean = false,
-                                          val expireGroupsUponCompletion:Boolean = false) extends Endpoint
+                                          val expireGroupsUponCompletion:Boolean = false)
+            extends Endpoint(name)
 
-private[dsl] trait Endpoint
+private[dsl] abstract class Endpoint(val name:String = null)
+
+private[dsl] abstract class SimpleEndpoint(override val name:String = null, val target:Any) extends Endpoint(name)
 

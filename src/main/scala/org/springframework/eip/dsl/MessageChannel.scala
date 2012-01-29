@@ -39,7 +39,7 @@ object Channel {
           new PollableComposition(null, this.doWithQueue(capacity, messageStore)) 
               with CompletableEIPConfigurationComposition
 
-    def withQueue() = new PollableComposition(null, this.doWithQueue(0, new SimpleMessageStore)) 
+    def withQueue() = new PollableComposition(null, this.doWithQueue(Int.MaxValue, new SimpleMessageStore))
               with CompletableEIPConfigurationComposition
 
     def withDispatcher(failover: Boolean, loadBalancer:String, taskExecutor:Executor) =
@@ -60,7 +60,7 @@ object Channel {
   }
 
   private[Channel] trait WithQueue {
-    def withQueue(capacity: Int = 0, messageStore: MessageStore = new SimpleMessageStore): PollableComposition 
+    def withQueue(capacity: Int = Int.MaxValue, messageStore: MessageStore = new SimpleMessageStore): PollableComposition
                   with CompletableEIPConfigurationComposition
 
 

@@ -19,12 +19,19 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.support.GenericApplicationContext
 import java.util.UUID
 import java.lang.IllegalStateException
-import org.springframework.beans.factory.support.BeanDefinitionBuilder
-import org.springframework.integration.channel.{DirectChannel, ExecutorChannel, QueueChannel}
 import org.springframework.integration.config.{ServiceActivatorFactoryBean, ConsumerEndpointFactoryBean}
 import org.springframework.integration.Message
 import java.lang.reflect.Method
 import org.apache.log4j.Logger
+import org.springframework.util.StringUtils
+import org.springframework.beans.factory.support.{BeanDefinitionReaderUtils, BeanDefinitionBuilder}
+import org.springframework.beans.factory.config.BeanDefinitionHolder
+import org.springframework.integration.scheduling.PollerMetadata
+import org.springframework.scheduling.support.PeriodicTrigger
+import org.springframework.integration.context.IntegrationContextUtils
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
+import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
+import org.springframework.integration.channel._
 
 /**
  * @author Oleg Zhurakousky
@@ -39,6 +46,8 @@ private[dsl] object ApplicationContextBuilder {
     if (parentContext != null) {
       applicationContext.setParent(parentContext)
     }
+    //TODO make it conditional based on what may already be registered in parent
+    this.preProcess(applicationContext)
 
     for (composition <- compositions){
       this.init(composition.asInstanceOf[EIPConfigurationComposition], null)
@@ -76,6 +85,7 @@ private[dsl] object ApplicationContextBuilder {
         case endpoint:Endpoint => {
           composition.parentComposition.target match {
             case poller:Poller => {
+              this.wireEndpoint(endpoint, inputChannel.name, (if (outputChannel != null) outputChannel.name else null), poller)
               println(inputChannel.name + " --> Polling(" + composition.target + ")" + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
             }
             case _ => {
@@ -153,18 +163,21 @@ private[dsl] object ApplicationContextBuilder {
     applicationContext.registerBeanDefinition(channelDefinition.name, channelBuilder.getBeanDefinition)
   }
 
-  private def wireEndpoint(endpoint: Endpoint, inputChannelName:String,  outputChannelName:String)(implicit applicationContext:GenericApplicationContext) {
-
+  /**
+   *
+   */
+  private def wireEndpoint(endpoint: Endpoint, inputChannelName:String,  outputChannelName:String, poller:Poller = null)
+                          (implicit applicationContext:GenericApplicationContext) {
 
     val consumerBuilder =
       BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
     var handlerBuilder = this.getHandlerDefinitionBuilder(endpoint)
 
-//    if (endpoint.inputChannel.configMap.containsKey(IntegrationComponent.queueCapacity)) {
-//      this.configurePoller(endpoint, consumerBuilder)
-//    }
-
     consumerBuilder.addPropertyValue("inputChannelName", inputChannelName)
+
+    if (poller != null) {
+      this.configurePoller(endpoint, poller, consumerBuilder)
+    }
 
 //    if (endpoint.isInstanceOf[route]) {
 //      if (endpoint.outputChannel != null) {
@@ -177,10 +190,42 @@ private[dsl] object ApplicationContextBuilder {
 //    }
 
     consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
-    //val consumerName = endpoint.configMap.get(IntegrationComponent.name).asInstanceOf[String]
-    applicationContext.registerBeanDefinition(UUID.randomUUID().toString, consumerBuilder.getBeanDefinition)
+    val consumerName = endpoint.name
+    if (StringUtils.hasText(consumerName)){
+      BeanDefinitionReaderUtils.
+        registerBeanDefinition(new BeanDefinitionHolder(consumerBuilder.getBeanDefinition, consumerName), applicationContext)
+    }
+    else {
+      BeanDefinitionReaderUtils.registerWithGeneratedName(consumerBuilder.getBeanDefinition, applicationContext)
+    }
   }
 
+  private def configurePoller(endpoint: Endpoint, pollerConfig:Poller,  consumerBuilder: BeanDefinitionBuilder)
+                             (implicit applicationContext:GenericApplicationContext) = {
+    var pollerBuilder =
+      BeanDefinitionBuilder.rootBeanDefinition(classOf[PollerMetadata])
+
+      var triggerBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[PeriodicTrigger])
+      if (pollerConfig.fixedRate > Integer.MIN_VALUE) {
+        triggerBuilder.addConstructorArgValue(pollerConfig.fixedRate);
+        triggerBuilder.addPropertyValue("fixedRate", true);
+      }
+
+      //pollerBuilder.addPropertyValue("trigger", triggerBuilder.getBeanDefinition)
+    //context.registerBeanDefinition(triggerBeanName, triggerBuilder.getBeanDefinition)
+      val triggerBeanName = BeanDefinitionReaderUtils.registerWithGeneratedName(triggerBuilder.getBeanDefinition, applicationContext)
+      pollerBuilder.addPropertyReference("trigger", triggerBeanName)
+
+      if (pollerConfig.maxMessagesPerPoll > Integer.MIN_VALUE) {
+        pollerBuilder.addPropertyValue("maxMessagesPerPoll", pollerConfig.maxMessagesPerPoll)
+      }
+
+      consumerBuilder.addPropertyValue("pollerMetadata", pollerBuilder.getBeanDefinition)
+  }
+
+  /**
+   *
+   */
   private def getHandlerDefinitionBuilder(endpoint: Endpoint): BeanDefinitionBuilder = {
     var handlerBuilder: BeanDefinitionBuilder = null
 
@@ -307,6 +352,26 @@ private[dsl] object ApplicationContextBuilder {
       method.setAccessible(true)
       method.invoke(f, m).asInstanceOf[Message[_]]
     }
+  }
+
+  private def preProcess(applicationContext:GenericApplicationContext) {
+
+    // taskScheduler
+    var schedulerBuilder = BeanDefinitionBuilder
+      .genericBeanDefinition(classOf[ThreadPoolTaskScheduler]);
+    schedulerBuilder.addPropertyValue("poolSize", 10);
+    schedulerBuilder.addPropertyValue("threadNamePrefix", "task-scheduler-");
+    schedulerBuilder.addPropertyValue("rejectedExecutionHandler", new CallerRunsPolicy());
+    var errorHandlerBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[MessagePublishingErrorHandler]);
+    errorHandlerBuilder.addPropertyReference("defaultErrorChannel", "errorChannel");
+    schedulerBuilder.addPropertyValue("errorHandler", errorHandlerBuilder.getBeanDefinition());
+
+    applicationContext.registerBeanDefinition(IntegrationContextUtils.TASK_SCHEDULER_BEAN_NAME, schedulerBuilder.getBeanDefinition)
+
+    // default errorChannel
+    var errorChannelBuilder =
+      BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
+    applicationContext.registerBeanDefinition(IntegrationContextUtils.ERROR_CHANNEL_BEAN_NAME, errorChannelBuilder.getBeanDefinition)
   }
 }
 

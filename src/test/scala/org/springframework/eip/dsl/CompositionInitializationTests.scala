@@ -19,6 +19,7 @@ import org.springframework.integration.channel.DirectChannel
 import org.springframework.integration.core.PollableChannel
 import org.springframework.context.support.GenericApplicationContext
 import java.lang.Thread
+import org.springframework.integration.Message
 
 /**
  * @author Oleg Zhurakousky
@@ -165,17 +166,24 @@ class CompositionInitializationTests {
 
     // although below would not work for explicit creation of EIPContext
     // this flow clearly has a starting point so the inlut channel will be autocreated
-    val messageFlowA = handle.using("payload.toUpperCase()") --> handle.using("T(java.lang.System).out.println('Received message: ' + #this)")
-   // Assert.assertEquals(2, messageFlowA.toListOfTargets().size)
-    messageFlowA.send("hello")
-
-//    val messageFlowB = Channel("inputChannel")  --> handle.using("serviceFromChanel")
-//    val mergedCompositionA = messageFlowB --> messageFlowA
-//    mergedCompositionA.send("hello")
+//    val messageFlowA = handle.using("payload.toUpperCase()") --> handle.using("T(java.lang.System).out.println('Received message: ' + #this)")
+//    messageFlowA.send("with SpEL")
 //
-//    val mergedCompositionB = messageFlowA --> messageFlowB
-//    mergedCompositionB.send("hello")
+//    val messageFlowB = handle.using{m:Message[String] => m.getPayload.toUpperCase} --> handle.using{m:Message[_] => println(m)}
+//    messageFlowB.send("with Scala Functions")
+//
+//    val messageFlowC = handle.using{s:String => s.toUpperCase} --> handle.using{m:Message[_] => println(m)}
+//    messageFlowC.send("with Scala Functions and payload extraction")
+//
+//    val messageFlowD = Channel("inputChannel") --> handle.using("payload")
+//    val messageFlowCD = messageFlowD --> messageFlowC
+//    messageFlowCD.send("with Scala Functions, SpEL and flow reuse")
 
+    val messageFlowD = Channel("inputChannel").withQueue() --> poll.usingFixedRate(5).withMaxMessagesPerPoll(10)   -->
+            handle.using{s:String => println("Message payload:" + s)}
+
+    messageFlowD.send("hello")
+    Thread.sleep(1000)
   }
 
   @Test(expected = classOf[IllegalStateException])
