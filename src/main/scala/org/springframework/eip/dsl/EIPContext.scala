@@ -18,28 +18,33 @@ package org.springframework.eip.dsl
 import org.springframework.context.ApplicationContext
 import org.springframework.integration.channel.{QueueChannel, DirectChannel}
 import java.lang.IllegalStateException
-import org.springframework.integration.MessageChannel
 import org.springframework.integration.message.GenericMessage
+import org.springframework.integration.{Message, MessageChannel}
+import org.springframework.util.CollectionUtils
+import org.springframework.integration.support.MessageBuilder
+import collection.JavaConversions
 
 /**
  * @author Oleg Zhurakousky
  */
 object EIPContext {
 
-  def apply(compositions:CompletableEIPConfigurationComposition*) = new EIPContext(null, compositions: _*)
+  def apply(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) = new EIPContext(null, compositions: _*)
 
-  def apply(parentApplicationContext:ApplicationContext)(compositions:CompletableEIPConfigurationComposition*) =
+  def apply(parentApplicationContext:ApplicationContext)(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) =
             new EIPContext(parentApplicationContext, compositions: _*)
 }
 
 /**
  *
  */
-class EIPContext(parentContext:ApplicationContext, compositions:CompletableEIPConfigurationComposition*) {
+class EIPContext(parentContext:ApplicationContext, compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) {
 
   val applicationContext = ApplicationContextBuilder.build(parentContext, compositions: _*)
-
-  def send(message:Any):Boolean = {
+  /**
+   *
+   */
+  def send(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null, channelName:String=null):Boolean = {
     if (compositions.size > 1){
       throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
     }
@@ -52,7 +57,45 @@ class EIPContext(parentContext:ApplicationContext, compositions:CompletableEIPCo
     }
 
     val inputChannel = this.applicationContext.getBean[MessageChannel](inputChannelName, classOf[MessageChannel])
-    inputChannel.send(new GenericMessage(message))
+
+    val messageToSend = this.constructMessage(message, headers)
+    val sent = if (timeout > 0){
+      inputChannel.send(messageToSend, timeout)
+    }
+    else {
+
+
+      inputChannel.send(messageToSend)
+    }
+    sent
+  }
+
+  private def constructMessage(message:Any, headers:Map[String,  Any] = null):Message[_] = {
+    val javaHeaders = if (headers != null){
+      JavaConversions.mapAsJavaMap(headers)
+    }
+    else {
+      null
+    }
+    val messageToSend:Message[_] = message match {
+      case msg:Message[_] => {
+        if (!CollectionUtils.isEmpty(javaHeaders)){
+          MessageBuilder.fromMessage(msg).copyHeadersIfAbsent(javaHeaders).build()
+        }
+        else {
+          msg
+        }
+      }
+      case _ => {
+        if (!CollectionUtils.isEmpty(javaHeaders)){
+          MessageBuilder.withPayload(message).copyHeaders(javaHeaders).build()
+        }
+        else {
+          MessageBuilder.withPayload(message).build()
+        }
+      }
+    }
+    messageToSend
   }
 
 }

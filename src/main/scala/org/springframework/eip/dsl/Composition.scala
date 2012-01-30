@@ -35,17 +35,9 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
 
   }
 
-  def send(message:Any):Boolean = {
+  def send(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null, channelName:String=null):Boolean = {
     val context = this.getContext()
-    context.send(message)
-  }
-
-  def send(message:Any, timeout:Long, channelName:String="default"):Boolean = {
-    true
-  }
-
-  def send(message:Any, timeout:Long):Boolean = {
-    true
+    context.send(message, timeout, headers, channelName)
   }
 
   def sendAndReceive[T](payload:Any): T = {
@@ -60,27 +52,27 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
       new EIPConfigurationComposition(null, this.target)
     }
   }
-  
-  private def getContext():EIPContext = {
 
-    def normalizeComposition(): EIPConfigurationComposition = {
-      this match {
-        case cmp:CompletableEIPConfigurationComposition =>   {
-          cmp
-        }
-        case _ => {
-          println("normaliziing composition ")
-          val newComposition = this.copy()
+  private[dsl] def normalizeComposition(): EIPConfigurationComposition = {
+    this match {
+      case cmp:CompletableEIPConfigurationComposition =>   {
+        cmp
+      }
+      case _ => {
+        println("normaliziing composition ")
+        val newComposition = this.copy()
 
-          val startingComposition = newComposition.getStartingComposition()
-          val field = classOf[EIPConfigurationComposition].getDeclaredField("parentComposition")
-          field.setAccessible(true)
-          field.set(startingComposition, Channel("$ch_" + UUID.randomUUID().toString.substring(0,8)))
+        val startingComposition = newComposition.getStartingComposition()
+        val field = classOf[EIPConfigurationComposition].getDeclaredField("parentComposition")
+        field.setAccessible(true)
+        field.set(startingComposition, Channel("$ch_" + UUID.randomUUID().toString.substring(0,8)))
 
-          new EIPConfigurationComposition(newComposition.parentComposition, newComposition.target)
-        }
+        new EIPConfigurationComposition(newComposition.parentComposition, newComposition.target)
       }
     }
+  }
+  
+  private def getContext():EIPContext = {
 
     threadLocal.get() match {
       case eipContext:EIPContext => {

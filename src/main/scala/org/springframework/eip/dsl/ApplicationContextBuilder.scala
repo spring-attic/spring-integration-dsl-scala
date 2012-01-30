@@ -17,9 +17,6 @@ package org.springframework.eip.dsl
 
 import org.springframework.context.ApplicationContext
 import org.springframework.context.support.GenericApplicationContext
-import java.util.UUID
-import java.lang.IllegalStateException
-import org.springframework.integration.config.{ServiceActivatorFactoryBean, ConsumerEndpointFactoryBean}
 import org.springframework.integration.Message
 import java.lang.reflect.Method
 import org.apache.log4j.Logger
@@ -32,6 +29,11 @@ import org.springframework.integration.context.IntegrationContextUtils
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
 import org.springframework.integration.channel._
+import org.springframework.integration.router.{PayloadTypeRouter, HeaderValueRouter}
+import java.util.{HashMap, UUID}
+import java.lang.IllegalStateException
+import org.springframework.integration.config._
+import org.springframework.integration.aggregator.{AggregatingMessageHandler, DefaultAggregatingMessageGroupProcessor}
 
 /**
  * @author Oleg Zhurakousky
@@ -40,7 +42,8 @@ private[dsl] object ApplicationContextBuilder {
   /**
    *
    */
-  def build(parentContext:ApplicationContext, compositions:CompletableEIPConfigurationComposition*):ApplicationContext= {
+  def build(parentContext:ApplicationContext,
+            compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*):ApplicationContext= {
     implicit val applicationContext = new GenericApplicationContext()
 
     if (parentContext != null) {
@@ -49,8 +52,8 @@ private[dsl] object ApplicationContextBuilder {
     //TODO make it conditional based on what may already be registered in parent
     this.preProcess(applicationContext)
 
-    for (composition <- compositions){
-      this.init(composition.asInstanceOf[EIPConfigurationComposition], null)
+    if (compositions.size > 0){
+      this.init(compositions(0), null)
     }
     applicationContext.refresh()
     applicationContext
@@ -179,15 +182,16 @@ private[dsl] object ApplicationContextBuilder {
       this.configurePoller(endpoint, poller, consumerBuilder)
     }
 
-//    if (endpoint.isInstanceOf[route]) {
-//      if (endpoint.outputChannel != null) {
-//        handlerBuilder.addPropertyReference(route.defaultOutputChannel, this.resolveChannelName(endpoint.outputChannel));
-//      }
-//    } else {
-      if (outputChannelName != null) {
-        handlerBuilder.addPropertyReference("outputChannel", outputChannelName);
+    if (outputChannelName != null) {
+      endpoint match {
+        case rt:Router => {
+          handlerBuilder.addPropertyReference("defaultOutputChannel", outputChannelName);
+        }
+        case _ => {
+          handlerBuilder.addPropertyReference("outputChannel", outputChannelName);
+        }
       }
-//    }
+    }
 
     consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
     val consumerName = endpoint.name
@@ -211,8 +215,6 @@ private[dsl] object ApplicationContextBuilder {
         triggerBuilder.addPropertyValue("fixedRate", true);
       }
 
-      //pollerBuilder.addPropertyValue("trigger", triggerBuilder.getBeanDefinition)
-    //context.registerBeanDefinition(triggerBeanName, triggerBuilder.getBeanDefinition)
       val triggerBeanName = BeanDefinitionReaderUtils.registerWithGeneratedName(triggerBuilder.getBeanDefinition, applicationContext)
       pollerBuilder.addPropertyReference("trigger", triggerBeanName)
 
@@ -226,7 +228,8 @@ private[dsl] object ApplicationContextBuilder {
   /**
    *
    */
-  private def getHandlerDefinitionBuilder(endpoint: Endpoint): BeanDefinitionBuilder = {
+  private def getHandlerDefinitionBuilder(endpoint: Endpoint)
+                           (implicit applicationContext:GenericApplicationContext): BeanDefinitionBuilder = {
     var handlerBuilder: BeanDefinitionBuilder = null
 
     endpoint match {
@@ -234,17 +237,56 @@ private[dsl] object ApplicationContextBuilder {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
         this.defineHandlerTarget(sa.target, handlerBuilder)
       }
-//      case xfmr: transform => {
-//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
-//      }
-//      case router: route => {
-//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
-//        handlerBuilder.addPropertyValue(route.ignoreChannelNameResolutionFailures, true)
-//        val channelMappings = router.configMap.get(route.channelIdentifierMap)
-//        if (channelMappings != null) {
-//          handlerBuilder.addPropertyValue(route.channelIdentifierMap, channelMappings)
-//        }
-//      }
+      case xfmr: Transformer => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
+        this.defineHandlerTarget(xfmr.target, handlerBuilder)
+      }
+      case router: Router => {
+        //handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
+        val conditionCompositions = router.compositions
+        if (conditionCompositions.size > 0) {
+          handlerBuilder = conditionCompositions(0) match {
+            case hv:HeaderValueConditionComposition => {
+              println("Initializing HeaderValueRouter")
+              BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderValueRouter])
+            }
+            case pt:PayloadTypeConditionComposition => {
+              println("Initializing PayloadTypeRouter")
+              BeanDefinitionBuilder.rootBeanDefinition(classOf[PayloadTypeRouter])
+            }
+            case _ => throw new IllegalStateException("Unrecognized Router type: " + conditionCompositions(0))
+          }
+        }
+
+        if (StringUtils.hasText(router.headerName)){
+          handlerBuilder.addConstructorArgValue(router.headerName)
+        }
+
+        val channelMappings = new HashMap[Any,  Any]()
+        for(conditionComposition <- conditionCompositions){
+          conditionComposition.target match {
+            case hv:HeaderValueCondition => {
+              var starting  = hv.composition.getStartingComposition()
+              starting match {
+                case ch:Channel => {
+                  this.init(new SimpleComposition(hv.composition.parentComposition, hv.composition.target), null)
+                  channelMappings.put(hv.headerValue, ch.name)
+                }
+                case _ => {
+                  val normalizedComp = hv.composition.normalizeComposition()
+                  this.init(new SimpleComposition(normalizedComp.parentComposition, normalizedComp.target), null)
+                  channelMappings.put(hv.headerValue, normalizedComp.getStartingComposition().target.asInstanceOf[Channel].name)
+                }
+              }
+            }
+            case pt:PayloadTypeCondition => {
+             
+            }
+            case _ =>
+          }
+        }
+        handlerBuilder.addPropertyValue("channelMappings", channelMappings)
+      }
 //      case fltr: filter => {
 //        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])
 //        val errorOnRejection = fltr.configMap.get(filter.throwExceptionOnRejection)
@@ -252,14 +294,14 @@ private[dsl] object ApplicationContextBuilder {
 //          handlerBuilder.addPropertyValue(filter.throwExceptionOnRejection, errorOnRejection)
 //        }
 //      }
-//      case splitter: split => {
-//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
-//      }
-//      case aggregator: aggregate => {
-//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[CorrelatingMessageHandler])
-//        val processorBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[DefaultAggregatingMessageGroupProcessor]);
-//        handlerBuilder.addConstructorArgValue(processorBuilder.getBeanDefinition());
-//      }
+      case splitter: MessageSplitter => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
+      }
+      case aggregator: MessageAggregator => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[AggregatingMessageHandler])
+        val processorBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[DefaultAggregatingMessageGroupProcessor]);
+        handlerBuilder.addConstructorArgValue(processorBuilder.getBeanDefinition());
+      }
       case _ => {
         throw new IllegalArgumentException("handler is not currently supported: " + endpoint)
       }

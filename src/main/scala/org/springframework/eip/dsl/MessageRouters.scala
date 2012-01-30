@@ -25,23 +25,23 @@ import org.springframework.integration.MessageChannel
 object route {
 
   def onPayloadType(conditionCompositions:PayloadTypeConditionComposition*) =
-              new SimpleComposition(null, new Router(null, null, conditionCompositions)) with Where {
+              new SimpleComposition(null, new Router(null, null, null, conditionCompositions)) with Where {
 
-    def where(name:String) = new SimpleComposition(null, new Router(name, null, conditionCompositions))
+    def where(name:String) = new SimpleComposition(null, new Router(name, null, null, conditionCompositions))
   }
 
   def onValueOfHeader(headerName:String)(conditionCompositions:HeaderValueConditionComposition*) =
-              new SimpleComposition(null, new Router(null, null, conditionCompositions)) with Where {
+              new SimpleComposition(null, new Router(null, null, headerName, conditionCompositions)) with Where {
 
-    def where(name:String) = new SimpleComposition(null, new Router(name, null, conditionCompositions))
+    def where(name:String) = new SimpleComposition(null, new Router(name, null, headerName, conditionCompositions))
   }
 
-  def using(spelExpression:String) = new SimpleComposition(null, new Router(null, spelExpression, null)) with Where {
-    def where(name:String) = new SimpleComposition(null, new Router(name, spelExpression, null))
+  def using(spelExpression:String) = new SimpleComposition(null, new Router(null, spelExpression, null, null)) with Where {
+    def where(name:String) = new SimpleComposition(null, new Router(name, spelExpression, null, null))
   }
 
-  def using(function:Function1[_,AnyRef]) = new SimpleComposition(null, new Router(null, function, null)) with Where {
-    def where(name:String) = new SimpleComposition(null, new Router(name, function, null))
+  def using(function:Function1[_,AnyRef]) = new SimpleComposition(null, new Router(null, function, null, null)) with Where {
+    def where(name:String) = new SimpleComposition(null, new Router(name, function, null, null))
   }
 
   private[route] trait Where {
@@ -51,15 +51,17 @@ object route {
 
 object when {
 
-  def apply(payloadType:Class[_])(c:EIPConfigurationComposition) = new PayloadTypeConditionComposition(null, new PayloadTypeCondition(payloadType))
+  def apply(payloadType:Class[_])(c:EIPConfigurationComposition) =
+    new PayloadTypeConditionComposition(null, new PayloadTypeCondition(payloadType, c))
 
-  def apply(headerValue:AnyRef)(c:EIPConfigurationComposition) = new HeaderValueConditionComposition(null, new HeaderValueConDition(headerValue))
+  def apply(headerValue:AnyRef)(c:EIPConfigurationComposition) =
+    new HeaderValueConditionComposition(null, new HeaderValueCondition(headerValue, c))
 
 }
 
-private[dsl] case class Router(override val name:String, override val target:Any, val compositions:Seq[ConditionComposition])
+private[dsl] case class Router(override val name:String, override val target:Any, val headerName:String, val compositions:Seq[ConditionComposition])
             extends SimpleEndpoint(name, target)
 
-private[dsl] class PayloadTypeCondition(val payloadType:Class[_])
+private[dsl] class PayloadTypeCondition(val payloadType:Class[_], val composition:EIPConfigurationComposition)
 
-private[dsl] class HeaderValueConDition(val headerValue:AnyRef)
+private[dsl] class HeaderValueCondition(val headerValue:AnyRef, val composition:EIPConfigurationComposition)
