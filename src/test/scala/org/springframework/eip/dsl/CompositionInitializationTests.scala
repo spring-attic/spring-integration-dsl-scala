@@ -200,7 +200,7 @@ class CompositionInitializationTests {
     val channelFoo = Channel("foo")
     val messageFlowF =
               channelFoo -->
-              filter.using {s:String => s.equals("hello")}.where(name="mark", exceptionOnRejection = true) -->
+              filter.using {s:String => s.equals("hello")}.where(name="mark", exceptionOnRejection = false) -->
               Channel("bar") -->
               route.onValueOfHeader("someHeader") (
                 when("foo") {
@@ -210,17 +210,6 @@ class CompositionInitializationTests {
                   barRoute
                 }
               )
-    
-    //val testComposition = TestableFlow(messageFlowF)
-
-    /*
-    Actor model
-     */
-
-
-
-   // messageFlowF.send("foo")
-    messageFlowA.start()
     messageFlowF.send(MessageBuilder.withPayload("hello").setHeader("someHeader", "foo").build())
     messageFlowF.send("hello", headers = Map("someHeader" -> "bar"))
     messageFlowF.send("hi", headers = Map("someHeader" -> "bar"))

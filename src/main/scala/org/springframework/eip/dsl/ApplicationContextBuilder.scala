@@ -298,6 +298,7 @@ private[dsl] object ApplicationContextBuilder {
         }
 
         val channelMappings = new HashMap[Any,  Any]()
+
         for(conditionComposition <- conditionCompositions){
           conditionComposition.target match {
             case hv:HeaderValueCondition => {
@@ -315,7 +316,18 @@ private[dsl] object ApplicationContextBuilder {
               }
             }
             case pt:PayloadTypeCondition => {
-             
+              var starting  = pt.composition.getStartingComposition()
+              starting match {
+                case ch:Channel => {
+                  this.init(new SimpleComposition(pt.composition.parentComposition, pt.composition.target), null)
+                  channelMappings.put(pt.payloadType.getName, ch.name)
+                }
+                case _ => {
+                  val normalizedComp = pt.composition.normalizeComposition()
+                  this.init(new SimpleComposition(normalizedComp.parentComposition, normalizedComp.target), null)
+                  channelMappings.put(pt.payloadType.getName, normalizedComp.getStartingComposition().target.asInstanceOf[Channel].name)
+                }
+              }
             }
             case _ =>
           }
