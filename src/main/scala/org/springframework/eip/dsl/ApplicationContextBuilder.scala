@@ -39,6 +39,8 @@ import org.springframework.integration.aggregator.{AggregatingMessageHandler, De
  * @author Oleg Zhurakousky
  */
 private[dsl] object ApplicationContextBuilder {
+
+  private val logger = Logger.getLogger(this.getClass)
   /**
    *
    */
@@ -56,6 +58,7 @@ private[dsl] object ApplicationContextBuilder {
       this.init(compositions(0), null)
     }
     applicationContext.refresh()
+    logger.info("\n*** Spring Integration Message Flow composition was initialized successfully ***\n")
     applicationContext
   }
 
@@ -76,11 +79,15 @@ private[dsl] object ApplicationContextBuilder {
         case channel:Channel => {
           composition.parentComposition.target match {
             case parentChannel:Channel => {
-//              println(inputChannel.name +  " --> bridge --> " + composition.target.asInstanceOf[Channel].name)
+              if (logger.isTraceEnabled) {
+                logger.trace("[" + inputChannel.name +  " --> bridge --> " + composition.target.asInstanceOf[Channel].name + "]")
+              }
             }
             case poller:Poller => {
-//              println(composition.parentComposition.parentComposition.target.asInstanceOf[Channel].name
-//                +  " --> pollable bridge --> " + composition.target.asInstanceOf[Channel].name)
+              if (logger.isTraceEnabled){
+                logger.trace("[" + composition.parentComposition.parentComposition.target.asInstanceOf[Channel].name
+                  +  " --> pollable bridge --> " + composition.target.asInstanceOf[Channel].name + "]")
+              }
             }
             case _ =>
           }
@@ -88,12 +95,18 @@ private[dsl] object ApplicationContextBuilder {
         case endpoint:Endpoint => {
           composition.parentComposition.target match {
             case poller:Poller => {
+              if (logger.isTraceEnabled){
+                logger.trace("[" + inputChannel.name + " --> Polling(" + composition.target + ")" +
+                  (if (outputChannel != null) (" --> " + outputChannel.name) else "") + "]")
+              }
               this.wireEndpoint(endpoint, inputChannel.name, (if (outputChannel != null) outputChannel.name else null), poller)
-//              println(inputChannel.name + " --> Polling(" + composition.target + ")" + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
             }
             case _ => {
+              if (logger.isTraceEnabled){
+                logger.trace("[" + inputChannel.name + " --> " + composition.target +
+                  (if (outputChannel != null) (" --> " + outputChannel.name) else "") + "]")
+              }
               this.wireEndpoint(endpoint, inputChannel.name, (if (outputChannel != null) outputChannel.name else null))
-//              println(inputChannel.name + " --> " + composition.target + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
             }
           }
         }
@@ -119,7 +132,7 @@ private[dsl] object ApplicationContextBuilder {
         case poller:Poller => {
           composition.parentComposition.parentComposition.target.asInstanceOf[Channel]
         }
-        case _ => throw new IllegalStateException("unrecognized component " + composition)
+        case _ => throw new IllegalStateException("Unrecognized component " + composition)
       }
     }
     else {
@@ -145,15 +158,24 @@ private[dsl] object ApplicationContextBuilder {
 
     val channelBuilder: BeanDefinitionBuilder = 
       if (channelDefinition.capacity == Integer.MIN_VALUE){   // DirectChannel
+        if (logger.isDebugEnabled){
+          logger.debug("Creating DirectChannel from: " + channelDefinition)
+        }
         val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
         builder
       }
       else if (channelDefinition.capacity > Integer.MIN_VALUE){
+        if (logger.isDebugEnabled){
+          logger.debug("Creating QueueChannel from: " + channelDefinition)
+        }
         val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
         builder.addConstructorArgValue(channelDefinition.capacity)
         builder
       }
       else if (channelDefinition.taskExecutor != null){
+        if (logger.isDebugEnabled){
+          logger.debug("Creating ExecutorChannel from: " + channelDefinition)
+        }
         val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ExecutorChannel])
         builder.addConstructorArgValue(channelDefinition.taskExecutor)
         builder
@@ -172,6 +194,9 @@ private[dsl] object ApplicationContextBuilder {
   private def wireEndpoint(endpoint: Endpoint, inputChannelName:String,  outputChannelName:String, poller:Poller = null)
                           (implicit applicationContext:GenericApplicationContext) {
 
+    if (logger.isDebugEnabled){
+      logger.debug("Creating " + endpoint)
+    }
     val consumerBuilder =
       BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
     var handlerBuilder = this.getHandlerDefinitionBuilder(endpoint)
@@ -204,8 +229,14 @@ private[dsl] object ApplicationContextBuilder {
     }
   }
 
+  /**
+   *
+   */
   private def configurePoller(endpoint: Endpoint, pollerConfig:Poller,  consumerBuilder: BeanDefinitionBuilder)
                              (implicit applicationContext:GenericApplicationContext) = {
+    if (logger.isDebugEnabled){
+      logger debug "Creating Polling consumer using " + pollerConfig
+    }
     var pollerBuilder =
       BeanDefinitionBuilder.rootBeanDefinition(classOf[PollerMetadata])
 
@@ -247,11 +278,15 @@ private[dsl] object ApplicationContextBuilder {
         if (conditionCompositions.size > 0) {
           handlerBuilder = conditionCompositions(0) match {
             case hv:HeaderValueConditionComposition => {
-              //println("Initializing HeaderValueRouter")
+              if (logger.isDebugEnabled){
+                logger.debug("Router is HeaderValueRouter")
+              }
               BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderValueRouter])
             }
             case pt:PayloadTypeConditionComposition => {
-              //println("Initializing PayloadTypeRouter")
+              if (logger.isDebugEnabled){
+                logger.debug("Router is PayloadTypeRouter")
+              }
               BeanDefinitionBuilder.rootBeanDefinition(classOf[PayloadTypeRouter])
             }
             case _ => throw new IllegalStateException("Unrecognized Router type: " + conditionCompositions(0))

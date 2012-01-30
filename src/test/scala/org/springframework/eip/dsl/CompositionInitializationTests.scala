@@ -169,10 +169,11 @@ class CompositionInitializationTests {
     val messageFlowA =
       handle.using("payload.toUpperCase()") -->
       handle.using("T(java.lang.System).out.println('Received message: ' + #this)")
+
     messageFlowA.send("with SpEL")
 
     val messageFlowB =
-      handle.using{m:Message[String] => m.getPayload.toUpperCase} -->
+      transform.using{m:Message[String] => m.getPayload.toUpperCase} -->
       handle.using{m:Message[_] => println(m)}
     messageFlowB.send("with Scala Functions")
 
@@ -183,7 +184,9 @@ class CompositionInitializationTests {
     val messageFlowCD = messageFlowD --> messageFlowC
     messageFlowCD.send("with Scala Functions, SpEL and flow reuse")
 
-    val messageFlowE = Channel("inputChannel").withQueue() --> poll.usingFixedRate(5).withMaxMessagesPerPoll(10)   -->
+    val poller =  poll.usingFixedRate(5).withMaxMessagesPerPoll(10)
+
+    val messageFlowE = Channel("inputChannel").withQueue() --> poller  -->
             handle.using{s:String => println("Message payload:" + s)}
 
     messageFlowE.send("hello")
@@ -194,24 +197,30 @@ class CompositionInitializationTests {
     val barRoute = Channel("barChannel") --> transform.using{s:String => s.toUpperCase} -->
       handle.using{s:String => println("BAR route:" + s)}
 
+    val channelFoo = Channel("foo")
     val messageFlowF =
-              Channel("inputChannel") -->
-              filter.using {s:String => s.equals("hello")}.where(exceptionOnRejection = true) -->
+              channelFoo -->
+              filter.using {s:String => s.equals("hello")}.where(name="mark", exceptionOnRejection = true) -->
+              Channel("bar") -->
               route.onValueOfHeader("someHeader") (
                 when("foo") {
                   fooRoute
-//                  handle.using{s:String => s.toUpperCase} -->
-//                  handle.using{s:String => println("FOO route:" + s)}
                 },
                 when("bar") {
                   barRoute
-//                  handle.using{s:String => s.toUpperCase} -->
-//                  handle.using{s:String => println("BAR route:" + s)}
                 }
               )
+    
+    //val testComposition = TestableFlow(messageFlowF)
+
+    /*
+    Actor model
+     */
 
 
 
+   // messageFlowF.send("foo")
+    messageFlowA.start()
     messageFlowF.send(MessageBuilder.withPayload("hello").setHeader("someHeader", "foo").build())
     messageFlowF.send("hello", headers = Map("someHeader" -> "bar"))
     messageFlowF.send("hi", headers = Map("someHeader" -> "bar"))

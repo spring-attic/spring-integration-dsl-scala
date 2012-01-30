@@ -17,6 +17,7 @@ package org.springframework.eip.dsl
 
 import java.util.UUID
 import java.lang.{IllegalStateException, ThreadLocal}
+import org.apache.log4j.Logger
 
 
 /**
@@ -24,6 +25,8 @@ import java.lang.{IllegalStateException, ThreadLocal}
  * Date: 1/12/12
  */
 class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposition, val target:Any) {
+
+  private val logger = Logger.getLogger(this.getClass)
 
   val threadLocal:ThreadLocal[EIPContext] = new ThreadLocal[EIPContext]
 
@@ -35,9 +38,9 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
 
   }
 
-  def send(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null, channelName:String=null):Boolean = {
+  def send(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Boolean = {
     val context = this.getContext()
-    context.send(message, timeout, headers, channelName)
+    context.send(message, timeout, headers)
   }
 
   def sendAndReceive[T](payload:Any): T = {
@@ -59,7 +62,9 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
         cmp
       }
       case _ => {
-        println("normaliziing composition ")
+        if (logger.isDebugEnabled){
+          logger.debug("Normalizing message flow composition: " + this)
+        }
         val newComposition = this.copy()
 
         val startingComposition = newComposition.getStartingComposition()
@@ -71,25 +76,33 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
       }
     }
   }
-  
+
+  /**
+   *
+   */
   private def getContext():EIPContext = {
 
     threadLocal.get() match {
       case eipContext:EIPContext => {
-        println("retrieved existing context")
+        if (logger.isDebugEnabled){
+          logger.debug("Retrieving existing EIP context")
+        }
         eipContext
       }
       case _ => {
-        println("creating context")
+        if (logger.isDebugEnabled){
+          logger.debug("Creating new EIP context")
+        }
         val normalizedComposition = normalizeComposition()
         normalizedComposition.target match {
           case poller:Poller => {
-            throw new IllegalStateException("The resulting message flow configuration ends with Poller with no Consumer: " + poller)
+            throw new IllegalStateException("The resulting message flow configuration ends with Poller which " +
+              "has no consumer Consumer: " + poller)
           }
           case ch:Channel => {
             if (ch.capacity == Integer.MIN_VALUE){
               throw new IllegalStateException("The resulting message flow configuration ends with " +
-                "Direct or PubSub Channel but no subscribers were configured: " + ch)
+                "Direct or PubSub Channel but no subscribers are configured: " + ch)
             }
           }
           case _ =>
