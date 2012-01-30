@@ -76,11 +76,11 @@ private[dsl] object ApplicationContextBuilder {
         case channel:Channel => {
           composition.parentComposition.target match {
             case parentChannel:Channel => {
-              println(inputChannel.name +  " --> bridge --> " + composition.target.asInstanceOf[Channel].name)
+//              println(inputChannel.name +  " --> bridge --> " + composition.target.asInstanceOf[Channel].name)
             }
             case poller:Poller => {
-              println(composition.parentComposition.parentComposition.target.asInstanceOf[Channel].name
-                +  " --> pollable bridge --> " + composition.target.asInstanceOf[Channel].name)
+//              println(composition.parentComposition.parentComposition.target.asInstanceOf[Channel].name
+//                +  " --> pollable bridge --> " + composition.target.asInstanceOf[Channel].name)
             }
             case _ =>
           }
@@ -89,11 +89,11 @@ private[dsl] object ApplicationContextBuilder {
           composition.parentComposition.target match {
             case poller:Poller => {
               this.wireEndpoint(endpoint, inputChannel.name, (if (outputChannel != null) outputChannel.name else null), poller)
-              println(inputChannel.name + " --> Polling(" + composition.target + ")" + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
+//              println(inputChannel.name + " --> Polling(" + composition.target + ")" + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
             }
             case _ => {
               this.wireEndpoint(endpoint, inputChannel.name, (if (outputChannel != null) outputChannel.name else null))
-              println(inputChannel.name + " --> " + composition.target + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
+//              println(inputChannel.name + " --> " + composition.target + (if (outputChannel != null) (" --> " + outputChannel.name) else ""))
             }
           }
         }
@@ -247,11 +247,11 @@ private[dsl] object ApplicationContextBuilder {
         if (conditionCompositions.size > 0) {
           handlerBuilder = conditionCompositions(0) match {
             case hv:HeaderValueConditionComposition => {
-              println("Initializing HeaderValueRouter")
+              //println("Initializing HeaderValueRouter")
               BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderValueRouter])
             }
             case pt:PayloadTypeConditionComposition => {
-              println("Initializing PayloadTypeRouter")
+              //println("Initializing PayloadTypeRouter")
               BeanDefinitionBuilder.rootBeanDefinition(classOf[PayloadTypeRouter])
             }
             case _ => throw new IllegalStateException("Unrecognized Router type: " + conditionCompositions(0))
@@ -287,13 +287,13 @@ private[dsl] object ApplicationContextBuilder {
         }
         handlerBuilder.addPropertyValue("channelMappings", channelMappings)
       }
-//      case fltr: filter => {
-//        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])
-//        val errorOnRejection = fltr.configMap.get(filter.throwExceptionOnRejection)
-//        if (errorOnRejection != null) {
-//          handlerBuilder.addPropertyValue(filter.throwExceptionOnRejection, errorOnRejection)
-//        }
-//      }
+      case fltr: MessageFilter => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])
+        if (fltr.exceptionOnRejection) {
+          handlerBuilder.addPropertyValue("throwExceptionOnRejection", fltr.exceptionOnRejection)
+        }
+        this.defineHandlerTarget(fltr.target, handlerBuilder)
+      }
       case splitter: MessageSplitter => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
       }

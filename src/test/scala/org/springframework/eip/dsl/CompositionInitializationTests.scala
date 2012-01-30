@@ -166,10 +166,14 @@ class CompositionInitializationTests {
 
     // although below would not work for explicit creation of EIPContext
     // this flow clearly has a starting point so the inlut channel will be autocreated
-    val messageFlowA = handle.using("payload.toUpperCase()") --> handle.using("T(java.lang.System).out.println('Received message: ' + #this)")
+    val messageFlowA =
+      handle.using("payload.toUpperCase()") -->
+      handle.using("T(java.lang.System).out.println('Received message: ' + #this)")
     messageFlowA.send("with SpEL")
 
-    val messageFlowB = handle.using{m:Message[String] => m.getPayload.toUpperCase} --> handle.using{m:Message[_] => println(m)}
+    val messageFlowB =
+      handle.using{m:Message[String] => m.getPayload.toUpperCase} -->
+      handle.using{m:Message[_] => println(m)}
     messageFlowB.send("with Scala Functions")
 
     val messageFlowC = handle.using{s:String => s.toUpperCase} --> handle.using{m:Message[_] => println(m)}
@@ -184,13 +188,15 @@ class CompositionInitializationTests {
 
     messageFlowE.send("hello")
     
-    val fooRoute = handle.using{s:String => s.toUpperCase} -->
+    val fooRoute = Channel("fooChannel") --> handle.using{s:String => s.toUpperCase} -->
       handle.using{s:String => println("FOO route:" + s)}
 
-    val barRoute = handle.using{s:String => s.toUpperCase} -->
+    val barRoute = Channel("barChannel") --> transform.using{s:String => s.toUpperCase} -->
       handle.using{s:String => println("BAR route:" + s)}
 
-    val messageFlowF = Channel("inputChannel") -->
+    val messageFlowF =
+              Channel("inputChannel") -->
+              filter.using {s:String => s.equals("hello")}.where(exceptionOnRejection = true) -->
               route.onValueOfHeader("someHeader") (
                 when("foo") {
                   fooRoute
@@ -207,7 +213,8 @@ class CompositionInitializationTests {
 
 
     messageFlowF.send(MessageBuilder.withPayload("hello").setHeader("someHeader", "foo").build())
-    messageFlowF.send("hello", headers = Map("someHeader" -> "foo"))
+    messageFlowF.send("hello", headers = Map("someHeader" -> "bar"))
+    messageFlowF.send("hi", headers = Map("someHeader" -> "bar"))
   }
 
   @Test(expected = classOf[IllegalStateException])

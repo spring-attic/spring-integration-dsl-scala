@@ -64,15 +64,17 @@ object transform {
 object filter {
 
   def using(function:Function1[_,Boolean]) = new SimpleComposition(null, new MessageFilter(null, function)) with Where {
-    def where(name:String)= new SimpleComposition(null, new MessageFilter(name, function))
+    def where(name:String = null, exceptionOnRejection:Boolean = false)=
+      new SimpleComposition(null, new MessageFilter(name, function, exceptionOnRejection))
   }
 
   def using(spelExpression:String) = new SimpleComposition(null, new MessageFilter(null, spelExpression)) with Where {
-    def where(name:String)= new SimpleComposition(null, new MessageFilter(name, spelExpression))
+    def where(name:String = null, exceptionOnRejection:Boolean = false) =
+      new SimpleComposition(null, new MessageFilter(name, spelExpression, exceptionOnRejection))
   }
 
   private[filter] trait Where {
-    def where(name:String): SimpleComposition
+    def where(name:String = null, exceptionOnRejection:Boolean = false): SimpleComposition
   }
 }
 
@@ -201,32 +203,6 @@ object aggregate {
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
-
-//    def on(correlationFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
-//      def where(name:String,
-//                keepReleasedMessages:Boolean,
-//                messageStore:MessageStore,
-//                sendPartialResultsOnExpiry:Boolean,
-//                expireGroupsUponCompletion:Boolean) =
-//        new SimpleComposition(null, new MessageAggregator(name = name,
-//                                                          keepReleasedMessages = keepReleasedMessages,
-//                                                          messageStore = messageStore,
-//                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-//                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
-//    }
-//
-//    def on(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
-//      def where(name:String,
-//                keepReleasedMessages:Boolean,
-//                messageStore:MessageStore,
-//                sendPartialResultsOnExpiry:Boolean,
-//                expireGroupsUponCompletion:Boolean) =
-//        new SimpleComposition(null, new MessageAggregator(name = name,
-//                                                          keepReleasedMessages = keepReleasedMessages,
-//                                                          messageStore = messageStore,
-//                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-//                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
-//    }
   }
 
   def until(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
@@ -241,31 +217,6 @@ object aggregate {
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
 
-//    def on(correlationFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
-//      def where(name:String,
-//                keepReleasedMessages:Boolean,
-//                messageStore:MessageStore,
-//                sendPartialResultsOnExpiry:Boolean,
-//                expireGroupsUponCompletion:Boolean) =
-//        new SimpleComposition(null, new MessageAggregator(name = name,
-//                                                          keepReleasedMessages = keepReleasedMessages,
-//                                                          messageStore = messageStore,
-//                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-//                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
-//    }
-//
-//    def on(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null))  with Where {
-//      def where(name:String,
-//                keepReleasedMessages:Boolean,
-//                messageStore:MessageStore,
-//                sendPartialResultsOnExpiry:Boolean,
-//                expireGroupsUponCompletion:Boolean) =
-//        new SimpleComposition(null, new MessageAggregator(name = name,
-//                                                          keepReleasedMessages = keepReleasedMessages,
-//                                                          messageStore = messageStore,
-//                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-//                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
-//    }
   }
 
   def where(name:String = null,
@@ -306,7 +257,7 @@ private[dsl] case class ServiceActivator(override val name:String, override val 
 private[dsl] case class Transformer( override val name:String, override val target:Any)
             extends SimpleEndpoint(name, target)
 
-private[dsl] case class MessageFilter(override val name:String, override val target:Any)
+private[dsl] case class MessageFilter(override val name:String, override val target:Any, exceptionOnRejection:Boolean = false)
             extends SimpleEndpoint(name, target)
 
 private[dsl] case class MessageSplitter(override val name:String, override val target:Any, val applySequence:Boolean = false)
