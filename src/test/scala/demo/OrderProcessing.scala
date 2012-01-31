@@ -18,7 +18,7 @@ import org.springframework.eip.dsl._
 import org.springframework.integration.Message
 import java.util.Random
 import org.junit._
-import org.springframework.core.task.SimpleAsyncTaskExecutor
+import java.util.concurrent.Executors
 
 /**
  * @author Oleg Zhurakousky
@@ -28,6 +28,7 @@ class OrderProcessing {
   
   @Test
   def runDemo() = {
+
     val validOrder = PurchaseOrder(List(
       PurchaseOrderItem("books", "Spring Integration in Action"),
       PurchaseOrderItem("books", "DSLs in Action"),
@@ -38,7 +39,7 @@ class OrderProcessing {
     val orderProcessingFlow = 
       filter.using{p:PurchaseOrder => !p.items.isEmpty}.where(exceptionOnRejection = true) -->
       split.using{p:PurchaseOrder => p.items} -->
-      Channel.withDispatcher(taskExecutor = new SimpleAsyncTaskExecutor) -->
+      Channel.withDispatcher(taskExecutor = Executors.newCachedThreadPool) -->
       route.using{pi:PurchaseOrderItem => pi.itemType}(
         when("books") {
           handle.using{m:Message[_] => println("Processing bikes order: " + m); m} // prints Message and returns it
@@ -60,11 +61,8 @@ class OrderProcessing {
 
   }
 
-  case class PurchaseOrder(val items: List[PurchaseOrderItem]) {
-  }
+  case class PurchaseOrder(val items: List[PurchaseOrderItem])
 
-  case class PurchaseOrderItem(val itemType: String, val title: String) {
-  }
-  
+  case class PurchaseOrderItem(val itemType: String, val title: String)
 
 }
