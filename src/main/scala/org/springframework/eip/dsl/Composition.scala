@@ -18,6 +18,8 @@ package org.springframework.eip.dsl
 import java.util.UUID
 import java.lang.{IllegalStateException, ThreadLocal}
 import org.apache.log4j.Logger
+import org.springframework.integration.Message
+import collection.JavaConversions._
 
 
 /**
@@ -43,8 +45,31 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
     context.send(message, timeout, headers)
   }
 
-  def sendAndReceive[T](payload:Any): T = {
-    null.asInstanceOf[T]
+  def sendAndReceive[T](message:Any, timeout:Long = 0, headers:Map[String,  Any] = null)
+                       (implicit m: scala.reflect.Manifest[T]): T = {
+    val context = this.getContext()
+    val replyMessage = context.sendAndReceive(message)
+    if (m.erasure.isAssignableFrom(classOf[Message[_]])){
+       replyMessage.asInstanceOf[T]
+    }
+    else {
+      val reply = replyMessage.getPayload
+      val convertedReply = reply match {
+        case list:java.util.List[_]  => {
+          list.toList
+        }
+        case list:java.util.Set[_] => {
+          list.toSet
+        }
+        case list:java.util.Map[_, _] => {
+          list.toMap
+        }
+        case _ => {
+          reply
+        }
+      }
+      convertedReply.asInstanceOf[T]
+    }
   }
 
   def copy(): EIPConfigurationComposition = {

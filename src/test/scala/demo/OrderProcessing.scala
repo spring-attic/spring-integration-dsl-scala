@@ -16,9 +16,7 @@
 package demo
 import org.springframework.eip.dsl._
 import org.springframework.integration.Message
-import scala.collection.JavaConversions
 import java.util.Random
-import java.util.concurrent._
 import org.junit._
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 
@@ -52,13 +50,11 @@ class OrderProcessing {
           } // prints Message, delays it randomly and returns it
         }
       ) -->
-      aggregate() -->
-      handle.using{m:Message[_] => println("Aggregated order: " + m)}
+      aggregate()
 
+    val result = orderProcessingFlow.sendAndReceive[List[_]](validOrder)
 
-    orderProcessingFlow.send(validOrder)
-
-    println("done")
+    println("Result: " + result)
 
   }
 

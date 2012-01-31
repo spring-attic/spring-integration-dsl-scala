@@ -21,6 +21,7 @@ import org.springframework.integration.{Message, MessageChannel}
 import org.springframework.util.CollectionUtils
 import org.springframework.integration.support.MessageBuilder
 import collection.JavaConversions
+import org.springframework.integration.channel.QueueChannel
 
 /**
  * @author Oleg Zhurakousky
@@ -64,6 +65,32 @@ class EIPContext(parentContext:ApplicationContext, compositions:(EIPConfiguratio
       inputChannel.send(messageToSend)
     }
     sent
+  }
+
+  def sendAndReceive(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Message[_] = {
+    if (compositions.size > 1){
+      throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
+    }
+
+    val inputChannelName = compositions(0).asInstanceOf[EIPConfigurationComposition].getStartingComposition().target match {
+      case ch:Channel => {
+        ch.name
+      }
+      case _ => throw new IllegalStateException("Can not determine starting channel for composition: " + compositions(0))
+    }
+
+    val inputChannel = this.applicationContext.getBean[MessageChannel](inputChannelName, classOf[MessageChannel])
+
+    val replyChannel = new QueueChannel()
+    val messageToSend = MessageBuilder.
+      fromMessage(this.constructMessage(message, headers)).setReplyChannel(replyChannel).build()
+    val sent = if (timeout > 0){
+      inputChannel.send(messageToSend, timeout)
+    }
+    else {
+      inputChannel.send(messageToSend)
+    }
+    replyChannel.receive(1000)
   }
 
   private def constructMessage(message:Any, headers:Map[String,  Any] = null):Message[_] = {
