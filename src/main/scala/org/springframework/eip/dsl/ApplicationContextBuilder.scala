@@ -277,11 +277,21 @@ private[dsl] object ApplicationContextBuilder {
         val conditionCompositions = router.compositions
         if (conditionCompositions.size > 0) {
           handlerBuilder = conditionCompositions(0) match {
-            case hv:HeaderValueConditionComposition => {
-              if (logger.isDebugEnabled){
-                logger.debug("Router is HeaderValueRouter")
+            case hv:ValueConditionComposition => {
+              if (router.headerName != null){
+                if (logger.isDebugEnabled){
+                  logger.debug("Router is HeaderValueRouter")
+                }
+                BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderValueRouter])
               }
-              BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderValueRouter])
+              else {
+                if (logger.isDebugEnabled){
+                  logger.debug("Router is MethodInvoking")
+                }
+                val hBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
+                this.defineHandlerTarget(router.target, hBuilder)
+                hBuilder
+              }
             }
             case pt:PayloadTypeConditionComposition => {
               if (logger.isDebugEnabled){
@@ -301,7 +311,7 @@ private[dsl] object ApplicationContextBuilder {
 
         for(conditionComposition <- conditionCompositions){
           conditionComposition.target match {
-            case hv:HeaderValueCondition => {
+            case hv:ValueCondition => {
               var starting  = hv.composition.getStartingComposition()
               starting match {
                 case ch:Channel => {

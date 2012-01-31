@@ -30,19 +30,21 @@ object route {
     def where(name:String) = new SimpleComposition(null, new Router(name, null, null, conditionCompositions))
   }
 
-  def onValueOfHeader(headerName:String)(conditionCompositions:HeaderValueConditionComposition*) =
+  def onValueOfHeader(headerName:String)(conditionCompositions:ValueConditionComposition*) =
               new SimpleComposition(null, new Router(null, null, headerName, conditionCompositions)) with Where {
 
     def where(name:String) = new SimpleComposition(null, new Router(name, null, headerName, conditionCompositions))
   }
 
-  def using(spelExpression:String) = new SimpleComposition(null, new Router(null, spelExpression, null, null)) with Where {
-    def where(name:String) = new SimpleComposition(null, new Router(name, spelExpression, null, null))
+  def using(target:String)(conditionCompositions:ValueConditionComposition*) =
+                    new SimpleComposition(null, new Router(null, target, null, conditionCompositions)) with Where {
+    def where(name:String) = new SimpleComposition(null, new Router(name, target, null, conditionCompositions))
   }
 
-  def using(function:Function1[_,AnyRef]) = new SimpleComposition(null, new Router(null, function, null, null)) with Where {
-    def where(name:String) = new SimpleComposition(null, new Router(name, function, null, null))
-  }
+  def using(target:Function1[_,Any])(conditionCompositions:ValueConditionComposition*) =
+    new SimpleComposition(null, new Router(null, target, null, conditionCompositions)) with Where {
+      def where(name:String) = new SimpleComposition(null, new Router(name, target, null, conditionCompositions))
+    }
 
   private[route] trait Where {
     def where(name:String): SimpleComposition
@@ -54,8 +56,8 @@ object when {
   def apply(payloadType:Class[_])(c:EIPConfigurationComposition) =
     new PayloadTypeConditionComposition(null, new PayloadTypeCondition(payloadType, c))
 
-  def apply(headerValue:AnyRef)(c:EIPConfigurationComposition) =
-    new HeaderValueConditionComposition(null, new HeaderValueCondition(headerValue, c))
+  def apply(headerValue:Any)(c:EIPConfigurationComposition) =
+    new ValueConditionComposition(null, new ValueCondition(headerValue, c))
 
 }
 
@@ -64,4 +66,4 @@ private[dsl] case class Router(override val name:String, override val target:Any
 
 private[dsl] class PayloadTypeCondition(val payloadType:Class[_], val composition:EIPConfigurationComposition)
 
-private[dsl] class HeaderValueCondition(val headerValue:AnyRef, val composition:EIPConfigurationComposition)
+private[dsl] class ValueCondition(val headerValue:Any, val composition:EIPConfigurationComposition)

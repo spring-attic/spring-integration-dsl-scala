@@ -101,14 +101,41 @@ class MessageRouterTests {
    */
   @Test
   def validateSpELRouterConfig(){
+    route.using("'someChannelName'")(
+      when(1) {
+        handle.using{m:Message[_] => println(m)}
+      },
+      when(2) {
+        handle.using{m:Message[_] => println(m)}
+      }
+    )
 
-    route.using("'someChannelName'")
+    (route using("'someChannelName'"))(
+      when(1) {
+        handle.using{m:Message[_] => println(m)}
+      },
+      when(2) {
+        handle.using{m:Message[_] => println(m)}
+      }
+    )
 
-    route using("'someChannelName'")
+    (route.using("'someChannelName'"))(
+      when(1) {
+        handle.using{m:Message[_] => println(m)}
+      },
+      when(2) {
+        handle.using{m:Message[_] => println(m)}
+      }
+    ).where(name = "myRouter")
 
-    route.using("'someChannelName'").where(name = "myRouter")
-
-    route using("'someChannelName'") where(name = "myRouter")
+    (route using("'someChannelName'"))(
+      when(1) {
+        handle.using{m:Message[_] => println(m)}
+      },
+      when(2) {
+        handle.using{m:Message[_] => println(m)}
+      }
+    ) where(name = "myRouter")
   }
 
   /**
@@ -117,12 +144,40 @@ class MessageRouterTests {
   @Test
   def validateFunctionRouterConfig(){
 
-    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}
+    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}(
+      when(1) {
+        handle.using{m:Message[_] => println(m)}
+      },
+      when(2) {
+        handle.using{m:Message[_] => println(m)}
+      }
+    )
 
-    route using{m:Message[_] => m.getHeaders.get("routeToChannel")}
+    (route using{m:Message[_] => m.getHeaders.get("routeToChannel")})(
+      when(1) {
+        handle.using{m:Message[_] => println(m)}
+      },
+      when(2) {
+        handle.using{m:Message[_] => println(m)}
+      }
+    )
 
-    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}.where(name = "myRouter")
+    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}(
+      when(1) {
+        handle.using{m:Message[_] => println(m)}
+      },
+      when(2) {
+        handle.using{m:Message[_] => println(m)}
+      }
+    ).where(name = "myRouter")
 
-    route using{m:Message[_] => m.getHeaders.get("routeToChannel")} where(name = "myRouter")
+    (route using{m:Message[_] => m.getHeaders.get("routeToChannel")})(
+      when(1) {
+        handle.using{m:Message[_] => println(m)}
+      },
+      when(2) {
+        handle.using{m:Message[_] => println(m)}
+      }
+    ) where(name = "myRouter")
   }
 }

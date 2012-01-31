@@ -27,6 +27,8 @@ class DslDemo {
     println("### End headerValueRouterDemo \n")
     payloadTypeRouterDemo
     println("### End payloadTypeRouterDemo \n")
+    genericRouterDemo
+    println("### End genericRouterDemo \n")
 //    directChannelAndServiceWithSpel
 //    println("### End demo\n")
 //    asyncChannelWithService
@@ -136,6 +138,23 @@ class DslDemo {
     payloadTypeRouter.send("hello")
     // or
     payloadTypeRouter.send(MessageBuilder.withPayload(23).build())
+  }
+
+  def genericRouterDemo = {
+
+    val genericRouter =
+      route.using{i:Int => i}(
+        when(1) {
+          handle.using{m:Message[_] => println("From 1: " + m)}
+        },
+        when(2) {
+          handle.using{m:Message[_] => println("From 2: " + m)}
+        }
+      )
+
+    genericRouter.send(1)
+    // or
+    genericRouter.send(2)
   }
 //
 //  /**

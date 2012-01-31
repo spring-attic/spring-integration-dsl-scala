@@ -243,12 +243,12 @@ private[dsl] case class PayloadTypeConditionComposition(override val parentCompo
   def -->(composition: PollableComposition) = new PayloadTypeConditionComposition(this, composition.target)
 }
 
-private[dsl] case class HeaderValueConditionComposition(override val parentComposition:EIPConfigurationComposition, override val target:Any)
+private[dsl] case class ValueConditionComposition(override val parentComposition:EIPConfigurationComposition, override val target:Any)
       extends ConditionComposition(parentComposition, target) {
 
-  def -->(composition: SimpleComposition) = new HeaderValueConditionComposition(this, composition.target)
+  def -->(composition: SimpleComposition) = new ValueConditionComposition(this, composition.target)
 
-  def -->(composition: PollableComposition) = new HeaderValueConditionComposition(this, composition.target)
+  def -->(composition: PollableComposition) = new ValueConditionComposition(this, composition.target)
 }
 
 /**
