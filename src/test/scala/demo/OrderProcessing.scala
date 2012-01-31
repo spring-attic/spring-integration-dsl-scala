@@ -41,7 +41,6 @@ class OrderProcessing {
       Channel.withDispatcher(taskExecutor = new SimpleAsyncTaskExecutor) -->
       route.using{pi:PurchaseOrderItem => pi.itemType}(
         when("books") {
-          Channel("foo") -->
           handle.using{m:Message[_] => println("Processing bikes order: " + m); m} // prints Message and returns it
         },
         when("bikes") {
