@@ -54,11 +54,10 @@ class OrderProcessing {
       handle.using{m:Message[_] => println("Aggregated order: " + m)}
 
 
-    orderProcessingFlow.send(invalidOrder)
+    orderProcessingFlow.send(validOrder)
 
     println("done")
 
-//    val reply = orderProcessingFlow.send(invalidOrder)
   }
 
   case class PurchaseOrder(val items: List[PurchaseOrderItem]) {
