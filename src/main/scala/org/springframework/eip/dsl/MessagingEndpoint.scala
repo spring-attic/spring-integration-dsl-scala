@@ -83,7 +83,7 @@ object filter {
  */
 object split {
 
-  def using(function:Function1[_,List[_]]) = new SimpleComposition(null, new MessageSplitter(null, target=function)) with Where {
+  def using(function:Function1[_,Iterable[Any]]) = new SimpleComposition(null, new MessageSplitter(null, target=function)) with Where {
     def where(name:String, applySequence:Boolean)= new SimpleComposition(null, new MessageSplitter(name, function, applySequence))
   }
 

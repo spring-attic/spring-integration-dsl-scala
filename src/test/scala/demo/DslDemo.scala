@@ -6,6 +6,7 @@ import org.springframework.integration.Message
 import org.springframework.integration.store.SimpleMessageStore
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.springframework.integration.support.MessageBuilder
+import collection.JavaConversions
 
 /**
  * @author Oleg Zhurakousky
@@ -15,20 +16,22 @@ class DslDemo {
   @Test
   def runDemos() = {
 
-    channelConfigDemo
-    println("### End channelConfigDemo demo\n")
-    messagingBridgeDemo
-    println("### End messagingBridgeDemo demo\n")
-    serviceActivatorDemo
-    println("### End serviceActivatorDemo \n")
-    transformerDemo
-    println("### End transformerDemo \n")
-    headerValueRouterDemo
-    println("### End headerValueRouterDemo \n")
-    payloadTypeRouterDemo
-    println("### End payloadTypeRouterDemo \n")
-    genericRouterDemo
-    println("### End genericRouterDemo \n")
+//    channelConfigDemo
+//    println("### End channelConfigDemo demo\n")
+//    messagingBridgeDemo
+//    println("### End messagingBridgeDemo demo\n")
+//    serviceActivatorDemo
+//    println("### End serviceActivatorDemo \n")
+//    transformerDemo
+//    println("### End transformerDemo \n")
+//    headerValueRouterDemo
+//    println("### End headerValueRouterDemo \n")
+//    payloadTypeRouterDemo
+//    println("### End payloadTypeRouterDemo \n")
+//    methodInvokingRouter
+//    println("### End genericRouterDemo \n")
+    messageSplitter
+    println("### End messageSplitter \n")
 //    directChannelAndServiceWithSpel
 //    println("### End demo\n")
 //    asyncChannelWithService
@@ -140,7 +143,7 @@ class DslDemo {
     payloadTypeRouter.send(MessageBuilder.withPayload(23).build())
   }
 
-  def genericRouterDemo = {
+  def methodInvokingRouter = {
 
     val genericRouter =
       route.using{i:Int => i}(
@@ -155,6 +158,15 @@ class DslDemo {
     genericRouter.send(1)
     // or
     genericRouter.send(2)
+  }
+
+  def messageSplitter = {
+
+    val splitterReturningScalaIterable =
+      split.using{m:Message[List[_]] => m.getPayload} -->
+      handle.using{m:Message[_] => println(m)}
+
+    splitterReturningScalaIterable.send(List(1, 2, 3))
   }
 //
 //  /**

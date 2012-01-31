@@ -34,6 +34,8 @@ import java.util.{HashMap, UUID}
 import java.lang.IllegalStateException
 import org.springframework.integration.config._
 import org.springframework.integration.aggregator.{AggregatingMessageHandler, DefaultAggregatingMessageGroupProcessor}
+import collection.JavaConversions
+import org.springframework.integration.support.MessageBuilder
 
 /**
  * @author Oleg Zhurakousky
@@ -266,14 +268,13 @@ private[dsl] object ApplicationContextBuilder {
     endpoint match {
       case sa: ServiceActivator => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
-        this.defineHandlerTarget(sa.target, handlerBuilder)
+        this.defineHandlerTarget(sa, handlerBuilder)
       }
       case xfmr: Transformer => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
-        this.defineHandlerTarget(xfmr.target, handlerBuilder)
+        this.defineHandlerTarget(xfmr, handlerBuilder)
       }
       case router: Router => {
-        //handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
         val conditionCompositions = router.compositions
         if (conditionCompositions.size > 0) {
           handlerBuilder = conditionCompositions(0) match {
@@ -289,7 +290,7 @@ private[dsl] object ApplicationContextBuilder {
                   logger.debug("Router is MethodInvoking")
                 }
                 val hBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
-                this.defineHandlerTarget(router.target, hBuilder)
+                this.defineHandlerTarget(router, hBuilder)
                 hBuilder
               }
             }
@@ -349,10 +350,11 @@ private[dsl] object ApplicationContextBuilder {
         if (fltr.exceptionOnRejection) {
           handlerBuilder.addPropertyValue("throwExceptionOnRejection", fltr.exceptionOnRejection)
         }
-        this.defineHandlerTarget(fltr.target, handlerBuilder)
+        this.defineHandlerTarget(fltr, handlerBuilder)
       }
       case splitter: MessageSplitter => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
+        this.defineHandlerTarget(splitter, handlerBuilder)
       }
       case aggregator: MessageAggregator => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[AggregatingMessageHandler])
@@ -366,11 +368,14 @@ private[dsl] object ApplicationContextBuilder {
     handlerBuilder
   }
 
-  private def defineHandlerTarget(target: Any, handlerBuilder: BeanDefinitionBuilder) = {
+  /**
+   *
+   */
+  private def defineHandlerTarget(endpoint: SimpleEndpoint, handlerBuilder: BeanDefinitionBuilder) = {
 
-    target match {
+    endpoint.target match {
       case function: Function[_, _] => {
-        var functionInvoker = new FunctionInvoker(function)
+        var functionInvoker = new FunctionInvoker(function, endpoint)
         handlerBuilder.addPropertyValue("targetObject", functionInvoker);
         handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
       }
@@ -378,12 +383,12 @@ private[dsl] object ApplicationContextBuilder {
         handlerBuilder.addPropertyValue("expressionString", spel);
       }
       case _ => {
-        throw new IllegalArgumentException("Unsupported value for 'target' - " + target)
+        throw new IllegalArgumentException("Unsupported value for 'target' - " + endpoint.target)
       }
     }
   }
 
-  private[dsl] final class FunctionInvoker(val f: Function[_, _]) {
+  private[dsl] final class FunctionInvoker(val f: Function[_, _], endpoint:Endpoint) {
     private val logger = Logger.getLogger(this.getClass)
     var methodName: String = ""
 
@@ -434,22 +439,55 @@ private[dsl] object ApplicationContextBuilder {
     def sendPayloadAndReceivePayload(m: Object): Object = {
       var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
       method.setAccessible(true)
-      method.invoke(f, m)
+      this.normalizeResult[Object](method.invoke(f, m))
     }
     def sendPayloadAndReceiveMessage(m: Object): Message[_] = {
       var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
       method.setAccessible(true)
-      method.invoke(f, m).asInstanceOf[Message[_]]
+
+      this.normalizeResult[Message[_]](method.invoke(f, m).asInstanceOf[Message[_]])
     }
     def sendMessageAndReceivePayload(m: Message[_]): Object = {
       var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
       method.setAccessible(true)
-      method.invoke(f, m)
+      //method.invoke(f, m)
+      this.normalizeResult[Object](method.invoke(f, m))
     }
     def sendMessageAndReceiveMessage(m: Message[_]): Message[_] = {
       var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
       method.setAccessible(true)
-      method.invoke(f, m).asInstanceOf[Message[_]]
+
+      this.normalizeResult[Message[_]](method.invoke(f, m).asInstanceOf[Message[_]])
+    }
+    
+    private def normalizeResult[T](result:Any):T = {
+      endpoint match {
+        case splitter:MessageSplitter => {
+          result match {
+            case message:Message[_] => {
+              val payload = message.getPayload
+              if (payload.isInstanceOf[Iterable[_]]){
+                MessageBuilder.withPayload(JavaConversions.asJavaCollection(payload.asInstanceOf[Iterable[_]])).copyHeaders(message.getHeaders).build().asInstanceOf[T]
+              }
+              else {
+                message.asInstanceOf[T]
+              }
+            }
+            case _ => {
+              if (result.isInstanceOf[Iterable[_]]){
+                JavaConversions.asJavaCollection(result.asInstanceOf[Iterable[_]]).asInstanceOf[T]
+              }
+              else {
+                result.asInstanceOf[T]
+              }
+            }
+          }
+        }
+        case _ => {
+          result.asInstanceOf[T]
+        }
+      }
+      
     }
   }
 
