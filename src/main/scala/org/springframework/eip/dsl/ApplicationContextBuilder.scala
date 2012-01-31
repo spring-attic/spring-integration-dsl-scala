@@ -375,7 +375,7 @@ private[dsl] object ApplicationContextBuilder {
 
     endpoint.target match {
       case function: Function[_, _] => {
-        var functionInvoker = new FunctionInvoker(function, endpoint)
+        val functionInvoker = new FunctionInvoker(function, endpoint)
         handlerBuilder.addPropertyValue("targetObject", functionInvoker);
         handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
       }
@@ -444,13 +444,11 @@ private[dsl] object ApplicationContextBuilder {
     def sendPayloadAndReceiveMessage(m: Object): Message[_] = {
       var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
       method.setAccessible(true)
-
       this.normalizeResult[Message[_]](method.invoke(f, m).asInstanceOf[Message[_]])
     }
     def sendMessageAndReceivePayload(m: Message[_]): Object = {
       var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
       method.setAccessible(true)
-      //method.invoke(f, m)
       this.normalizeResult[Object](method.invoke(f, m))
     }
     def sendMessageAndReceiveMessage(m: Message[_]): Message[_] = {
@@ -467,7 +465,8 @@ private[dsl] object ApplicationContextBuilder {
             case message:Message[_] => {
               val payload = message.getPayload
               if (payload.isInstanceOf[Iterable[_]]){
-                MessageBuilder.withPayload(JavaConversions.asJavaCollection(payload.asInstanceOf[Iterable[_]])).copyHeaders(message.getHeaders).build().asInstanceOf[T]
+                MessageBuilder.withPayload(JavaConversions.asJavaCollection(payload.asInstanceOf[Iterable[_]])).
+                  copyHeaders(message.getHeaders).build().asInstanceOf[T]
               }
               else {
                 message.asInstanceOf[T]

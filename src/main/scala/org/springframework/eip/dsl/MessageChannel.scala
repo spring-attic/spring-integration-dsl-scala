@@ -67,7 +67,6 @@ object Channel {
     def withQueue(): PollableComposition with CompletableEIPConfigurationComposition
   }
 
-
   private[Channel] trait WithDispatcher {
     def withDispatcher(failover: Boolean = true, loadBalancer:String = "round-robin", taskExecutor:Executor = null): SimpleComposition
   }

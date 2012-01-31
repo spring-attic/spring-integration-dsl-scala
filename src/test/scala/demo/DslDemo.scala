@@ -28,10 +28,13 @@ class DslDemo {
 //    println("### End headerValueRouterDemo \n")
 //    payloadTypeRouterDemo
 //    println("### End payloadTypeRouterDemo \n")
-//    methodInvokingRouter
+//    methodInvokingRouterDemo
 //    println("### End genericRouterDemo \n")
-    messageSplitter
-    println("### End messageSplitter \n")
+//    messageSplitterDemo
+//    println("### End messageSplitter \n")
+    messageSplitterAndAggregatorDemo
+    println("### End messageSplitterAndAggregatorDemo \n")
+
 //    directChannelAndServiceWithSpel
 //    println("### End demo\n")
 //    asyncChannelWithService
@@ -143,9 +146,9 @@ class DslDemo {
     payloadTypeRouter.send(MessageBuilder.withPayload(23).build())
   }
 
-  def methodInvokingRouter = {
+  def methodInvokingRouterDemo = {
 
-    val genericRouter =
+    val methodInvokingRouter =
       route.using{i:Int => i}(
         when(1) {
           handle.using{m:Message[_] => println("From 1: " + m)}
@@ -155,18 +158,30 @@ class DslDemo {
         }
       )
 
-    genericRouter.send(1)
+    methodInvokingRouter.send(1)
     // or
-    genericRouter.send(2)
+    methodInvokingRouter.send(2)
   }
 
-  def messageSplitter = {
+  def messageSplitterDemo = {
 
     val splitterReturningScalaIterable =
       split.using{m:Message[List[_]] => m.getPayload} -->
       handle.using{m:Message[_] => println(m)}
 
     splitterReturningScalaIterable.send(List(1, 2, 3))
+  }
+
+  def messageSplitterAndAggregatorDemo = {
+
+    val splitterAndAggregator =
+      split.using{m:Message[List[_]] => m.getPayload} -->
+      transform.using{m:Message[Int] => (m.getPayload + 2).toString}  -->
+      aggregate() -->
+      handle.using{m:Message[_] => println(m)}
+
+
+    splitterAndAggregator.send(List(1, 2, 3))
   }
 //
 //  /**
