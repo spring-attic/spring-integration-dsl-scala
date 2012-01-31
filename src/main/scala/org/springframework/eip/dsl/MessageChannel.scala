@@ -19,6 +19,8 @@ import org.springframework.integration.Message
 import java.util.concurrent.Executor
 import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
 import org.springframework.integration.message.GenericMessage
+import org.springframework.util.StringUtils
+import java.util.UUID
 
 /**
  * @author Oleg Zhurakousky
@@ -36,27 +38,47 @@ object Channel {
     }
 
     def withQueue(capacity: Int, messageStore: MessageStore) =
-          new PollableComposition(null, this.doWithQueue(capacity, messageStore)) 
+          new PollableComposition(null, doWithQueue(name, capacity, messageStore))
               with CompletableEIPConfigurationComposition
 
-    def withQueue() = new PollableComposition(null, this.doWithQueue(Int.MaxValue, new SimpleMessageStore))
+    def withQueue() = new PollableComposition(null, doWithQueue(name, Int.MaxValue, new SimpleMessageStore))
               with CompletableEIPConfigurationComposition
 
     def withDispatcher(failover: Boolean, loadBalancer:String, taskExecutor:Executor) =
-          new SimpleComposition(null, this.doWithDispatcher(failover, loadBalancer, taskExecutor)) 
+          new SimpleComposition(null, doWithDispatcher(name, failover, loadBalancer, taskExecutor))
                     with CompletableEIPConfigurationComposition with ChannelComposition{
 
             override def -->(composition: SimpleComposition) =
               new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
-          }
+    }
+  }
 
-    private def doWithQueue(capacity: Int, messageStore: MessageStore): Channel  = {
-      new Channel(name, capacity = capacity, messageStore = messageStore)
+  def withDispatcher(failover: Boolean = true, loadBalancer:String = null, taskExecutor:Executor = null) =
+    new SimpleComposition(null, doWithDispatcher(null, failover, loadBalancer, taskExecutor))
+      with CompletableEIPConfigurationComposition with ChannelComposition{
+
+      override def -->(composition: SimpleComposition) =
+        new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
     }
 
-    private def doWithDispatcher(failover: Boolean, loadBalancer:String, taskExecutor:Executor): Channel = {
-      new Channel(name, failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor)
+  private def doWithQueue(name:String,  capacity: Int, messageStore: MessageStore): Channel  = {
+    val channelName:String = if (!StringUtils.hasText(name)){
+      "$ch_" + UUID.randomUUID().toString.substring(0,8)
     }
+    else {
+      name
+    }
+    new Channel(name = channelName, capacity = capacity, messageStore = messageStore)
+  }
+
+  private def doWithDispatcher(name:String,  failover: Boolean, loadBalancer:String, taskExecutor:Executor): Channel = {
+    val channelName:String = if (!StringUtils.hasText(name)){
+      "$ch_" + UUID.randomUUID().toString.substring(0,8)
+    }
+    else {
+      name
+    }
+    new Channel(name = channelName, failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor)
   }
 
   private[Channel] trait WithQueue {

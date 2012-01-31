@@ -13,7 +13,7 @@
 	<!-- Loggers -->
 
 	<logger name="org.springframework.eip">
-		<level value="trace" />
+		<level value="info" />
 	</logger>
 
 	<!-- Root Logger -->
