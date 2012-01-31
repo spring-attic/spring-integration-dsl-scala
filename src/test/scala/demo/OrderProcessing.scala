@@ -52,7 +52,10 @@ class OrderProcessing {
       ) -->
       aggregate()
 
-    val result = orderProcessingFlow.sendAndReceive[List[_]](validOrder)
+    val errorFlow = handle.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
+
+    val result = orderProcessingFlow.sendAndReceive[Any](validOrder, errorFlow = errorFlow)
+    //val result = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = errorFlow)
 
     println("Result: " + result)
 

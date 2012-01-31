@@ -32,6 +32,10 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
 
   val threadLocal:ThreadLocal[EIPContext] = new ThreadLocal[EIPContext]
 
+  private[dsl] trait WithErrorFlow {
+    def withErrorFlow(errorComposition:EIPConfigurationComposition):Unit
+  }
+
   def start():Unit = {
 
   }
@@ -45,31 +49,46 @@ class EIPConfigurationComposition(val parentComposition:EIPConfigurationComposit
     context.send(message, timeout, headers)
   }
 
-  def sendAndReceive[T](message:Any, timeout:Long = 0, headers:Map[String,  Any] = null)
-                       (implicit m: scala.reflect.Manifest[T]): T = {
+  def sendAndReceive[T](message:Any, timeout:Long = 0, headers:Map[String,  Any] = null, errorFlow:EIPConfigurationComposition = null)
+                       (implicit m: scala.reflect.Manifest[T]): T  = {
     val context = this.getContext()
-    val replyMessage = context.sendAndReceive(message)
-    if (m.erasure.isAssignableFrom(classOf[Message[_]])){
-       replyMessage.asInstanceOf[T]
-    }
-    else {
-      val reply = replyMessage.getPayload
-      val convertedReply = reply match {
-        case list:java.util.List[_]  => {
-          list.toList
+
+    val reply = try {
+       val replyMessage = context.sendAndReceive(message)
+       if (m.erasure.isAssignableFrom(classOf[Message[_]])){
+         replyMessage.asInstanceOf[T]
+       }
+       else {
+         val reply = replyMessage.getPayload
+         val convertedReply = reply match {
+           case list:java.util.List[_]  => {
+             list.toList
+           }
+           case list:java.util.Set[_] => {
+             list.toSet
+           }
+           case list:java.util.Map[_, _] => {
+             list.toMap
+           }
+           case _ => {
+             reply
+           }
+         }
+         convertedReply.asInstanceOf[T]
+       }
+    } catch {
+      case ex:Exception => {
+        if (errorFlow != null){
+          errorFlow.sendAndReceive[T](ex)
         }
-        case list:java.util.Set[_] => {
-          list.toSet
-        }
-        case list:java.util.Map[_, _] => {
-          list.toMap
-        }
-        case _ => {
-          reply
+        else {
+          throw new RuntimeException("boo")
         }
       }
-      convertedReply.asInstanceOf[T]
     }
+
+    reply.asInstanceOf[T]
+
   }
 
   def copy(): EIPConfigurationComposition = {
