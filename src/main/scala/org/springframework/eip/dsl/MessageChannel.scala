@@ -18,7 +18,6 @@ package org.springframework.eip.dsl
 import org.springframework.integration.Message
 import java.util.concurrent.Executor
 import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
-import org.springframework.integration.message.GenericMessage
 import org.springframework.util.StringUtils
 import java.util.UUID
 

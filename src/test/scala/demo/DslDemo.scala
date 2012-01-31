@@ -1,12 +1,10 @@
 package demo
 import org.springframework.eip.dsl._
 import org.junit._
-import org.springframework.integration.message.GenericMessage
 import org.springframework.integration.Message
 import org.springframework.integration.store.SimpleMessageStore
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.springframework.integration.support.MessageBuilder
-import collection.JavaConversions
 
 /**
  * @author Oleg Zhurakousky

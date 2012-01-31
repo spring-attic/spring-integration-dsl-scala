@@ -15,7 +15,6 @@
  */
 package org.springframework.eip.dsl
 
-import org.springframework.integration.MessageChannel
 
 /**
  * @author Oleg Zhurakousky
