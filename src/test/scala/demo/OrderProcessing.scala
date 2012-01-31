@@ -44,10 +44,12 @@ class OrderProcessing {
       route.using{pi:PurchaseOrderItem => pi.itemType}(
         when("books") {
           Channel("foo") -->
-          handle.using{m:Message[_] => println("Processing bikes order: " + m); m}
+          handle.using{m:Message[_] => println("Processing bikes order: " + m); m} // prints Message and returns it
         },
         when("bikes") {
-          handle.using{m:Message[_] => println("Processing books order: " + m); Thread.sleep(new Random().nextInt(2000)); m}
+          handle.using{
+            m:Message[_] => println("Processing books order: " + m); Thread.sleep(new Random().nextInt(2000)); m
+          } // prints Message, delays it randomly and returns it
         }
       ) -->
       aggregate() -->
