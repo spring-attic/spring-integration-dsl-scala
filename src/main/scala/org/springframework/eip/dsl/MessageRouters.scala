@@ -23,46 +23,59 @@ package org.springframework.eip.dsl
 
 object route {
 
-  def onPayloadType(conditionCompositions:PayloadTypeConditionComposition*) =
-              new SimpleComposition(null, new Router(null, null, null, conditionCompositions)) with Where {
-
-    def where(name:String) = new SimpleComposition(null, new Router(name, null, null, conditionCompositions))
-  }
-
-  def onValueOfHeader(headerName:String)(conditionCompositions:ValueConditionComposition*) =
-              new SimpleComposition(null, new Router(null, null, headerName, conditionCompositions)) with Where {
-
-    def where(name:String) = new SimpleComposition(null, new Router(name, null, headerName, conditionCompositions))
-  }
-
-  def using(target:String)(conditionCompositions:ValueConditionComposition*) =
-                    new SimpleComposition(null, new Router(null, target, null, conditionCompositions)) with Where {
-    def where(name:String) = new SimpleComposition(null, new Router(name, target, null, conditionCompositions))
-  }
-
-  def using(target:Function1[_,Any])(conditionCompositions:ValueConditionComposition*) =
-    new SimpleComposition(null, new Router(null, target, null, conditionCompositions)) with Where {
-      def where(name:String) = new SimpleComposition(null, new Router(name, target, null, conditionCompositions))
-    }
-
-  private[route] trait Where {
-    def where(name:String): SimpleComposition
-  }
+//  def onPayloadType(conditionCompositions:PayloadTypeConditionComposition*) =
+//              new SimpleComposition(null, new Router(null, null, null, conditionCompositions)) with Where {
+//
+//    def where(name:String) = new SimpleComposition(null, new Router(name, null, null, conditionCompositions))
+//  }
+//
+//  def onValueOfHeader(headerName:String)(conditionCompositions:ValueConditionComposition*) =
+//              new SimpleComposition(null, new Router(null, null, headerName, conditionCompositions)) with Where {
+//
+//    def where(name:String) = new SimpleComposition(null, new Router(name, null, headerName, conditionCompositions))
+//  }
+//
+//  def using(target:String)(conditionCompositions:ValueConditionComposition*) =
+//                    new SimpleComposition(null, new Router(null, target, null, conditionCompositions)) with Where {
+//    def where(name:String) = new SimpleComposition(null, new Router(name, target, null, conditionCompositions))
+//  }
+//
+//  def using(target:Function1[_,Any])(conditionCompositions:ValueConditionComposition*) =
+//    new SimpleComposition(null, new Router(null, target, null, conditionCompositions)) with Where {
+//      def where(name:String) = new SimpleComposition(null, new Router(name, target, null, conditionCompositions))
+//    }
+//
+//  private[route] trait Where {
+//    def where(name:String): SimpleComposition
+//  }
 }
-
+/**
+ * 
+ */
 object when {
-
-  def apply(payloadType:Class[_])(c:EIPConfigurationComposition) =
-    new PayloadTypeConditionComposition(null, new PayloadTypeCondition(payloadType, c))
-
-  def apply(headerValue:Any)(c:EIPConfigurationComposition) =
-    new ValueConditionComposition(null, new ValueCondition(headerValue, c))
-
+//  def apply(payloadType:Class[_]) = new PayloadTypeConditionComposition(null, payloadType)
+//  
+//  def apply(headerValue:Any) = new ValueConditionComposition(null, headerValue)
 }
 
-private[dsl] case class Router(override val name:String, override val target:Any, val headerName:String, val compositions:Seq[ConditionComposition])
-            extends SimpleEndpoint(name, target)
+//trait ThenChannel {
+//  def then(channelComposition:ChannelComposition){
+//    
+//  }
+//}
+//object when {
+//
+//  def apply(payloadType:Class[_])(c:EIPConfigurationComposition) =
+//    new PayloadTypeConditionComposition(null, new PayloadTypeCondition(payloadType, c))
+//
+//  def apply(headerValue:Any)(c:EIPConfigurationComposition) =
+//    new ValueConditionComposition(null, new ValueCondition(headerValue, c))
+//
+//}
 
-private[dsl] class PayloadTypeCondition(val payloadType:Class[_], val composition:EIPConfigurationComposition)
+//private[dsl] case class Router(override val name:String, override val target:Any, val headerName:String, val compositions:Seq[ConditionComposition])
+//            extends SimpleEndpoint(name, target)
 
-private[dsl] class ValueCondition(val headerValue:Any, val composition:EIPConfigurationComposition)
+private[dsl] class PayloadTypeCondition(val payloadType:Class[_], val channelComposition:SimpleComposition with ChannelComposition)
+
+private[dsl] class ValueCondition(val value:Any, val channelComposition:SimpleComposition with ChannelComposition)

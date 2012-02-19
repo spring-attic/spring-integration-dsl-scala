@@ -25,40 +25,37 @@ import java.util.UUID
  * @author Oleg Zhurakousky
  */
 object Channel {
+  
+  /**
+   * 
+   */
+  def apply(name:String) = new ChannelIntegrationComposition(null, new Channel(name = name)) {
 
-  def apply(name:String) = new SimpleComposition(null, new Channel(name = name))
-    with WithQueue
-    with WithDispatcher
-    with ChannelComposition
-    with CompletableEIPConfigurationComposition {
+    def withQueue(capacity: Int = Int.MaxValue, messageStore: MessageStore = null) =
+          new PollableChannelIntegrationComposition(null, doWithQueue(name, capacity, messageStore))
 
-    override def -->(composition: SimpleComposition) = {
-      new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
-    }
+    def withQueue() = new PollableChannelIntegrationComposition(null, doWithQueue(name, Int.MaxValue, new SimpleMessageStore))
 
-    def withQueue(capacity: Int, messageStore: MessageStore) =
-          new PollableComposition(null, doWithQueue(name, capacity, messageStore))
-              with CompletableEIPConfigurationComposition
-
-    def withQueue() = new PollableComposition(null, doWithQueue(name, Int.MaxValue, new SimpleMessageStore))
-              with CompletableEIPConfigurationComposition
-
-    def withDispatcher(failover: Boolean, loadBalancer:String, taskExecutor:Executor) =
-          new SimpleComposition(null, doWithDispatcher(name, failover, loadBalancer, taskExecutor))
-                    with CompletableEIPConfigurationComposition with ChannelComposition{
-
-            override def -->(composition: SimpleComposition) =
-              new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
-    }
+    def withDispatcher(failover: Boolean = false, loadBalancer:String = null, taskExecutor:Executor = null) =
+          new ChannelIntegrationComposition(null, doWithDispatcher(name, failover, loadBalancer, taskExecutor))
   }
-
+  
+  /**
+   * 
+   */
   def withDispatcher(failover: Boolean = true, loadBalancer:String = null, taskExecutor:Executor = null) =
-    new SimpleComposition(null, doWithDispatcher(null, failover, loadBalancer, taskExecutor))
-      with CompletableEIPConfigurationComposition with ChannelComposition{
-
-      override def -->(composition: SimpleComposition) =
-        new SimpleCompletableComposition(this, composition.target) with CompletableEIPConfigurationComposition
-    }
+    new ChannelIntegrationComposition(null, doWithDispatcher(null, failover, loadBalancer, taskExecutor))
+  
+  /**
+   * 
+   */
+  def withQueue = new PollableChannelIntegrationComposition(null, doWithQueue(null, Int.MaxValue, new SimpleMessageStore))
+  
+  /**
+   * 
+   */
+  def withQueue(capacity:Int = Int.MaxValue, messageStore: MessageStore = new SimpleMessageStore) = 
+    	new PollableChannelIntegrationComposition(null, doWithQueue(null, capacity, messageStore))
 
   private def doWithQueue(name:String,  capacity: Int, messageStore: MessageStore): Channel  = {
     val channelName:String = if (!StringUtils.hasText(name)){
@@ -79,18 +76,18 @@ object Channel {
     }
     new Channel(name = channelName, failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor)
   }
+}
 
-  private[Channel] trait WithQueue {
-    def withQueue(capacity: Int = Int.MaxValue, messageStore: MessageStore = new SimpleMessageStore): PollableComposition
-                  with CompletableEIPConfigurationComposition
-
-
-    def withQueue(): PollableComposition with CompletableEIPConfigurationComposition
+object PubSubChannel {
+  def apply() = new ChannelIntegrationComposition(null, new PubSubChannel(name = null)) {
+    def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(name = null, applySequence=true))
   }
-
-  private[Channel] trait WithDispatcher {
-    def withDispatcher(failover: Boolean = true, loadBalancer:String = "round-robin", taskExecutor:Executor = null): SimpleComposition
+  
+  def apply(name:String) = new ChannelIntegrationComposition(null, new PubSubChannel(name = name)) {
+    def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(name = name, applySequence=true))
   }
+  
+  def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(name = null, applySequence=true))
 }
 
 /**
@@ -102,6 +99,12 @@ private[dsl] case class Channel(val name:String,
                            val taskExecutor:Executor = null,
                            val capacity: Int = Integer.MIN_VALUE,
                            val messageStore: MessageStore = null)
+/**
+ *                            
+ */
+private[dsl] case class PubSubChannel(val name:String,
+                           val applySequence: Boolean = false,
+                           val taskExecutor:Executor = null)
 
 private[dsl] trait Receivable extends Sendable{
   def receive(): Message[_]
@@ -113,4 +116,3 @@ private[dsl] trait Sendable {
   def send(message:Message[_]): Unit
 }
 
-private[dsl] trait ChannelComposition

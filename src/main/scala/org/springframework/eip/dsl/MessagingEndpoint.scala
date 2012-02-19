@@ -27,34 +27,29 @@ import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
  */
 object handle {
 
-  def using(function:Function1[_,_]) = new SimpleComposition(null, new ServiceActivator(null, function)) with Where {
-    def where(name:String)= new SimpleComposition(null, new ServiceActivator(name, function))
+  def using(function:Function1[_,_]) = new IntegrationComposition(null, new ServiceActivator(null, function)) {
+    
+    def where(name:String)= new IntegrationComposition(null, new ServiceActivator(name, function))
   }
 
-  def using(spelExpression:String) = new SimpleComposition(null, new ServiceActivator(null, spelExpression)) with Where {
-    def where(name:String)= new SimpleComposition(null, new ServiceActivator(name, spelExpression))
-  }
-
-  private[handle] trait Where {
-    def where(name:String): SimpleComposition
+  def using(spelExpression:String) = new IntegrationComposition(null, new ServiceActivator(null, spelExpression))  {
+    def where(name:String)= new IntegrationComposition(null, new ServiceActivator(name, spelExpression))
   }
 }
+
+
 
 /**
  * TRANSFORMER
  */
 object transform {
 
-  def using(function:Function1[_,AnyRef]) = new SimpleComposition(null, new Transformer(null, function)) with Where {
-    def where(name:String)= new SimpleComposition(null, new Transformer(name, function))
+  def using(function:Function1[_,AnyRef]) = new IntegrationComposition(null, new Transformer(null, function)) {
+    def where(name:String)= new IntegrationComposition(null, new Transformer(name, function))
   }
 
-  def using(spelExpression:String) = new SimpleComposition(null, new Transformer(null, spelExpression)) with Where {
-    def where(name:String)= new SimpleComposition(null, new Transformer(name, spelExpression))
-  }
-
-  private[transform] trait Where {
-    def where(name:String): SimpleComposition
+  def using(spelExpression:String) = new IntegrationComposition(null, new Transformer(null, spelExpression)) {
+    def where(name:String)= new IntegrationComposition(null, new Transformer(name, spelExpression))
   }
 }
 
@@ -63,18 +58,14 @@ object transform {
  */
 object filter {
 
-  def using(function:Function1[_,Boolean]) = new SimpleComposition(null, new MessageFilter(null, function)) with Where {
+  def using(function:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageFilter(null, function)) {
     def where(name:String = null, exceptionOnRejection:Boolean = false)=
-      new SimpleComposition(null, new MessageFilter(name, function, exceptionOnRejection))
+      new IntegrationComposition(null, new MessageFilter(name, function, exceptionOnRejection))
   }
 
-  def using(spelExpression:String) = new SimpleComposition(null, new MessageFilter(null, spelExpression)) with Where {
+  def using(spelExpression:String) = new IntegrationComposition(null, new MessageFilter(null, spelExpression))  {
     def where(name:String = null, exceptionOnRejection:Boolean = false) =
-      new SimpleComposition(null, new MessageFilter(name, spelExpression, exceptionOnRejection))
-  }
-
-  private[filter] trait Where {
-    def where(name:String = null, exceptionOnRejection:Boolean = false): SimpleComposition
+      new IntegrationComposition(null, new MessageFilter(name, spelExpression, exceptionOnRejection))
   }
 }
 
@@ -83,16 +74,12 @@ object filter {
  */
 object split {
 
-  def using(function:Function1[_,Iterable[Any]]) = new SimpleComposition(null, new MessageSplitter(null, target=function)) with Where {
-    def where(name:String, applySequence:Boolean)= new SimpleComposition(null, new MessageSplitter(name, function, applySequence))
+  def using(function:Function1[_,Iterable[Any]]) = new IntegrationComposition(null, new MessageSplitter(null, target=function)) {
+    def where(name:String = null, applySequence:Boolean = true)= new IntegrationComposition(null, new MessageSplitter(name, function, applySequence))
   }
 
-  def using(spelExpression:String) = new SimpleComposition(null, new MessageSplitter(null, target = spelExpression)) with Where {
-    def where(name:String, applySequence:Boolean)= new SimpleComposition(null, new MessageSplitter(name, spelExpression, applySequence))
-  }
-
-  private[split] trait Where {
-    def where(name:String, applySequence:Boolean = true): SimpleComposition
+  def using(spelExpression:String) = new IntegrationComposition(null, new MessageSplitter(null, target = spelExpression))  {
+    def where(name:String= null, applySequence:Boolean = true)= new IntegrationComposition(null, new MessageSplitter(name, spelExpression, applySequence))
   }
 }
 
@@ -101,51 +88,51 @@ object split {
 */
 object aggregate {
 
-  def apply() = new SimpleComposition(null, new MessageAggregator()) with Where {
-    def where(name:String,
-              keepReleasedMessages:Boolean,
-              messageStore:MessageStore,
-              sendPartialResultsOnExpiry:Boolean,
-              expireGroupsUponCompletion:Boolean) =
-      new SimpleComposition(null, new MessageAggregator(name = name,
+  def apply() = new IntegrationComposition(null, new MessageAggregator()) {
+    def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+      new IntegrationComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
   }
 
-  def on(correlationFunction:Function1[_,AnyRef]) = new SimpleComposition(null, new MessageAggregator(null)) with ReleaseStrategy with Where {
-    def where(name:String,
-              keepReleasedMessages:Boolean,
-              messageStore:MessageStore,
-              sendPartialResultsOnExpiry:Boolean,
-              expireGroupsUponCompletion:Boolean) =
-      new SimpleComposition(null, new MessageAggregator(name = name,
+  def on(correlationFunction:Function1[_,AnyRef]) = new IntegrationComposition(null, new MessageAggregator(null))  {
+    def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+      new IntegrationComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
 
-    def until(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-      def where(name:String,
-                keepReleasedMessages:Boolean,
-                messageStore:MessageStore,
-                sendPartialResultsOnExpiry:Boolean,
-                expireGroupsUponCompletion:Boolean) =
-        new SimpleComposition(null, new MessageAggregator(name = name,
+    def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator(null))  {
+      def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+        new IntegrationComposition(null, new MessageAggregator(name = name,
                                                           keepReleasedMessages = keepReleasedMessages,
                                                           messageStore = messageStore,
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                           expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
-    def until(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-      def where(name:String,
-                keepReleasedMessages:Boolean,
-                messageStore:MessageStore,
-                sendPartialResultsOnExpiry:Boolean,
-                expireGroupsUponCompletion:Boolean) =
-        new SimpleComposition(null, new MessageAggregator(name = name,
+    def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator(null))  {
+      def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+        new IntegrationComposition(null, new MessageAggregator(name = name,
                                                           keepReleasedMessages = keepReleasedMessages,
                                                           messageStore = messageStore,
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
@@ -153,38 +140,38 @@ object aggregate {
     }
   }
 
-  def on(correlationKey:AnyRef) = new SimpleComposition(null, new MessageAggregator(null)) with ReleaseStrategy with Where {
-    def where(name:String,
-              keepReleasedMessages:Boolean,
-              messageStore:MessageStore,
-              sendPartialResultsOnExpiry:Boolean,
-              expireGroupsUponCompletion:Boolean) =
-      new SimpleComposition(null, new MessageAggregator(name = name,
+  def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator(null))  {
+    def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+      new IntegrationComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
 
-    def until(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-      def where(name:String,
-                keepReleasedMessages:Boolean,
-                messageStore:MessageStore,
-                sendPartialResultsOnExpiry:Boolean,
-                expireGroupsUponCompletion:Boolean) =
-        new SimpleComposition(null, new MessageAggregator(name = name,
+    def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator(null))  {
+      def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+        new IntegrationComposition(null, new MessageAggregator(name = name,
                                                           keepReleasedMessages = keepReleasedMessages,
                                                           messageStore = messageStore,
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                            expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
-    def until(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-      def where(name:String,
-                keepReleasedMessages:Boolean,
-                messageStore:MessageStore,
-                sendPartialResultsOnExpiry:Boolean,
-                expireGroupsUponCompletion:Boolean) =
-        new SimpleComposition(null, new MessageAggregator(name = name,
+    def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator(null))  {
+      def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+        new IntegrationComposition(null, new MessageAggregator(name = name,
                                                           keepReleasedMessages = keepReleasedMessages,
                                                           messageStore = messageStore,
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
@@ -192,26 +179,26 @@ object aggregate {
     }
   }
 
-  def until(releaseFunction:Function1[_,Boolean]) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
-    def where(name:String,
-              keepReleasedMessages:Boolean,
-              messageStore:MessageStore,
-              sendPartialResultsOnExpiry:Boolean,
-              expireGroupsUponCompletion:Boolean) =
-      new SimpleComposition(null, new MessageAggregator(name = name,
+  def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator(null)) {
+    def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+      new IntegrationComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
   }
 
-  def until(releaseExpression:String) = new SimpleComposition(null, new MessageAggregator(null)) with Where {
+  def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator(null))  {
     def where(name:String,
               keepReleasedMessages:Boolean,
               messageStore:MessageStore,
               sendPartialResultsOnExpiry:Boolean,
               expireGroupsUponCompletion:Boolean) =
-      new SimpleComposition(null, new MessageAggregator(name = name,
+      new IntegrationComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
@@ -224,31 +211,31 @@ object aggregate {
             messageStore:MessageStore = new SimpleMessageStore,
             sendPartialResultsOnExpiry:Boolean = false,
             expireGroupsUponCompletion:Boolean = false) =
-    new SimpleComposition(null, new MessageAggregator(name = name,
+    new IntegrationComposition(null, new MessageAggregator(name = name,
                                                       keepReleasedMessages = keepReleasedMessages,
                                                       messageStore = messageStore,
                                                       sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                       expireGroupsUponCompletion = expireGroupsUponCompletion))
 
-  private[aggregate] trait Where {
-    def where(name:String = null,
-              keepReleasedMessages:Boolean = true,
-              messageStore:MessageStore = new SimpleMessageStore,
-              sendPartialResultsOnExpiry:Boolean = false,
-              expireGroupsUponCompletion:Boolean = false): SimpleComposition
-  }
+//  private[aggregate] trait Where {
+//    def where(name:String = null,
+//              keepReleasedMessages:Boolean = true,
+//              messageStore:MessageStore = new SimpleMessageStore,
+//              sendPartialResultsOnExpiry:Boolean = false,
+//              expireGroupsUponCompletion:Boolean = false): IntegrationComposition
+//  }
 
-  private[aggregate] trait ReleaseStrategy {
-    def until(releaseFunction:Function1[_,Boolean]): SimpleComposition
-
-    def until(releaseExpression:String): SimpleComposition
-  }
-
-  private[aggregate] trait CorrelationStrategy {
-    def on(correlationKey:AnyRef): SimpleComposition
-
-    def on(correlationFunction:Function1[_,AnyRef]): SimpleComposition
-  }
+//  private[aggregate] trait ReleaseStrategy {
+//    def until(releaseFunction:Function1[_,Boolean]): IntegrationComposition
+//
+//    def until(releaseExpression:String): IntegrationComposition
+//  }
+//
+//  private[aggregate] trait CorrelationStrategy {
+//    def on(correlationKey:AnyRef): SimpleComposition
+//
+//    def on(correlationFunction:Function1[_,AnyRef]): IntegrationComposition
+//  }
 }
 
 private[dsl] case class ServiceActivator(override val name:String, override val target:Any)

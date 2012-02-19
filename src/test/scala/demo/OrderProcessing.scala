@@ -26,40 +26,53 @@ import java.util.concurrent.Executors
  */
 class OrderProcessing {
   
-  @Test
-  def runDemo() = {
-
-    val validOrder = PurchaseOrder(List(
-      PurchaseOrderItem("books", "Spring Integration in Action"),
-      PurchaseOrderItem("books", "DSLs in Action"),
-      PurchaseOrderItem("bikes", "Canyon Torque FRX")))
-
-    val invalidOrder = PurchaseOrder(List())
-
-    val orderProcessingFlow = 
-      filter.using{p:PurchaseOrder => !p.items.isEmpty}.where(exceptionOnRejection = true) -->
-      split.using{p:PurchaseOrder => p.items} -->
-      Channel.withDispatcher(taskExecutor = Executors.newCachedThreadPool) -->
-      route.using{pi:PurchaseOrderItem => pi.itemType}(
-        when("books") {
-          handle.using{m:Message[_] => println("Processing bikes order: " + m); m} // prints Message and returns it
-        },
-        when("bikes") {
-          handle.using{
-            m:Message[_] => println("Processing books order: " + m); Thread.sleep(new Random().nextInt(2000)); m
-          } // prints Message, delays it randomly and returns it
-        }
-      ) -->
-      aggregate()
-
-    val errorFlow = handle.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
-
-    val result = orderProcessingFlow.sendAndReceive[Any](validOrder, errorFlow = errorFlow)
-    //val result = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = errorFlow)
-
-    println("Result: " + result)
-
-  }
+//  @Test
+//  def runDemo() = {
+//
+//    val validOrder = PurchaseOrder(List(
+//      PurchaseOrderItem("books", "Spring Integration in Action"),
+//      PurchaseOrderItem("books", "DSLs in Action"),
+//      PurchaseOrderItem("bikes", "Canyon Torque FRX")))
+//
+//    val invalidOrder = PurchaseOrder(List())
+//    
+//    val bookChannel = Channel("bookChannel")
+//    val bikesChannel = Channel("bikesChannel")
+//    val beerChannel = Channel("beerChannel").withQueue()
+//    val aggregationChannel = Channel("aggregationChannel")
+//    
+//    
+//    val bikeRoute = handle.using("") --> aggregationChannel
+//
+//    val orderProcessingFlow = 
+//      filter.using{p:PurchaseOrder => !p.items.isEmpty}.where(exceptionOnRejection = true) -->
+//      split.using{p:PurchaseOrder => p.items} -->
+//      Channel.withDispatcher(taskExecutor = Executors.newCachedThreadPool) -->
+//      route.using{pi:PurchaseOrderItem => pi.itemType}(
+//        when("books") then bookChannel,
+//        when("bikes") then bikesChannel 
+//        when("beers") then beerChannel 
+//      ) 
+//      $
+//      bikesChannel -->
+//      bikeRoute
+//      $
+//      bookChannel -->
+//      handle.using("") -->
+//      aggregationChannel
+//      $
+//      aggregationChannel
+//
+//    val errorFlow = handle.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
+//
+//    val result = orderProcessingFlow.sendAndReceive[Any](validOrder, errorFlow = errorFlow)
+//    //val result = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = errorFlow)
+//
+//    println("Result: " + result)
+//    
+//    // orderProcessingFlow.aggregationChannel.sendAndRecieve???
+//
+//  }
 
   case class PurchaseOrder(val items: List[PurchaseOrderItem])
 

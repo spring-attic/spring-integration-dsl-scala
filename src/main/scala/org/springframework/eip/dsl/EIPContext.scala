@@ -28,97 +28,97 @@ import org.springframework.integration.channel.QueueChannel
  */
 object EIPContext {
 
-  def apply(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) = new EIPContext(null, compositions: _*)
-
-  def apply(parentApplicationContext:ApplicationContext)(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) =
-            new EIPContext(parentApplicationContext, compositions: _*)
+//  def apply(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) = new EIPContext(null, compositions: _*)
+//
+//  def apply(parentApplicationContext:ApplicationContext)(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) =
+//            new EIPContext(parentApplicationContext, compositions: _*)
 }
 
 /**
  *
  */
-class EIPContext(parentContext:ApplicationContext, compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) {
-
-  val applicationContext = ApplicationContextBuilder.build(parentContext, compositions: _*)
-  /**
-   *
-   */
-  def send(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Boolean = {
-    if (compositions.size > 1){
-      throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
-    }
-    
-    val inputChannelName = compositions(0).asInstanceOf[EIPConfigurationComposition].getStartingComposition().target match {
-      case ch:Channel => {
-        ch.name
-      }
-      case _ => throw new IllegalStateException("Can not determine starting channel for composition: " + compositions(0))
-    }
-
-    val inputChannel = this.applicationContext.getBean[MessageChannel](inputChannelName, classOf[MessageChannel])
-
-    val messageToSend = this.constructMessage(message, headers)
-    val sent = if (timeout > 0){
-      inputChannel.send(messageToSend, timeout)
-    }
-    else {
-      inputChannel.send(messageToSend)
-    }
-    sent
-  }
-
-  def sendAndReceive(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Message[_] = {
-    if (compositions.size > 1){
-      throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
-    }
-
-    val inputChannelName = compositions(0).asInstanceOf[EIPConfigurationComposition].getStartingComposition().target match {
-      case ch:Channel => {
-        ch.name
-      }
-      case _ => throw new IllegalStateException("Can not determine starting channel for composition: " + compositions(0))
-    }
-
-    val inputChannel = this.applicationContext.getBean[MessageChannel](inputChannelName, classOf[MessageChannel])
-
-    val replyChannel = new QueueChannel()
-    val messageToSend = MessageBuilder.
-      fromMessage(this.constructMessage(message, headers)).setReplyChannel(replyChannel).build()
-    val sent = if (timeout > 0){
-      inputChannel.send(messageToSend, timeout)
-    }
-    else {
-      inputChannel.send(messageToSend)
-    }
-    replyChannel.receive(1000)
-  }
-
-  private def constructMessage(message:Any, headers:Map[String,  Any] = null):Message[_] = {
-    val javaHeaders = if (headers != null){
-      JavaConversions.mapAsJavaMap(headers)
-    }
-    else {
-      null
-    }
-    val messageToSend:Message[_] = message match {
-      case msg:Message[_] => {
-        if (!CollectionUtils.isEmpty(javaHeaders)){
-          MessageBuilder.fromMessage(msg).copyHeadersIfAbsent(javaHeaders).build()
-        }
-        else {
-          msg
-        }
-      }
-      case _ => {
-        if (!CollectionUtils.isEmpty(javaHeaders)){
-          MessageBuilder.withPayload(message).copyHeaders(javaHeaders).build()
-        }
-        else {
-          MessageBuilder.withPayload(message).build()
-        }
-      }
-    }
-    messageToSend
-  }
-
-}
+//class EIPContext(parentContext:ApplicationContext, compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) {
+//
+//  val applicationContext = ApplicationContextBuilder.build(parentContext, compositions: _*)
+//  /**
+//   *
+//   */
+//  def send(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Boolean = {
+//    if (compositions.size > 1){
+//      throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
+//    }
+//    
+//    val inputChannelName = compositions(0).asInstanceOf[EIPConfigurationComposition].getStartingComposition().target match {
+//      case ch:Channel => {
+//        ch.name
+//      }
+//      case _ => throw new IllegalStateException("Can not determine starting channel for composition: " + compositions(0))
+//    }
+//
+//    val inputChannel = this.applicationContext.getBean[MessageChannel](inputChannelName, classOf[MessageChannel])
+//
+//    val messageToSend = this.constructMessage(message, headers)
+//    val sent = if (timeout > 0){
+//      inputChannel.send(messageToSend, timeout)
+//    }
+//    else {
+//      inputChannel.send(messageToSend)
+//    }
+//    sent
+//  }
+//
+//  def sendAndReceive(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Message[_] = {
+//    if (compositions.size > 1){
+//      throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
+//    }
+//
+//    val inputChannelName = compositions(0).asInstanceOf[EIPConfigurationComposition].getStartingComposition().target match {
+//      case ch:Channel => {
+//        ch.name
+//      }
+//      case _ => throw new IllegalStateException("Can not determine starting channel for composition: " + compositions(0))
+//    }
+//
+//    val inputChannel = this.applicationContext.getBean[MessageChannel](inputChannelName, classOf[MessageChannel])
+//
+//    val replyChannel = new QueueChannel()
+//    val messageToSend = MessageBuilder.
+//      fromMessage(this.constructMessage(message, headers)).setReplyChannel(replyChannel).build()
+//    val sent = if (timeout > 0){
+//      inputChannel.send(messageToSend, timeout)
+//    }
+//    else {
+//      inputChannel.send(messageToSend)
+//    }
+//    replyChannel.receive(1000)
+//  }
+//
+//  private def constructMessage(message:Any, headers:Map[String,  Any] = null):Message[_] = {
+//    val javaHeaders = if (headers != null){
+//      JavaConversions.mapAsJavaMap(headers)
+//    }
+//    else {
+//      null
+//    }
+//    val messageToSend:Message[_] = message match {
+//      case msg:Message[_] => {
+//        if (!CollectionUtils.isEmpty(javaHeaders)){
+//          MessageBuilder.fromMessage(msg).copyHeadersIfAbsent(javaHeaders).build()
+//        }
+//        else {
+//          msg
+//        }
+//      }
+//      case _ => {
+//        if (!CollectionUtils.isEmpty(javaHeaders)){
+//          MessageBuilder.withPayload(message).copyHeaders(javaHeaders).build()
+//        }
+//        else {
+//          MessageBuilder.withPayload(message).build()
+//        }
+//      }
+//    }
+//    messageToSend
+//  }
+//
+//}
