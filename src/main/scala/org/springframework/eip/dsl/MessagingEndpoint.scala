@@ -216,26 +216,6 @@ object aggregate {
                                                       messageStore = messageStore,
                                                       sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                       expireGroupsUponCompletion = expireGroupsUponCompletion))
-
-//  private[aggregate] trait Where {
-//    def where(name:String = null,
-//              keepReleasedMessages:Boolean = true,
-//              messageStore:MessageStore = new SimpleMessageStore,
-//              sendPartialResultsOnExpiry:Boolean = false,
-//              expireGroupsUponCompletion:Boolean = false): IntegrationComposition
-//  }
-
-//  private[aggregate] trait ReleaseStrategy {
-//    def until(releaseFunction:Function1[_,Boolean]): IntegrationComposition
-//
-//    def until(releaseExpression:String): IntegrationComposition
-//  }
-//
-//  private[aggregate] trait CorrelationStrategy {
-//    def on(correlationKey:AnyRef): SimpleComposition
-//
-//    def on(correlationFunction:Function1[_,AnyRef]): IntegrationComposition
-//  }
 }
 
 private[dsl] case class ServiceActivator(override val name:String, override val target:Any)
