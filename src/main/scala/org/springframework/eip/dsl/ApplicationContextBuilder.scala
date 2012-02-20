@@ -45,11 +45,13 @@ private[dsl] object ApplicationContextBuilder {
 //  private val logger = Logger.getLogger(this.getClass)
 //  
 //
-//  /**
-//   *
-//   */
-//  def build(parentContext:ApplicationContext,
-//            compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*):ApplicationContext= {
+  /**
+   *
+   */
+  def build(parentContext:ApplicationContext,
+            compositions:IntegrationComposition*):ApplicationContext= {
+    null
+  }
 //    implicit val applicationContext = new GenericApplicationContext()
 //
 //    if (parentContext != null) {

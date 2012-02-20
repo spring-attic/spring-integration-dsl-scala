@@ -31,7 +31,7 @@ abstract class EIPConfigurationComposition(val parentComposition:EIPConfiguratio
 
   private val logger = Logger.getLogger(this.getClass)
 
-//  val threadLocal:ThreadLocal[EIPContext] = new ThreadLocal[EIPContext]
+  
 
   private[dsl] trait WithErrorFlow {
     def withErrorFlow(errorComposition:EIPConfigurationComposition):Unit

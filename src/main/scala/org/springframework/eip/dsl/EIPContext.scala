@@ -26,29 +26,29 @@ import org.springframework.integration.channel.QueueChannel
 /**
  * @author Oleg Zhurakousky
  */
-object EIPContext {
+object $ {
 
-//  def apply(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) = new EIPContext(null, compositions: _*)
-//
-//  def apply(parentApplicationContext:ApplicationContext)(compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) =
-//            new EIPContext(parentApplicationContext, compositions: _*)
+  def apply(compositions:IntegrationComposition*) = new $(null, compositions: _*)
+
+  def apply(parentApplicationContext:ApplicationContext)(compositions:IntegrationComposition*) =
+            new $(parentApplicationContext, compositions: _*)
 }
 
 /**
  *
  */
-//class EIPContext(parentContext:ApplicationContext, compositions:(EIPConfigurationComposition with CompletableEIPConfigurationComposition)*) {
-//
-//  val applicationContext = ApplicationContextBuilder.build(parentContext, compositions: _*)
-//  /**
-//   *
-//   */
-//  def send(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Boolean = {
-//    if (compositions.size > 1){
-//      throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
-//    }
-//    
-//    val inputChannelName = compositions(0).asInstanceOf[EIPConfigurationComposition].getStartingComposition().target match {
+class $(parentContext:ApplicationContext, compositions:IntegrationComposition*) {
+
+  val applicationContext = ApplicationContextBuilder.build(parentContext, compositions: _*)
+  /**
+   *
+   */
+  def send(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Boolean = {
+    if (compositions.size > 1){
+      throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
+    }
+    
+//    val inputChannelName = DslUtils.getStartingComposition(compositions(0)).target match {
 //      case ch:Channel => {
 //        ch.name
 //      }
@@ -65,9 +65,10 @@ object EIPContext {
 //      inputChannel.send(messageToSend)
 //    }
 //    sent
-//  }
-//
-//  def sendAndReceive(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Message[_] = {
+    false
+  }
+
+  def sendAndReceive(message:Any, timeout:Long = 0, headers:Map[String,  Any] = null):Message[_] = {
 //    if (compositions.size > 1){
 //      throw new IllegalStateException("Can not determine starting point for thsi context since it contains multiple")
 //    }
@@ -91,34 +92,35 @@ object EIPContext {
 //      inputChannel.send(messageToSend)
 //    }
 //    replyChannel.receive(1000)
-//  }
-//
-//  private def constructMessage(message:Any, headers:Map[String,  Any] = null):Message[_] = {
-//    val javaHeaders = if (headers != null){
-//      JavaConversions.mapAsJavaMap(headers)
-//    }
-//    else {
-//      null
-//    }
-//    val messageToSend:Message[_] = message match {
-//      case msg:Message[_] => {
-//        if (!CollectionUtils.isEmpty(javaHeaders)){
-//          MessageBuilder.fromMessage(msg).copyHeadersIfAbsent(javaHeaders).build()
-//        }
-//        else {
-//          msg
-//        }
-//      }
-//      case _ => {
-//        if (!CollectionUtils.isEmpty(javaHeaders)){
-//          MessageBuilder.withPayload(message).copyHeaders(javaHeaders).build()
-//        }
-//        else {
-//          MessageBuilder.withPayload(message).build()
-//        }
-//      }
-//    }
-//    messageToSend
-//  }
-//
-//}
+    null
+  }
+
+  private def constructMessage(message:Any, headers:Map[String,  Any] = null):Message[_] = {
+    val javaHeaders = if (headers != null){
+      JavaConversions.mapAsJavaMap(headers)
+    }
+    else {
+      null
+    }
+    val messageToSend:Message[_] = message match {
+      case msg:Message[_] => {
+        if (!CollectionUtils.isEmpty(javaHeaders)){
+          MessageBuilder.fromMessage(msg).copyHeadersIfAbsent(javaHeaders).build()
+        }
+        else {
+          msg
+        }
+      }
+      case _ => {
+        if (!CollectionUtils.isEmpty(javaHeaders)){
+          MessageBuilder.withPayload(message).copyHeaders(javaHeaders).build()
+        }
+        else {
+          MessageBuilder.withPayload(message).build()
+        }
+      }
+    }
+    messageToSend
+  }
+
+}

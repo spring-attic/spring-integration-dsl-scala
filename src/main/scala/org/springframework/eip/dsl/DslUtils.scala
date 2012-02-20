@@ -24,7 +24,7 @@ object DslUtils {
   /**
    * 
    */
-  def toProductList(integrationComposition: BaseIntegrationComposition): List[Any] = {
+  def toProductList[T <: BaseIntegrationComposition](integrationComposition: T): List[Any] = {
 
     val listBuffer = new ListBuffer[Any]()
     this.doToList(integrationComposition, listBuffer);
