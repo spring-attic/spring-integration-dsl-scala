@@ -22,6 +22,8 @@ import org.apache.log4j.Logger
  */
 object DSL {
   
+  
+  
   implicit def anyComponent[T <: BaseIntegrationComposition]  = new ComposableIntegrationComponent[T] { 
     def compose(i: IntegrationComposition, s:T) = {
       val composition = s match {

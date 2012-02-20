@@ -87,7 +87,9 @@ object split {
 * AGGREGATOR
 */
 object aggregate {
-
+  /**
+   * 
+   */
   def apply() = new IntegrationComposition(null, new MessageAggregator()) {
     def where(name:String = null,
               keepReleasedMessages:Boolean = false,
@@ -100,7 +102,9 @@ object aggregate {
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
   }
-
+  /**
+   * 
+   */
   def on(correlationFunction:Function1[_,AnyRef]) = new IntegrationComposition(null, new MessageAggregator(null))  {
     def where(name:String = null,
               keepReleasedMessages:Boolean = false,
@@ -139,7 +143,9 @@ object aggregate {
                                                           expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
   }
-
+  /**
+   * 
+   */
   def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator(null))  {
     def where(name:String = null,
               keepReleasedMessages:Boolean = false,
@@ -178,7 +184,9 @@ object aggregate {
                                                           expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
   }
-
+  /**
+   *  
+   */
   def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator(null)) {
     def where(name:String = null,
               keepReleasedMessages:Boolean = false,
@@ -190,6 +198,19 @@ object aggregate {
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
+    
+    def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator(null))  {
+    	def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+              new IntegrationComposition(null, new MessageAggregator(name = name,
+                                                        keepReleasedMessages = keepReleasedMessages,
+                                                        messageStore = messageStore,
+                                                        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                        expireGroupsUponCompletion = expireGroupsUponCompletion))
+    }
   }
 
   def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator(null))  {
@@ -203,7 +224,19 @@ object aggregate {
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
-
+    
+    def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator(null))  {
+    	def where(name:String = null,
+              keepReleasedMessages:Boolean = false,
+              messageStore:MessageStore = new SimpleMessageStore,
+              sendPartialResultsOnExpiry:Boolean = true,
+              expireGroupsUponCompletion:Boolean = false) =
+              new IntegrationComposition(null, new MessageAggregator(name = name,
+                                                        keepReleasedMessages = keepReleasedMessages,
+                                                        messageStore = messageStore,
+                                                        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
+                                                        expireGroupsUponCompletion = expireGroupsUponCompletion))
+    }
   }
 
   def where(name:String = null,

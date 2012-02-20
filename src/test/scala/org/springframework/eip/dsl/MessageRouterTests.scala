@@ -18,6 +18,7 @@ package org.springframework.eip.dsl
 import org.junit.{Assert, Test}
 import org.springframework.integration.Message
 import org.springframework.core.task.SimpleAsyncTaskExecutor
+import org.springframework.eip.dsl.DSL._
 
 /**
  * @author Oleg Zhurakousky
@@ -29,153 +30,87 @@ class MessageRouterTests {
   @Test
   def validateConditionComposition(){
 
-//    val typeCondition = when(classOf[String]).then(Channel("hello"))
-//    Assert.assertTrue(typeCondition.isInstanceOf[PayloadTypeConditionComposition])
-//    
-//    val valueCondition = when("foo").then(Channel("hello"))
-//    Assert.assertTrue(valueCondition.isInstanceOf[ValueConditionComposition])
+    val typeCondition = when(classOf[String]).then(Channel("hello"))
+    Assert.assertTrue(typeCondition.isInstanceOf[PayloadTypeCondition])
+    
+    val valueCondition = when("foo").then(Channel("hello"))
+    Assert.assertTrue(valueCondition.isInstanceOf[ValueCondition])
   }
 
-//  /**
-//   * Demonstrates PayloadTypeRouter
-//   */
-//  @Test
-//  def validatePayloadTypeRouterConfig(){
-//
-//    val routerA =  route.onPayloadType(
-//
-//      when(classOf[String]) {
-//        Channel("stringChannel")  -->
-//        handle.using{s:String => s}
-//      },
-//      when(classOf[Int]) {
-//        Channel("intChannel")  -->
-//        handle.using{s:String => s}
-//      }
-//
-//    ).where(name = "myRouter")
-//    
-//    Assert.assertTrue(routerA.isInstanceOf[EIPConfigurationComposition])
-//    val targetRouter = routerA.target.asInstanceOf[Router]
-//    Assert.assertTrue(targetRouter.name equals "myRouter")
-//    Assert.assertNotNull(targetRouter.compositions)
-//    Assert.assertEquals(2, targetRouter.compositions.size)
-//
-//    // infix notation
-//    route onPayloadType(
-//
-//      when(classOf[String]) {
-//        Channel("stringChannel")  -->
-//        handle.using{s:String => s}
-//      }
-//
-//    ) where(name = "myRouter")
-//  }
-//
-//  /**
-//   * Demonstrates HeaderValueRouter
-//   */
-//  @Test
-//  def validateHeaderValueRouterConfig(){
-//
-//    val sChannel = Channel("stringChannel")
-//
-//    Channel("A") -->
-//    route.onValueOfHeader("someHeaderName") (
-//
-//      when("foo") {
-//        Channel("stringChannel")  -->
-//        handle.using{s:String => s}
-//      },
-//      when("bar") {
-//        Channel("intChannel")  -->
-//        handle.using{s:String => s}
-//      }
-//    )
-//  }
-//
-//  /**
-//   * Demonstrates SpEL Router
-//   */
-//  @Test
-//  def validateSpELRouterConfig(){
-//    route.using("'someChannelName'")(
-//      when(1) {
-//        handle.using{m:Message[_] => println(m)}
-//      },
-//      when(2) {
-//        handle.using{m:Message[_] => println(m)}
-//      }
-//    )
-//
-//    (route using("'someChannelName'"))(
-//      when(1) {
-//        handle.using{m:Message[_] => println(m)}
-//      },
-//      when(2) {
-//        handle.using{m:Message[_] => println(m)}
-//      }
-//    )
-//
-//    (route.using("'someChannelName'"))(
-//      when(1) {
-//        handle.using{m:Message[_] => println(m)}
-//      },
-//      when(2) {
-//        handle.using{m:Message[_] => println(m)}
-//      }
-//    ).where(name = "myRouter")
-//
-//    (route using("'someChannelName'"))(
-//      when(1) {
-//        handle.using{m:Message[_] => println(m)}
-//      },
-//      when(2) {
-//        handle.using{m:Message[_] => println(m)}
-//      }
-//    ) where(name = "myRouter")
-//  }
-//
-//  /**
-//   * Demonstrates Function based  Router
-//   */
-//  @Test
-//  def validateFunctionRouterConfig(){
-//
-//    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}(
-//      when(1) {
-//        handle.using{m:Message[_] => println(m)}
-//      },
-//      when(2) {
-//        handle.using{m:Message[_] => println(m)}
-//      }
-//    )
-//
-//    (route using{m:Message[_] => m.getHeaders.get("routeToChannel")})(
-//      when(1) {
-//        handle.using{m:Message[_] => println(m)}
-//      },
-//      when(2) {
-//        handle.using{m:Message[_] => println(m)}
-//      }
-//    )
-//
-//    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}(
-//      when(1) {
-//        handle.using{m:Message[_] => println(m)}
-//      },
-//      when(2) {
-//        handle.using{m:Message[_] => println(m)}
-//      }
-//    ).where(name = "myRouter")
-//
-//    (route using{m:Message[_] => m.getHeaders.get("routeToChannel")})(
-//      when(1) {
-//        handle.using{m:Message[_] => println(m)}
-//      },
-//      when(2) {
-//        handle.using{m:Message[_] => println(m)}
-//      }
-//    ) where(name = "myRouter")
-//  }
+  /**
+   * Demonstrates PayloadTypeRouter
+   */
+  @Test
+  def validatePayloadTypeRouterConfig(){
+
+    val routerA =  route.onPayloadType(
+
+      when(classOf[String]) then Channel("StringChannel"),
+      when(classOf[Int]) then Channel("IntChannel")
+
+    ).where(name = "myRouter")
+    
+    Assert.assertTrue(routerA.isInstanceOf[IntegrationComposition])
+    val targetRouter = routerA.target.asInstanceOf[Router]
+    Assert.assertTrue(targetRouter.name equals "myRouter")
+    Assert.assertNotNull(targetRouter.compositions)
+    Assert.assertEquals(2, targetRouter.compositions.size)
+
+    // infix notation
+    route onPayloadType(
+
+      when(classOf[String]) then Channel("StringChannel")
+       
+
+    ) where(name = "myRouter")
+  }
+
+  /**
+   * Demonstrates HeaderValueRouter
+   */
+  @Test
+  def validateHeaderValueRouterConfig(){
+
+    val sChannel = Channel("stringChannel")
+
+    Channel("A") -->
+    route.onValueOfHeader("someHeaderName") (
+
+      when("foo") then Channel("stringChannel"),
+      when("bar") then Channel("intChannel") 
+    )
+  }
+
+  /**
+   * Demonstrates SpEL Router
+   */
+  @Test
+  def validateSpELRouterConfig(){
+    
+    route.using("'someChannelName'")_ // if no condition
+
+    route.using("'someChannelName'")(
+      when(1) then Channel("1"),
+      when(2) then Channel("2")
+    ) where(name = "myRouter")
+    
+    (route using("'someChannelName'"))(
+      when(1) then Channel("1"),
+      when(2) then Channel("2")
+    ) where(name = "myRouter")
+    
+    
+  }
+
+  /**
+   * Demonstrates Function based  Router
+   */
+  @Test
+  def validateFunctionRouterConfig(){
+    
+    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}(
+      when(1) then Channel("1"),
+      when(2) then Channel("2")
+    ) where(name = "myRouter")
+  }
 }
