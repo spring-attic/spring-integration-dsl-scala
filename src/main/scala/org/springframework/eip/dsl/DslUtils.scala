@@ -66,7 +66,6 @@ object DslUtils {
           case c: BaseIntegrationComposition => this.doToList(c, lb)
 
           case lc: ListOfCompositions[BaseIntegrationComposition] =>
-            println()
             if (lc.compositions.size == 1) lb += lc.compositions(0).target
             else for (element <- lc.compositions) lb += this.toProductList(element)
 

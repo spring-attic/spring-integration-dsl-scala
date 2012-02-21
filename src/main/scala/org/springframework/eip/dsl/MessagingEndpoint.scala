@@ -16,6 +16,7 @@
 package org.springframework.eip.dsl
 
 import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
+import java.util.UUID
 
 
 /**
@@ -27,13 +28,13 @@ import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
  */
 object handle {
 
-  def using(function:Function1[_,_]) = new IntegrationComposition(null, new ServiceActivator(null, function)) {
+  def using(function:Function1[_,_]) = new IntegrationComposition(null, new ServiceActivator(target = function)) {
     
-    def where(name:String)= new IntegrationComposition(null, new ServiceActivator(name, function))
+    def where(name:String)= new IntegrationComposition(null, new ServiceActivator(name = name, target = function))
   }
 
-  def using(spelExpression:String) = new IntegrationComposition(null, new ServiceActivator(null, spelExpression))  {
-    def where(name:String)= new IntegrationComposition(null, new ServiceActivator(name, spelExpression))
+  def using(spelExpression:String) = new IntegrationComposition(null, new ServiceActivator(target = spelExpression))  {
+    def where(name:String)= new IntegrationComposition(null, new ServiceActivator(name = name, target = spelExpression))
   }
 }
 
@@ -44,12 +45,12 @@ object handle {
  */
 object transform {
 
-  def using(function:Function1[_,AnyRef]) = new IntegrationComposition(null, new Transformer(null, function)) {
-    def where(name:String)= new IntegrationComposition(null, new Transformer(name, function))
+  def using(function:Function1[_,AnyRef]) = new IntegrationComposition(null, new Transformer(target = function)) {
+    def where(name:String)= new IntegrationComposition(null, new Transformer(name = name, target = function))
   }
 
-  def using(spelExpression:String) = new IntegrationComposition(null, new Transformer(null, spelExpression)) {
-    def where(name:String)= new IntegrationComposition(null, new Transformer(name, spelExpression))
+  def using(spelExpression:String) = new IntegrationComposition(null, new Transformer(target = spelExpression)) {
+    def where(name:String)= new IntegrationComposition(null, new Transformer(name = name, target = spelExpression))
   }
 }
 
@@ -58,48 +59,50 @@ object transform {
  */
 object filter {
 
-  def using(function:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageFilter(null, function)) {
-    def where(name:String = null, exceptionOnRejection:Boolean = false)=
-      new IntegrationComposition(null, new MessageFilter(name, function, exceptionOnRejection))
+  def using(function:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageFilter(target = function)) {
+    def where(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) =
+      new IntegrationComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
   }
 
-  def using(spelExpression:String) = new IntegrationComposition(null, new MessageFilter(null, spelExpression))  {
-    def where(name:String = null, exceptionOnRejection:Boolean = false) =
-      new IntegrationComposition(null, new MessageFilter(name, spelExpression, exceptionOnRejection))
+  def using(spelExpression:String) = new IntegrationComposition(null, new MessageFilter(target = spelExpression))  {
+    def where(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) =
+      new IntegrationComposition(null, new MessageFilter(name = name, target = spelExpression, exceptionOnRejection = exceptionOnRejection))
   }
 }
 
 
-/**
- * ENRICHER (payload, header)
- */
-object enrich {
-  
-  def header = new {
-    def using(headerMap:(Tuple2[String, _])*)=
-      new IntegrationComposition(null, new Enricher(null, headerMap))
-    
-    def using(function:Function1[_,AnyRef])=
-      new IntegrationComposition(null, new Enricher(null, function))
-  }
-  
-  def payload = new {
-    def using(function:Function1[_,AnyRef])=
-      new IntegrationComposition(null, new Enricher(null, function))
-  }
-}
+///**
+// * ENRICHER (payload, header)
+// */
+//object enrich {
+//  
+//  def header = new {
+//    def using(headerMap:(Tuple2[String, _])*)=
+//      new IntegrationComposition(null, new Enricher(null, headerMap))
+//    
+//    def using(function:Function1[_,AnyRef])=
+//      new IntegrationComposition(null, new Enricher(null, function))
+//  }
+//  
+//  def payload = new {
+//    def using(function:Function1[_,AnyRef])=
+//      new IntegrationComposition(null, new Enricher(null, function))
+//  }
+//}
 
 /**
  * SPLITTER
  */
 object split {
 
-  def using(function:Function1[_,Iterable[Any]]) = new IntegrationComposition(null, new MessageSplitter(null, target=function)) {
-    def where(name:String = null, applySequence:Boolean = true)= new IntegrationComposition(null, new MessageSplitter(name, function, applySequence))
+  def using(function:Function1[_,Iterable[Any]]) = new IntegrationComposition(null, new MessageSplitter(target=function)) {
+    def where(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
+      new IntegrationComposition(null, new MessageSplitter(name = name, target = function, applySequence = applySequence))
   }
 
   def using(spelExpression:String) = new IntegrationComposition(null, new MessageSplitter(null, target = spelExpression))  {
-    def where(name:String= null, applySequence:Boolean = true)= new IntegrationComposition(null, new MessageSplitter(name, spelExpression, applySequence))
+    def where(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
+      new IntegrationComposition(null, new MessageSplitter(name = name, target = spelExpression, applySequence = applySequence))
   }
 }
 
@@ -111,7 +114,7 @@ object aggregate {
    * 
    */
   def apply() = new IntegrationComposition(null, new MessageAggregator()) {
-    def where(name:String = null,
+    def where(name:String,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -125,8 +128,8 @@ object aggregate {
   /**
    * 
    */
-  def on(correlationFunction:Function1[_,AnyRef]) = new IntegrationComposition(null, new MessageAggregator(null))  {
-    def where(name:String = null,
+  def on(correlationFunction:Function1[_,AnyRef]) = new IntegrationComposition(null, new MessageAggregator())  {
+    def where(name:String,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -137,8 +140,8 @@ object aggregate {
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
 
-    def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator(null))  {
-      def where(name:String = null,
+    def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator())  {
+      def where(name:String,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -150,8 +153,8 @@ object aggregate {
                                                           expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
-    def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator(null))  {
-      def where(name:String = null,
+    def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator())  {
+      def where(name:String ,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -166,7 +169,7 @@ object aggregate {
   /**
    * 
    */
-  def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator(null))  {
+  def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator())  {
     def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
@@ -178,7 +181,7 @@ object aggregate {
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
 
-    def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator(null))  {
+    def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator())  {
       def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
@@ -191,7 +194,7 @@ object aggregate {
                                                            expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
-    def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator(null))  {
+    def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator())  {
       def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
@@ -207,7 +210,7 @@ object aggregate {
   /**
    *  
    */
-  def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator(null)) {
+  def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator()) {
     def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
@@ -219,7 +222,7 @@ object aggregate {
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
     
-    def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator(null))  {
+    def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator())  {
     	def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
@@ -233,7 +236,7 @@ object aggregate {
     }
   }
 
-  def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator(null))  {
+  def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator())  {
     def where(name:String,
               keepReleasedMessages:Boolean,
               messageStore:MessageStore,
@@ -245,7 +248,7 @@ object aggregate {
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
     
-    def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator(null))  {
+    def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator())  {
     	def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
@@ -271,30 +274,29 @@ object aggregate {
                                                       expireGroupsUponCompletion = expireGroupsUponCompletion))
 }
 
-private[dsl] case class ServiceActivator(override val name:String, override val target:Any)
+private[dsl] class ServiceActivator(name:String = "$sa_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
             extends SimpleEndpoint(name, target)
 
-private[dsl] case class MessagingBridge(override val name:String)
+private[dsl] class MessagingBridge(name:String = "$br_" + UUID.randomUUID().toString.substring(0, 8))
             extends SimpleEndpoint(name, null)
 
-private[dsl] case class Enricher(override val name:String, 
-                                 override val target:Any)
+private[dsl] class Enricher(name:String = "$enr_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
             extends SimpleEndpoint(name, null)
 
-private[dsl] case class Transformer( override val name:String, override val target:Any)
+private[dsl] class Transformer(name:String = "$xfmr_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
             extends SimpleEndpoint(name, target)
 
-private[dsl] case class MessageFilter(override val name:String, override val target:Any, exceptionOnRejection:Boolean = false)
+private[dsl] class MessageFilter(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val exceptionOnRejection:Boolean = false)
             extends SimpleEndpoint(name, target)
 
-private[dsl] case class MessageSplitter(override val name:String, override val target:Any, val applySequence:Boolean = false)
+private[dsl] class MessageSplitter(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val applySequence:Boolean = false)
             extends SimpleEndpoint(name, target)
 
-private[dsl] case class MessageAggregator(override val name:String = null,
+private[dsl] case class MessageAggregator(override val name:String = "$ag_" + UUID.randomUUID().toString.substring(0, 8),
                                           val keepReleasedMessages:Boolean = true,
                                           val messageStore:MessageStore = new SimpleMessageStore,
                                           val sendPartialResultsOnExpiry:Boolean = false,
                                           val expireGroupsUponCompletion:Boolean = false) extends IntegrationComponent(name)
 
-private[dsl] abstract class SimpleEndpoint(override val name:String = null, val target:Any) extends IntegrationComponent(name)
+private[dsl] abstract class SimpleEndpoint(name:String, val target:Any = null) extends IntegrationComponent(name)
 

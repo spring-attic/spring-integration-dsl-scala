@@ -42,7 +42,7 @@ case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIn
    */
   def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: BaseIntegrationComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
     val context = this.getContext()
-    context.sendAndReceive[T](message)
+    context.sendAndReceive[T](message, timeout, headers, errorFlow)
   }
 
   /**
@@ -98,7 +98,7 @@ case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIn
         eipContext
       }
       case _ => {
-        val eipContext = SI(this)
+        val eipContext = new SI(null, this)
         threadLocal.set(eipContext)
         eipContext
       }
@@ -109,7 +109,7 @@ case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIn
 /**
  *
  */
-case class IntegrationComposition(override private[dsl] val parentComposition: BaseIntegrationComposition, override private[dsl] val target: IntegrationComponent)
+class IntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends BaseIntegrationComposition(parentComposition, target) {
   /**
    *
@@ -123,7 +123,7 @@ case class IntegrationComposition(override private[dsl] val parentComposition: B
 /**
  *
  */
-case class ChannelIntegrationComposition(override private[dsl] val parentComposition: BaseIntegrationComposition, override private[dsl] val target: IntegrationComponent)
+class ChannelIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends IntegrationComposition(parentComposition, target) {
 
   /**
@@ -141,7 +141,7 @@ case class ChannelIntegrationComposition(override private[dsl] val parentComposi
 /**
  *
  */
-case class PollableChannelIntegrationComposition(override private[dsl] val parentComposition: IntegrationComposition, override private[dsl] val target: IntegrationComponent)
+class PollableChannelIntegrationComposition(parentComposition: IntegrationComposition, target: IntegrationComponent)
   extends ChannelIntegrationComposition(parentComposition, target) {
   /**
    *

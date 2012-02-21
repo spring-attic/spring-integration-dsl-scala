@@ -41,7 +41,9 @@ object DSL {
    *
    */
   implicit def channelComponent = new ComposableIntegrationComponent[ChannelIntegrationComposition] {
-    def compose(i: IntegrationComposition, c: ChannelIntegrationComposition) = new ChannelIntegrationComposition(i, c.target)
+    def compose(i: IntegrationComposition, c: ChannelIntegrationComposition) = {
+      new ChannelIntegrationComposition(i, c.target)
+    }
   }
 
   /**

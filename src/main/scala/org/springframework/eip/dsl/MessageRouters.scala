@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package org.springframework.eip.dsl
+import java.util.UUID
 
 
 /**
@@ -23,57 +24,50 @@ package org.springframework.eip.dsl
 
 object route {
 
-  def onPayloadType(conditionCompositions:PayloadTypeCondition*) = new IntegrationComposition(null,  new Router(null, null, null, conditionCompositions: _*)) { 
+  def onPayloadType(conditionCompositions:PayloadTypeCondition*) = new IntegrationComposition(null,  new Router()(conditionCompositions: _*)) { 
 
-    def where(name:String) = new IntegrationComposition(null, new Router(name, null, null, conditionCompositions: _*))
+    def where(name:String) = new IntegrationComposition(null, new Router(name, null, null)(conditionCompositions: _*))
   }
 
   def onValueOfHeader(headerName: String)(conditionCompositions: ValueCondition*) =
-    new IntegrationComposition(null, new Router(null, null, headerName, conditionCompositions: _*)) {
+    new IntegrationComposition(null, new Router(null, null, headerName)(conditionCompositions: _*)) {
 
-      def where(name: String) = new IntegrationComposition(null, new Router(name, null, headerName, conditionCompositions: _*))
+      def where(name: String) = new IntegrationComposition(null, new Router(name, null, headerName)(conditionCompositions: _*))
     }
 
   def using(target: String)(conditions: ValueCondition* ) =
-    new IntegrationComposition(null, new Router(null, target, null, conditions: _*))  {
-      def where(name: String) = new IntegrationComposition(null, new Router(name, target, null, conditions: _*))
+    new IntegrationComposition(null, new Router(target = target)(conditions: _*))  {
+      def where(name: String) = new IntegrationComposition(null, new Router(name, target, null)(conditions: _*))
     }
 
   def using(target: Function1[_, Any])(conditions: ValueCondition*) =
-    new IntegrationComposition(null, new Router(null, target, null, conditions: _*)) {
-      def where(name: String) = new IntegrationComposition(null, new Router(name, target, null, conditions: _*))
+    new IntegrationComposition(null, new Router(target = target)(conditions: _*)) {
+      def where(name: String) = new IntegrationComposition(null, new Router(name = name, target = target)(conditions: _*))
     }
-  
-//  def using(target: String) =
-//    new IntegrationComposition(null, new Router(null, target, null, null))  {
-//      def where(name: String) = new IntegrationComposition(null, new Router(name, target, null, null))
-//    }
-//
-//  def using(target: Function1[_, Any]) =
-//    new IntegrationComposition(null, new Router(null, target, null, null)) {
-//      def where(name: String) = new IntegrationComposition(null, new Router(name, target, null, null))
-//    }
 }
 /**
  * 
  */
 object when {
   def apply(payloadType:Class[_]) = new {
-    def then(channel:ChannelIntegrationComposition) = new PayloadTypeCondition(payloadType, channel)
+    def then(composition:IntegrationComposition) = new PayloadTypeCondition(payloadType, composition)
+    def -->(composition:IntegrationComposition) = new PayloadTypeCondition(payloadType, composition)
   }
-  
-  def apply(headerValue:Any) = new  {
-    def then(channel:ChannelIntegrationComposition) = new ValueCondition(headerValue, channel)
-  }
+ 
+  def apply(value:Any) = new  {
+    def then(composition:IntegrationComposition) = new ValueCondition(value, composition)
+    def -->(composition:IntegrationComposition) = new ValueCondition(value, composition)
+  } 
 }
 
-private[dsl] case class Router(override val name:String, override val target:Any, val headerName:String, val conditions:Condition*)
+
+private[dsl] class Router(name:String = "$rtr_" + UUID.randomUUID().toString.substring(0, 8), target:Any = null, val headerName:String = null)( val conditions:Condition*)
             extends SimpleEndpoint(name, target)
 
-private[dsl] abstract class Condition(val value:Any, val channel:IntegrationComponent)
+private[dsl] abstract class Condition(val value:Any, val integrationComposition:BaseIntegrationComposition)
 
-private[dsl] class PayloadTypeCondition(val payloadType:Class[_], val channelComposition:ChannelIntegrationComposition) 
-	extends Condition(DslUtils.toJavaType(payloadType).getName(), channelComposition.target)
+private[dsl] class PayloadTypeCondition(val payloadType:Class[_], override val integrationComposition:BaseIntegrationComposition) 
+	extends Condition(DslUtils.toJavaType(payloadType).getName(), integrationComposition)
 
-private[dsl] class ValueCondition(override val value:Any, val channelComposition:ChannelIntegrationComposition) 
-	extends Condition(value, channelComposition.target)
+private[dsl] class ValueCondition(override val value:Any, override val integrationComposition:BaseIntegrationComposition) 
+	extends Condition(value, integrationComposition)

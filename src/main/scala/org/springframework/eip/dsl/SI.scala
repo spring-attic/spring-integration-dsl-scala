@@ -29,25 +29,13 @@ import scala.collection.JavaConversions._
 /**
  * @author Oleg Zhurakousky
  */
-object SI {
-
-  def apply(compositions: BaseIntegrationComposition*) = new SI(null, compositions: _*)
-
-  def apply(parentApplicationContext: ApplicationContext)(compositions: BaseIntegrationComposition*) =
-    new SI(parentApplicationContext, compositions: _*)
-
-}
-
-/**
- *
- */
-class SI(parentContext: ApplicationContext, compositions: BaseIntegrationComposition*) {
+private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegrationComposition) {
 
   private val logger = Logger.getLogger(this.getClass)
 
   if (logger.isDebugEnabled) logger.debug("Creating new EIP context")
 
-  val normalizedComposition = compositions(0).normalizeComposition()
+  val normalizedComposition = composition.normalizeComposition()
 
   normalizedComposition.target match {
     case poller: Poller => throw new IllegalStateException("The resulting message flow configuration ends with Poller which " +
@@ -61,9 +49,7 @@ class SI(parentContext: ApplicationContext, compositions: BaseIntegrationComposi
 
   val inputChannelName: String = DslUtils.getStartingComposition(normalizedComposition).target.asInstanceOf[AbstractChannel].name
 
-  val compositionList: List[BaseIntegrationComposition] = compositions.toList.patch(0, Seq(normalizedComposition), 1)
-
-  val applicationContext = ApplicationContextBuilder.build(parentContext, compositionList)
+  val applicationContext = ApplicationContextBuilder.build(parentContext, normalizedComposition)
   /**
    *
    */
