@@ -5,7 +5,7 @@ import org.springframework.eip.dsl.DSL._
 import org.springframework.integration.Message
 import org.springframework.integration.message.GenericMessage
 
-class DSLUsageTests {
+class DSLUsageDemo {
 
   @Test
   def simpleCompositionTestSend = {
@@ -154,6 +154,18 @@ class DSLUsageTests {
     messageFlow.send("hello")
     messageFlow.send(123)
     messageFlow.send(true)
+    println("done")
+  }
+  
+  @Test
+  def simpleCompositionTestSendWithBridge = {
+    val messageFlow = 
+      Channel("A") -->
+      Channel("B") -->
+      handle.using{m:Message[_] => println("From Hello channel - " + m)}
+      
+    messageFlow.send("hello")
+    
     println("done")
   }
 }

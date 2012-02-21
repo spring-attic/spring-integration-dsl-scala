@@ -36,6 +36,7 @@ import org.springframework.integration.config._
 import org.springframework.integration.aggregator.{ AggregatingMessageHandler, DefaultAggregatingMessageGroupProcessor }
 import collection.JavaConversions
 import org.springframework.integration.support.MessageBuilder
+import org.springframework.integration.handler.BridgeHandler
 
 /**
  * @author Oleg Zhurakousky
@@ -59,7 +60,9 @@ private[dsl] object ApplicationContextBuilder {
     this.preProcess(applicationContext)
 
     for(composition <- compositions){
-      println("composition: " + DslUtils.toProductList(composition))
+      if (this.logger.isDebugEnabled()) 
+        this.logger.debug("Initializing the following composition segment: " + DslUtils.toProductList(composition))
+      
       this.init(composition, null)
     }
     
@@ -72,7 +75,7 @@ private[dsl] object ApplicationContextBuilder {
    *
    */
   private def init(composition: BaseIntegrationComposition, outputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext): Unit = {
-	  println("composition: " + DslUtils.toProductList(composition))
+	 
     val inputChannel: AbstractChannel = this.determineInputChannel(composition)
     
     if (inputChannel != null) this.buildChannel(inputChannel)
@@ -89,6 +92,7 @@ private[dsl] object ApplicationContextBuilder {
               if (logger.isTraceEnabled) {
                 logger.trace("[" + inputChannel.name + " --> bridge --> " + composition.target.asInstanceOf[Channel].name + "]")
               }
+              this.wireEndpoint(new MessagingBridge(null), inputChannel, (if (outputChannel != null) outputChannel else null))
             }
             case poller: Poller => {
               if (logger.isTraceEnabled) {
@@ -134,7 +138,8 @@ private[dsl] object ApplicationContextBuilder {
   }
 
   private def determineInputChannel(composition: BaseIntegrationComposition): AbstractChannel = {
-    val inputChannel: AbstractChannel = if (!composition.target.isInstanceOf[AbstractChannel] && composition.parentComposition != null) {
+    
+    val inputChannel: AbstractChannel = if (composition.parentComposition != null) {
       composition.parentComposition.target match {
         case ch: AbstractChannel => {
           ch
@@ -143,7 +148,10 @@ private[dsl] object ApplicationContextBuilder {
           composition.parentComposition.parentComposition.target.asInstanceOf[AbstractChannel]
         }
         case endpoint: IntegrationComponent => {
-          Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
+          if (!composition.target.isInstanceOf[AbstractChannel]){
+            Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
+          }
+          else null
         }
         case _ => throw new IllegalStateException("Unrecognized component " + composition)
       }
@@ -274,6 +282,10 @@ private[dsl] object ApplicationContextBuilder {
       case xfmr: Transformer => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
         this.defineHandlerTarget(xfmr, handlerBuilder)
+      }
+      case mb: MessagingBridge => {
+        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[BridgeHandler])
+        //this.defineHandlerTarget(xfmr, handlerBuilder)
       }
       case router: Router => {
         val conditions = router.conditions

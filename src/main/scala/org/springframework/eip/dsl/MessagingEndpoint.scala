@@ -254,6 +254,9 @@ object aggregate {
 private[dsl] case class ServiceActivator(override val name:String, override val target:Any)
             extends SimpleEndpoint(name, target)
 
+private[dsl] case class MessagingBridge(override val name:String)
+            extends SimpleEndpoint(name, null)
+
 private[dsl] case class Transformer( override val name:String, override val target:Any)
             extends SimpleEndpoint(name, target)
 
