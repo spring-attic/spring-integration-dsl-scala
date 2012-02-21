@@ -97,6 +97,7 @@ private[dsl] object ApplicationContextBuilder {
                 logger.trace("[" + composition.parentComposition.parentComposition.target.asInstanceOf[Channel].name
                   + " --> pollable bridge --> " + composition.target.asInstanceOf[Channel].name + "]")
               }
+              //this.wireEndpoint(new MessagingBridge(), inputChannel, (if (outputChannel != null) outputChannel else null), poller)
             }
             case _ =>
           }
@@ -121,8 +122,8 @@ private[dsl] object ApplicationContextBuilder {
                 logger.trace("[" + inputChannel.name + " --> " + composition.target +
                   (if (outputChannel != null) (" --> " + outputChannel.name) else "") + "]")
               }
-
-              this.wireEndpoint(endpoint, inputChannel, (if (outputChannel != null) outputChannel else null))
+              if (!endpoint.isInstanceOf[Poller])
+            	  this.wireEndpoint(endpoint, inputChannel, (if (outputChannel != null) outputChannel else null))
             }
           }
         }
@@ -205,7 +206,7 @@ private[dsl] object ApplicationContextBuilder {
    *
    */
   private def wireEndpoint(endpoint: IntegrationComponent, inputChannel: AbstractChannel, outputChannel: AbstractChannel, poller: Poller = null)(implicit applicationContext: GenericApplicationContext) {
-    require(endpoint.name != null, "Each component must be named")
+    require(endpoint.name != null, "Each component must be named " + endpoint)
     
     if (!applicationContext.containsBean(endpoint.name)) {
       if (logger.isDebugEnabled) logger.debug("Creating " + endpoint)

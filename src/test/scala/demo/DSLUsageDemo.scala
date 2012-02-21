@@ -1,6 +1,7 @@
-package org.springframework.eip.dsl
+package demo
 
 import org.junit.{Assert, Test}
+import org.springframework.eip.dsl._
 import org.springframework.eip.dsl.DSL._
 import org.springframework.integration.Message
 import org.springframework.integration.message.GenericMessage
@@ -8,7 +9,7 @@ import org.springframework.integration.message.GenericMessage
 class DSLUsageDemo {
 
   @Test
-  def simpleCompositionTestSend = {
+  def demoSend = {
     val messageFlow = 
       transform.using{m:Message[String] => m.getPayload().toUpperCase()} -->
       handle.using{m:Message[_] => println(m)}
@@ -18,7 +19,7 @@ class DSLUsageDemo {
   }
   
   @Test
-  def simpleCompositionTestSendAndReceive = {
+  def sdemoSendAndReceive = {
     val messageFlow = 
       transform.using{m:Message[String] => m.getPayload().toUpperCase()} -->
       handle.using{m:Message[_] => println(m);m}
@@ -28,7 +29,7 @@ class DSLUsageDemo {
   }
   
   @Test
-  def simpleCompositionTestSendWithPubSubChannel = {
+  def demoSendWithPubSubChannel = {
     val messageFlow = 
       transform.using{m:Message[String] => m.getPayload().toUpperCase()} -->
       PubSubChannel("pubSub") --< (
@@ -46,7 +47,7 @@ class DSLUsageDemo {
   
   
   @Test
-  def simpleCompositionTestSendWithBridge = {
+  def demoSendWithBridge = {
     val messageFlow = 
       Channel("A") -->
       Channel("B") -->
@@ -57,17 +58,17 @@ class DSLUsageDemo {
     println("done")
   }
   
-//  @Test
-//  def simpleCompositionTestSendWithPolingBridge = {
-//    val messageFlow = 
-//      Channel("A") -->
-//      Channel("B").withQueue --> poll.usingFixedRate(1) -->
-//      handle.using{m:Message[_] => println("From Hello channel - " + m)}
-//      
-//    messageFlow.send("hello")
-//    
-//    println("done")
-//  }
+  @Test
+  def demoSendWithPolingBridge = {
+    val messageFlow = 
+      Channel("A") -->
+      Channel("B").withQueue --> poll.usingFixedRate(1) -->
+      handle.using{m:Message[_] => println("From Hello channel - " + m)}
+      
+    messageFlow.send("hello")
+    Thread.sleep(1000)
+    println("done")
+  }
   
   def simpleCompositionWithEnricher = {
     val enrichFlow = 

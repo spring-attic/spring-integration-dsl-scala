@@ -71,24 +71,24 @@ object filter {
 }
 
 
-///**
-// * ENRICHER (payload, header)
-// */
-//object enrich {
-//  
-//  def header = new {
-//    def using(headerMap:(Tuple2[String, _])*)=
-//      new IntegrationComposition(null, new Enricher(null, headerMap))
-//    
-//    def using(function:Function1[_,AnyRef])=
-//      new IntegrationComposition(null, new Enricher(null, function))
-//  }
-//  
-//  def payload = new {
-//    def using(function:Function1[_,AnyRef])=
-//      new IntegrationComposition(null, new Enricher(null, function))
-//  }
-//}
+/**
+ * ENRICHER (payload, header)
+ */
+object enrich {
+  
+  def header = new {
+    def using(headerMap:(Tuple2[String, _])*)=
+      new IntegrationComposition(null, new Enricher(null, headerMap))
+    
+    def using(function:Function1[_,AnyRef])=
+      new IntegrationComposition(null, new Enricher(null, function))
+  }
+  
+  def payload = new {
+    def using(function:Function1[_,AnyRef])=
+      new IntegrationComposition(null, new Enricher(null, function))
+  }
+}
 
 /**
  * SPLITTER

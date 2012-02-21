@@ -18,6 +18,7 @@ package org.springframework.eip.dsl
 import org.springframework.scheduling.Trigger
 import java.util.concurrent.Executor
 import org.springframework.core.task.SyncTaskExecutor
+import java.util.UUID
 
 /**
  * @author Oleg Zhurakousky
@@ -67,18 +68,11 @@ object poll {
         new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor)
       }
   }
-
-//  private[poll] trait WithExecutor {
-//    def withExecutor(taskExecutor:Executor = new SyncTaskExecutor): Poller
-//  }
-//  private[poll] trait WithMaxMessagesPerPoll {
-//    def withMaxMessagesPerPoll(maxMessagesPerPoll:Int): Poller
-//  }
 }
 /**
  * 
  */
-case class Poller(override val name:String = null, val fixedRate:Int = Integer.MIN_VALUE,
+case class Poller(override val name:String = "$poll_" + UUID.randomUUID().toString.substring(0, 8), val fixedRate:Int = Integer.MIN_VALUE,
                                val fixedDelay:Int = Integer.MIN_VALUE,
                                val maxMessagesPerPoll:Int = Integer.MIN_VALUE,
                                val taskExecutor:Executor = new SyncTaskExecutor,
