@@ -77,7 +77,9 @@ object Channel {
     new Channel(name = channelName, failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor)
   }
 }
-
+/**
+ * 
+ */
 object PubSubChannel {
   def apply() = new ChannelIntegrationComposition(null, new PubSubChannel(name = null)) {
     def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(name = null, applySequence=true))
@@ -90,29 +92,20 @@ object PubSubChannel {
   def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(name = null, applySequence=true))
 }
 
+private[dsl] abstract class AbstractChannel(override val name:String) extends IntegrationComponent(name)
+
 /**
  *
  */
-private[dsl] case class Channel(val name:String,
+private[dsl] case class Channel(override val name:String,
                            val failover: Boolean = true,
                            val loadBalancer:String = null,
                            val taskExecutor:Executor = null,
                            val capacity: Int = Integer.MIN_VALUE,
-                           val messageStore: MessageStore = null)
+                           val messageStore: MessageStore = null) extends AbstractChannel(name)
 /**
  *                            
  */
-private[dsl] case class PubSubChannel(val name:String,
+private[dsl] case class PubSubChannel(override val name:String,
                            val applySequence: Boolean = false,
-                           val taskExecutor:Executor = null)
-
-private[dsl] trait Receivable extends Sendable{
-  def receive(): Message[_]
-
-  def receive(timeout:Int): Message[_]
-}
-
-private[dsl] trait Sendable {
-  def send(message:Message[_]): Unit
-}
-
+                           val taskExecutor:Executor = null) extends AbstractChannel(name)

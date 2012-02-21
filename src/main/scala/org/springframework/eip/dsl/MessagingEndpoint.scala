@@ -267,10 +267,7 @@ private[dsl] case class MessageAggregator(override val name:String = null,
                                           val keepReleasedMessages:Boolean = true,
                                           val messageStore:MessageStore = new SimpleMessageStore,
                                           val sendPartialResultsOnExpiry:Boolean = false,
-                                          val expireGroupsUponCompletion:Boolean = false)
-            extends Endpoint(name)
+                                          val expireGroupsUponCompletion:Boolean = false) extends IntegrationComponent(name)
 
-private[dsl] abstract class Endpoint(val name:String = null)
-
-private[dsl] abstract class SimpleEndpoint(override val name:String = null, val target:Any) extends Endpoint(name)
+private[dsl] abstract class SimpleEndpoint(override val name:String = null, val target:Any) extends IntegrationComponent(name)
 

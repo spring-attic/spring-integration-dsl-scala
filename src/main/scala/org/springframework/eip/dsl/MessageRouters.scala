@@ -67,11 +67,13 @@ object when {
   }
 }
 
-private[dsl] case class Router(override val name:String, override val target:Any, val headerName:String, val compositions:Condition*)
+private[dsl] case class Router(override val name:String, override val target:Any, val headerName:String, val conditions:Condition*)
             extends SimpleEndpoint(name, target)
 
-private[dsl] abstract class Condition
+private[dsl] abstract class Condition(val value:Any, val channel:IntegrationComponent)
 
-private[dsl] class PayloadTypeCondition(val payloadType:Class[_], val channelComposition:ChannelIntegrationComposition) extends Condition
+private[dsl] class PayloadTypeCondition(val payloadType:Class[_], val channelComposition:ChannelIntegrationComposition) 
+	extends Condition(payloadType, channelComposition.target)
 
-private[dsl] class ValueCondition(val value:Any, val channelComposition:ChannelIntegrationComposition) extends Condition
+private[dsl] class ValueCondition(override val value:Any, val channelComposition:ChannelIntegrationComposition) 
+	extends Condition(value, channelComposition.target)

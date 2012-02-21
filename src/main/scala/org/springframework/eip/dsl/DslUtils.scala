@@ -48,9 +48,10 @@ object DslUtils {
         p match {
           case c: BaseIntegrationComposition => this.doToList(c, lb)
 
-          case wa: WrappedArray[BaseIntegrationComposition] =>
-            if (wa.size == 1) lb += wa(0).target
-            else for (element <- wa) lb += this.toProductList(element)
+          case lc: ListOfCompositions[BaseIntegrationComposition] =>
+            println()
+            if (lc.compositions.size == 1) lb += lc.compositions(0).target
+            else for (element <- lc.compositions) lb += this.toProductList(element)
 
           case _ => lb += p
         }

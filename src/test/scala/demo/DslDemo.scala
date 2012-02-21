@@ -82,5 +82,7 @@ class DslDemo {
 	          Channel("InnerB-4B-2")
 	      )
 	   )
+	   
+	   println(DslUtils.toProductList(c))
    }
 }

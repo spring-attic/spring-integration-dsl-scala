@@ -78,11 +78,11 @@ object poll {
 /**
  * 
  */
-case class Poller(val fixedRate:Int = Integer.MIN_VALUE,
+case class Poller(override val name:String = null, val fixedRate:Int = Integer.MIN_VALUE,
                                val fixedDelay:Int = Integer.MIN_VALUE,
                                val maxMessagesPerPoll:Int = Integer.MIN_VALUE,
                                val taskExecutor:Executor = new SyncTaskExecutor,
-                               val trigger:Trigger = null){
+                               val trigger:Trigger = null) extends IntegrationComponent (name){
 
   def -->[T](a: T)(implicit g :ComposableIntegrationComponent[T]):IntegrationComposition = null
 }
