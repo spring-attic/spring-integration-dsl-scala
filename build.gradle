@@ -1,6 +1,9 @@
 description = 'Spring Integration Scala DSL'
 
+group = 'org.springframework.integration'
+
 apply plugin: 'scala'
+apply plugin: 'maven'
 
 repositories {
     mavenCentral()
@@ -24,3 +27,4 @@ task wrapper(type: Wrapper) {
     distributionUrl = 'http://repo.gradle.org/gradle/distributions-snapshots/gradle-1.0-milestone-8-20120112000036+0100-bin.zip'
     jarFile = '.wrapper/gradle-wrapper.jar'
 }
+
