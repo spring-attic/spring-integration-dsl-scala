@@ -81,7 +81,7 @@ class SI(parentContext: ApplicationContext, compositions: BaseIntegrationComposi
   /**
    *
    */
-  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null)(implicit m: scala.reflect.Manifest[T]): T = {
+  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: BaseIntegrationComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
 
     val inputChannel = this.applicationContext.getBean[MessageChannel](this.inputChannelName, classOf[MessageChannel])
 
@@ -90,12 +90,19 @@ class SI(parentContext: ApplicationContext, compositions: BaseIntegrationComposi
     val messageToSend = MessageBuilder.
       fromMessage(this.constructMessage(message, headers)).setReplyChannel(replyChannel).build()
 
-    val sent =
+    val sent = try {
       if (timeout > 0) inputChannel.send(messageToSend, timeout)
       else inputChannel.send(messageToSend)
+    } catch {
+      case ex: Exception => {
+        if (errorFlow != null) {
+          errorFlow.sendAndReceive[T](ex)
+        } else throw ex
+      }
+    }   
 
     val replyMessage = replyChannel.receive(1000)
-
+    
     val convertedReply =
       if (m.erasure.isAssignableFrom(classOf[Message[_]])) replyMessage
       else {

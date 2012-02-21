@@ -15,8 +15,10 @@
  */
 package org.springframework.eip.dsl
 import java.util.UUID
+
+import scala.collection.mutable.ListBuffer
+
 import org.apache.log4j.Logger
-import org.springframework.integration.Message
 
 /**
  * @author Oleg Zhurakousky
@@ -26,9 +28,9 @@ case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIn
   private[dsl] val logger = Logger.getLogger(this.getClass)
 
   private val threadLocal: ThreadLocal[SI] = new ThreadLocal[SI]
-  
+
   /**
-   * 
+   *
    */
   def send(message: Any, timeout: Long = 0, headers: Map[String, Any] = null): Boolean = {
     val context = this.getContext()
@@ -40,23 +42,11 @@ case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIn
    */
   def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: BaseIntegrationComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
     val context = this.getContext()
-
-    val reply = try {
-      context.sendAndReceive[T](message)
-    } 
-    catch {
-      case ex: Exception => {
-        if (errorFlow != null) {
-          errorFlow.sendAndReceive[T](ex)
-        } else throw new RuntimeException("Failed to process Message through Error flow")
-      }
-    }
-
-    reply
+    context.sendAndReceive[T](message)
   }
 
   /**
-   * Will produce a copy of this composition 
+   * Will produce a copy of this composition
    */
   private[dsl] def copy(): BaseIntegrationComposition = {
 
@@ -74,9 +64,7 @@ case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIn
    */
   private[dsl] def merge(toComposition: BaseIntegrationComposition) = {
     val startingComposition = DslUtils.getStartingComposition(toComposition)
-    val field = classOf[BaseIntegrationComposition].getDeclaredField("parentComposition")
-    field.setAccessible(true)
-    field.set(startingComposition, this)
+    DslUtils.injectParentComposition(startingComposition, this)
   }
 
   /**
@@ -85,17 +73,13 @@ case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIn
   private[dsl] def normalizeComposition(): BaseIntegrationComposition = {
 
     val newComposition = this.copy()
-
     val startingComposition = DslUtils.getStartingComposition(newComposition)
-    val field = classOf[BaseIntegrationComposition].getDeclaredField("parentComposition")
-    field.setAccessible(true)
-    field.set(startingComposition, Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8)))
-
+    DslUtils.injectParentComposition(startingComposition, Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8)))
     new BaseIntegrationComposition(newComposition.parentComposition, newComposition.target)
   }
 
   /**
-   * 
+   *
    */
   private[dsl] def generateComposition[T <: BaseIntegrationComposition](parent: T, child: IntegrationComponent): IntegrationComposition = {
     val composition = child match {
@@ -105,7 +89,7 @@ case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIn
     }
     composition
   }
-  
+
   private def getContext(): SI = {
 
     threadLocal.get() match {
@@ -128,7 +112,7 @@ case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIn
 case class IntegrationComposition(override private[dsl] val parentComposition: BaseIntegrationComposition, override private[dsl] val target: IntegrationComponent)
   extends BaseIntegrationComposition(parentComposition, target) {
   /**
-   * 
+   *
    */
   def -->[T <: IntegrationComposition](a: T)(implicit g: ComposableIntegrationComponent[T]) = {
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)
@@ -143,7 +127,7 @@ case class ChannelIntegrationComposition(override private[dsl] val parentComposi
   extends IntegrationComposition(parentComposition, target) {
 
   /**
-   * 
+   *
    */
   def --<[T <: BaseIntegrationComposition](a: T*)(implicit g: ComposableIntegrationComponent[T]): BaseIntegrationComposition = {
     if (this.logger.isDebugEnabled()) {
@@ -155,12 +139,12 @@ case class ChannelIntegrationComposition(override private[dsl] val parentComposi
 }
 
 /**
- * 
+ *
  */
 case class PollableChannelIntegrationComposition(override private[dsl] val parentComposition: IntegrationComposition, override private[dsl] val target: IntegrationComponent)
   extends ChannelIntegrationComposition(parentComposition, target) {
   /**
-   * 
+   *
    */
   def -->(p: Poller) = new IntegrationComposition(this, p)
 
@@ -172,15 +156,22 @@ case class PollableChannelIntegrationComposition(override private[dsl] val paren
 private[dsl] abstract class ComposableIntegrationComponent[T] {
   def compose(c: IntegrationComposition, e: T): T
 
-  def compose(c: IntegrationComposition, e: T*): BaseIntegrationComposition = {
-    new BaseIntegrationComposition(c, new ListOfCompositions(e: _*))
+  def compose(c: IntegrationComposition, e: BaseIntegrationComposition*): BaseIntegrationComposition = {
+    val buffer = new ListBuffer[BaseIntegrationComposition]()
+    for (element <- e) {
+      val copiedComposition = element.copy()
+      val startingComposition = DslUtils.getStartingComposition(copiedComposition)
+      DslUtils.injectParentComposition(startingComposition, c)
+      buffer += copiedComposition
+    }
+    new BaseIntegrationComposition(c, new ListOfCompositions(buffer.toList))
   }
 }
 /**
- * 
+ *
  */
-private[dsl] class ListOfCompositions[T](val compositions: T*) extends IntegrationComponent(null)
+private[dsl] class ListOfCompositions[T](val compositions: List[BaseIntegrationComposition]) extends IntegrationComponent(null)
 /**
- * 
+ *
  */
 private[dsl] abstract class IntegrationComponent(val name: String = null)

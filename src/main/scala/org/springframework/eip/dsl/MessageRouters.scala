@@ -73,7 +73,7 @@ private[dsl] case class Router(override val name:String, override val target:Any
 private[dsl] abstract class Condition(val value:Any, val channel:IntegrationComponent)
 
 private[dsl] class PayloadTypeCondition(val payloadType:Class[_], val channelComposition:ChannelIntegrationComposition) 
-	extends Condition(payloadType, channelComposition.target)
+	extends Condition(DslUtils.toJavaType(payloadType).getName(), channelComposition.target)
 
 private[dsl] class ValueCondition(override val value:Any, val channelComposition:ChannelIntegrationComposition) 
 	extends Condition(value, channelComposition.target)

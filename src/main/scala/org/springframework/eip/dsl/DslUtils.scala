@@ -16,6 +16,7 @@
 package org.springframework.eip.dsl
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.WrappedArray
+import java.lang.Long
 /**
  * @author Oleg Zhurakousky
  */
@@ -39,6 +40,22 @@ object DslUtils {
     } else {
       integrationComposition
     }
+  }
+  
+  private[dsl] def injectParentComposition(rootComposition:BaseIntegrationComposition, parentComposition:BaseIntegrationComposition) = {
+    val field = classOf[BaseIntegrationComposition].getDeclaredField("parentComposition")
+    field.setAccessible(true)
+    field.set(rootComposition, parentComposition)
+  }
+  
+  private[dsl] def toJavaType(t:Class[_]):Class[_] = {
+    if (t.isAssignableFrom(classOf[scala.Int])) classOf[java.lang.Integer]
+    else if (t.isAssignableFrom(classOf[scala.Long])) classOf[java.lang.Long]
+    else if (t.isAssignableFrom(classOf[scala.Double])) classOf[java.lang.Double]
+    else if (t.isAssignableFrom(classOf[scala.Short])) classOf[java.lang.Short]
+    else if (t.isAssignableFrom(classOf[scala.Boolean])) classOf[java.lang.Boolean]
+    else 
+    t
   }
 
   private def doToList(integrationComposition: BaseIntegrationComposition, lb: ListBuffer[Any]): Unit = {
