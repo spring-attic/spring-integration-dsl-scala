@@ -69,6 +69,26 @@ object filter {
   }
 }
 
+
+/**
+ * ENRICHER (payload, header)
+ */
+object enrich {
+  
+  def header = new {
+    def using(headerMap:(Tuple2[String, _])*)=
+      new IntegrationComposition(null, new Enricher(null, headerMap))
+    
+    def using(function:Function1[_,AnyRef])=
+      new IntegrationComposition(null, new Enricher(null, function))
+  }
+  
+  def payload = new {
+    def using(function:Function1[_,AnyRef])=
+      new IntegrationComposition(null, new Enricher(null, function))
+  }
+}
+
 /**
  * SPLITTER
  */
@@ -255,6 +275,10 @@ private[dsl] case class ServiceActivator(override val name:String, override val 
             extends SimpleEndpoint(name, target)
 
 private[dsl] case class MessagingBridge(override val name:String)
+            extends SimpleEndpoint(name, null)
+
+private[dsl] case class Enricher(override val name:String, 
+                                 override val target:Any)
             extends SimpleEndpoint(name, null)
 
 private[dsl] case class Transformer( override val name:String, override val target:Any)

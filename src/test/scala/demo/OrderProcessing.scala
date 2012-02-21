@@ -41,35 +41,37 @@ class OrderProcessing {
     val bikesChannel = Channel("bikesChannel")
     val eFlow = handle.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
     val aggregationChannel = Channel("aggregationChannel")
-   
-
-    val orderProcessingFlow = SI(
-      filter.using{p:PurchaseOrder => !p.items.isEmpty}.where(exceptionOnRejection = true) -->
-      split.using{p:PurchaseOrder => p.items} -->
-      Channel.withDispatcher(taskExecutor = Executors.newCachedThreadPool) -->
-      route.using{pi:PurchaseOrderItem => pi.itemType}(
-        when("books") then bookChannel,
-        when("bikes") then bikesChannel 
-      ) 
-      ,
-      bikesChannel -->
-      handle.using{m:Message[_] => println("Processing bikes order: " + m); m} --> 
-      aggregationChannel
-      ,
-      bookChannel -->
-      handle.using{m:Message[_] => println("Processing books order: " + m); m} --> 
-      aggregationChannel
-      ,
-      aggregationChannel -->
-      aggregate()
-    )
-
-    val result = orderProcessingFlow.sendAndReceive[Any](validOrder, errorFlow = eFlow)
-//    val result = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = eFlow)
-
-    println("Result: " + result)
     
-    // orderProcessingFlow.aggregationChannel.sendAndRecieve???
+    
+//    val bikeFlow = 
+//      handle.using{m:Message[_] => println("Processing bikes order: " + m); m} --> 
+//      aggregationFlow
+//      
+//    val bookFlow = 
+//      handle.using{m:Message[_] => println("Processing bikes order: " + m); m} --> 
+//      aggregationFlow
+//      
+//    val aggregationFlow = 
+//      aggregationChannel -->
+//      aggregate()
+   
+//    val orderProcessingFlow =
+//      filter.using{p:PurchaseOrder => !p.items.isEmpty}.where(exceptionOnRejection = true) -->
+//      split.using{p:PurchaseOrder => p.items} -->
+//      Channel.withDispatcher(taskExecutor = Executors.newCachedThreadPool) -->    
+//      route.using{pi:PurchaseOrderItem => pi.itemType}(
+//        when("books") then bikeFlow, 
+//        when("bikes") then 
+//        	handle.using{m:Message[_] => println("Processing bikes order: " + m); m} --> 
+//        	aggregationFlow  
+//      ) 
+//
+//    val result = orderProcessingFlow.sendAndReceive[Any](validOrder, errorFlow = eFlow)
+////    val result = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = eFlow)
+//
+//    println("Result: " + result)
+//    
+//    // orderProcessingFlow.aggregationChannel.sendAndRecieve???
 
   }
 

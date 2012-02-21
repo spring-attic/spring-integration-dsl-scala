@@ -1,0 +1,26 @@
+description = 'Spring Integration Scala DSL'
+
+apply plugin: 'scala'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Libraries needed to run the scala tools
+    scalaTools 'org.scala-lang:scala-compiler:2.9.1'
+    scalaTools 'org.scala-lang:scala-library:2.9.1'
+
+    // Libraries needed for scala api
+    compile 'org.scala-lang:scala-library:2.9.1'
+    compile 'log4j:log4j:1.2.16'
+    compile 'org.springframework.integration:spring-integration-core:2.1.0.RELEASE'
+    testCompile 'com.novocode:junit-interface:0.7'
+}
+
+task wrapper(type: Wrapper) {
+    description = 'Generates gradlew[.bat] scripts'
+    gradleVersion = '1.0-milestone-8'
+    distributionUrl = 'http://repo.gradle.org/gradle/distributions-snapshots/gradle-1.0-milestone-8-20120112000036+0100-bin.zip'
+    jarFile = '.wrapper/gradle-wrapper.jar'
+}

@@ -4,4 +4,24 @@ target
 .settings
 .cache
 .idea_modules/
+/build
+*.iml
+*.ipr
+*.iws
+*.msg
+*.sw?
+*/src/main/java/META-INF
+.classpath
+.DS_Store
+.gradle
+.idea
+.project
+.settings
+bin
+build
+build.log
+lib
+logs
+nohup.out
+out
 

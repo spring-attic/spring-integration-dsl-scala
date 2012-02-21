@@ -168,4 +168,33 @@ class DSLUsageDemo {
     
     println("done")
   }
+  
+//  @Test
+//  def simpleCompositionTestSendWithPolingBridge = {
+//    val messageFlow = 
+//      Channel("A") -->
+//      Channel("B").withQueue --> poll.usingFixedRate(1) -->
+//      handle.using{m:Message[_] => println("From Hello channel - " + m)}
+//      
+//    messageFlow.send("hello")
+//    
+//    println("done")
+//  }
+  
+  def simpleCompositionWithEnricher = {
+    val enrichFlow = 
+      handle.using("someSpel") -->
+      transform.using("someSpel")
+      
+    val bazEnrichFlow = 
+      handle.using("someSpel") -->
+      transform.using("someSpel")
+      
+//    val messageFlow = 
+//      enrich.header.using("hello" -> "bye", "foo" -> "@myBean.foo()", "baz" -> {m:Message[_] => bazEnrichFlow.sendAndReceive(m)}) -->
+//      enrich.payload.withData{m:Message[_] => m} -->
+//      handle.using{m:Message[_] => println(m);m} -->
+//      enrich.payload.using{payload:String => enrichFlow.sendAndReceive(payload)} -->
+//      handle.using{m:Message[_] => println(m);m}
+  }
 }
