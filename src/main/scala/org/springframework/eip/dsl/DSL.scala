@@ -30,7 +30,8 @@ object DSL {
           val copyComposition = s.copy()
           i.merge(copyComposition)
           i.generateComposition(copyComposition.parentComposition, copyComposition.target)
-        } else i.generateComposition(i, s.target)
+        } 
+        else i.generateComposition(i, s.target)
 
       mergedComposition.asInstanceOf[T]
     }
@@ -40,18 +41,14 @@ object DSL {
    *
    */
   implicit def channelComponent = new ComposableIntegrationComponent[ChannelIntegrationComposition] {
-    def compose(i: IntegrationComposition, c: ChannelIntegrationComposition) = {
-      new ChannelIntegrationComposition(i, c.target)
-    }
+    def compose(i: IntegrationComposition, c: ChannelIntegrationComposition) = new ChannelIntegrationComposition(i, c.target)
   }
 
   /**
    *
    */
   implicit def pollableChannelComponent = new ComposableIntegrationComponent[PollableChannelIntegrationComposition] {
-    def compose(i: IntegrationComposition, c: PollableChannelIntegrationComposition) = {
-      new PollableChannelIntegrationComposition(i, c.target)
-    }
+    def compose(i: IntegrationComposition, c: PollableChannelIntegrationComposition) = new PollableChannelIntegrationComposition(i, c.target)
   }
 
 }
