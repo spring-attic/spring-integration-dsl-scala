@@ -22,6 +22,8 @@ dependencies {
     
     // dependent libraries
     compile 'org.springframework.integration:spring-integration-core:2.1.1.BUILD-SNAPSHOT'
+    compile 'org.springframework.integration:spring-integration-http:2.1.1.BUILD-SNAPSHOT'
+    compile("org.codehaus.jackson:jackson-mapper-asl:1.9.2") { optional = true }
     
     // libraries only needed for test
     testCompile "log4j:log4j:1.2.16"

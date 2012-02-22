@@ -294,7 +294,7 @@ private[dsl] class MessageFilter(name:String = "$flt_" + UUID.randomUUID().toStr
 private[dsl] class MessageSplitter(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val applySequence:Boolean = false)
             extends SimpleEndpoint(name, target)
 
-private[dsl] case class MessageAggregator(override val name:String = "$ag_" + UUID.randomUUID().toString.substring(0, 8),
+private[dsl] class MessageAggregator(name:String = "$ag_" + UUID.randomUUID().toString.substring(0, 8),
                                           val keepReleasedMessages:Boolean = true,
                                           val messageStore:MessageStore = new SimpleMessageStore,
                                           val sendPartialResultsOnExpiry:Boolean = false,

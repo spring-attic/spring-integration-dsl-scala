@@ -351,6 +351,9 @@ private[dsl] object ApplicationContextBuilder {
         val processorBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[DefaultAggregatingMessageGroupProcessor]);
         handlerBuilder.addConstructorArgValue(processorBuilder.getBeanDefinition());
       }
+      case httpOut:HttpOutboundGateway => {
+        handlerBuilder = HttpOutboundGatewayBuilder.buildHandler(httpOut)
+      }
       case _ => throw new IllegalArgumentException("handler is not currently supported: " + endpoint)
     }
     handlerBuilder

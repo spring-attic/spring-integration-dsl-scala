@@ -14,6 +14,10 @@ resolvers += "Spring Release Repository" at "https://repo.springsource.org/libs-
 
 libraryDependencies += "org.springframework.integration" % "spring-integration-core" % "2.1.1.BUILD-SNAPSHOT"
 
+libraryDependencies += "org.springframework.integration" % "spring-integration-http" % "2.1.1.BUILD-SNAPSHOT"
+
+libraryDependencies += "org.codehaus.jackson" % "jackson-mapper-asl" % "1.9.2"
+
 libraryDependencies += "com.novocode" % "junit-interface" % "0.7" % "test->default"
 
 libraryDependencies += "log4j" % "log4j" % "1.2.16" % "test->default"

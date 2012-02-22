@@ -1,18 +1,19 @@
 package demo
 
-import org.junit.{ Assert, Test }
-import org.springframework.integration.dsl._
-import org.springframework.integration.dsl.DSL._
-import org.springframework.integration.Message
-import org.springframework.integration.message.GenericMessage
-import org.springframework.integration.dsl.builders.transform
-import org.springframework.integration.dsl.builders.enrich
-import org.springframework.integration.dsl.builders.Channel
-import org.springframework.integration.dsl.builders.PubSubChannel
-import org.springframework.integration.dsl.builders.poll
-import org.springframework.integration.dsl.builders.handle
+import org.junit.Test
 import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.SpelParserConfiguration
+import org.springframework.integration.dsl.DSL.anyComponent
+import org.springframework.integration.dsl.DSL.pollableChannelComponent
+import org.springframework.integration.dsl.builders.Channel
+import org.springframework.integration.dsl.builders.PubSubChannel
+import org.springframework.integration.dsl.builders.enrich
+import org.springframework.integration.dsl.builders.handle
+import org.springframework.integration.dsl.builders.poll
+import org.springframework.integration.dsl.builders.to
+import org.springframework.integration.dsl.builders.transform
+import org.springframework.integration.json.JsonToObjectTransformer
+import org.springframework.integration.Message
 
 class DSLUsageDemo {
 
@@ -124,82 +125,67 @@ class DSLUsageDemo {
       enrich.headers("foo" -> "foo",
         "bar" -> { m: Message[String] => m.getPayload().toUpperCase() },
         "phrase" -> expression) -->
-      handle.using { m: Message[_] => println(m) }
-      
+        handle.using { m: Message[_] => println(m) }
+
     enricher.send("Hello")
     println("done")
   }
-  
+
   @Test
-  def contentEnricher = {  
+  def contentEnricher = {
     val employee = new Employee("John", "Doe", 23)
     val enricher =
-      enrich{p:Person => p.name = employee.firstName +  " " + employee.lastName; p.age = employee.age; p} -->
-      handle.using { m: Message[_] => println(m) }
-      
-    enricher.send(new Person)
-    println("done")
-  }
-  
-  @Test
-  def contentEnricherWithSubFlow = {  
-    
-    val employeeBuldingFlow = 
-      transform.using{attributes:List[String] => new Employee(attributes(0), attributes(1), Integer.parseInt(attributes(2)))}
-    
-    val enricher =
-      enrich{p:Person => 
-        val employee = employeeBuldingFlow.sendAndReceive[Employee](List[String]("John", "Doe", "25")) 
-        p.name = employee.firstName +  " " + employee.lastName 
-        p.age = employee.age
-        p
-      } -->
-      handle.using { m: Message[_] => println(m) }
-      
+      enrich { p: Person => p.name = employee.firstName + " " + employee.lastName; p.age = employee.age; p } -->
+        handle.using { m: Message[_] => println(m) }
+
     enricher.send(new Person)
     println("done")
   }
 
   @Test
-  def simpleCompositionWithEnricher = {
-    //    val enrichFlow = 
-    //      handle.using("someSpel") -->
-    //      transform.using("someSpel")
-    //      
-    //    val bazEnrichFlow = 
-    //      handle.using("someSpel") -->
-    //      transform.using("someSpel")
-    //      
-    //    val someServiceAsAFlow =   
-    //      handle.using("someSpel") -->
-    //      transform.using("someSpel")
-    //    
-    //    val enricherA = enrich.headers("hello" -> "bye", "foo" -> "@myBean.foo()", "baz" -> {m:Message[_] => bazEnrichFlow.sendAndReceive(m)}) 
-    //    val enricherA = enrich.header("hello" -> "bye") --> handle.using{m:Message[_] => println(m)}
-    //    enricherA.send("Hello")
-    //    
-    //    val enricherB = enrich.header("hello" -> Some({m:Message[String] => m.getPayload().toUpperCase()})) --> handle.using{m:Message[_] => println(m)}
-    //    enricherB.send("Hello")
-    //    
-    //    val enricherC = enrich.header("hello" -> {m:Message[String] => m.getPayload().toUpperCase()}) --> handle.using{m:Message[_] => println(m)}
-    //    enricherC.send("Hello")
-    //    
-    //    val enricherD = enrich.header("hello" -> {m:Message[String] => m.getPayload().toUpperCase()}) --> handle.using{m:Message[_] => println(m)}
-    //    enricherD.send("Hello")
-    //    
-    //    val enricherE = enrich.header("hello" -> {"Hello"}) --> handle.using{m:Message[_] => println(m)}
-    //    enricherE.send("Hello")
-    ()
-    //    val enricherE = enrich{p:Person => 
-    //      val employee = someServiceAsAFlow.sendAndReceive[Employee]("123-45-2453")
-    //      p.name = employee.firstName + employee.lastName
-    //      p.age = employee.age
-    //      p
-    //    }
-    //val enricherF = enrich{""}
+  def contentEnricherWithSubFlow = {
+
+    val employeeBuldingFlow =
+      transform.using { attributes: List[String] => new Employee(attributes(0), attributes(1), Integer.parseInt(attributes(2))) }
+
+    val enricher =
+      enrich { p: Person =>
+        val employee = employeeBuldingFlow.sendAndReceive[Employee](List[String]("John", "Doe", "25"))
+        p.name = employee.firstName + " " + employee.lastName
+        p.age = employee.age
+        p
+      } -->
+      handle.using { m: Message[_] => println(m) }
+
+    enricher.send(new Person)
+    println("done")
   }
 
   case class Person(var name: String = null, var age: Int = 0)
 
   class Employee(val firstName: String, val lastName: String, val age: Int)
+
+  @Test
+  def httpOutbound = {
+
+    val tickerService =
+      transform.using { s: String =>
+        s.toLowerCase() match {
+          case "vmw" => "VMWare"
+          case "orcl" => "Oracle"
+          case _ => "vmw"
+        }
+      }
+
+    val httpFlow = 
+            enrich.header("company" -> {name:String => tickerService.sendAndReceive[String](name)}) -->
+    		to.http.GET[String] { m: Message[String] => "http://www.google.com/finance/info?q=" + m.getPayload()} -->
+    		handle.using{quotes:Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes)}
+    		
+    httpFlow.send("vmw")
+    
+//    toAndFrom.http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("oracle"))
+      
+    println("done")
+  }
 }
