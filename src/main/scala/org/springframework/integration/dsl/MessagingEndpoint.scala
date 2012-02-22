@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.eip.dsl
+package org.springframework.integration.dsl
 
 import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
 import java.util.UUID
@@ -76,17 +76,19 @@ object filter {
  */
 object enrich {
   
-  def header = new {
-    def using(headerMap:(Tuple2[String, _])*)=
-      new IntegrationComposition(null, new Enricher(null, headerMap))
-    
-    def using(function:Function1[_,AnyRef])=
-      new IntegrationComposition(null, new Enricher(null, function))
+  def apply(function:Function1[_,AnyRef]) = new IntegrationComposition(null, new Enricher(target = function)) {
+    def where(name:String = "$henr" + UUID.randomUUID().toString.substring(0, 8)) =
+      new IntegrationComposition(null, new Enricher(name = name, target = function))
   }
   
-  def payload = new {
-    def using(function:Function1[_,AnyRef])=
-      new IntegrationComposition(null, new Enricher(null, function))
+  def headers(headersMap:(Tuple2[String, AnyRef])*) = new IntegrationComposition(null, new Enricher(target = headersMap)) {
+    def where(name:String = "$henr" + UUID.randomUUID().toString.substring(0, 8)) =
+      new IntegrationComposition(null, new Enricher(name = name, target = headersMap))
+  }
+ 
+  def header(headerMap:Tuple2[String, AnyRef]) = new IntegrationComposition(null, new Enricher(target = headerMap)) {
+    def where(name:String = "$henr" + UUID.randomUUID().toString.substring(0, 8)) =
+      new IntegrationComposition(null, new Enricher(name = name, target = headerMap))
   }
 }
 
@@ -281,7 +283,7 @@ private[dsl] class MessagingBridge(name:String = "$br_" + UUID.randomUUID().toSt
             extends SimpleEndpoint(name, null)
 
 private[dsl] class Enricher(name:String = "$enr_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
-            extends SimpleEndpoint(name, null)
+            extends SimpleEndpoint(name, target)
 
 private[dsl] class Transformer(name:String = "$xfmr_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
             extends SimpleEndpoint(name, target)

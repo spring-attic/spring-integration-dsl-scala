@@ -1,7 +1,7 @@
-package org.springframework.eip.dsl
+package org.springframework.integration.dsl
 
 import org.junit.{ Assert, Test }
-import org.springframework.eip.dsl.DSL._
+import org.springframework.integration.dsl.DSL._
 
 class DSLTest {
 

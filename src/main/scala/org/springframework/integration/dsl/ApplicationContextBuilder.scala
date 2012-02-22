@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.eip.dsl
+package org.springframework.integration.dsl
 
 import org.springframework.context.ApplicationContext
 import org.springframework.context.support.GenericApplicationContext
@@ -37,11 +37,15 @@ import org.springframework.integration.aggregator.{ AggregatingMessageHandler, D
 import collection.JavaConversions
 import org.springframework.integration.support.MessageBuilder
 import org.springframework.integration.handler.BridgeHandler
+import org.springframework.integration.transformer.HeaderEnricher
+import org.springframework.integration.transformer.HeaderEnricher.StaticHeaderValueMessageProcessor
+import org.springframework.integration.transformer.HeaderEnricher.HeaderValueMessageProcessor
+import org.springframework.integration.transformer.MessageTransformingHandler
 
 /**
  * @author Oleg Zhurakousky
  */
-private[dsl] object ApplicationContextBuilder {
+private[integration] object ApplicationContextBuilder {
 
   private val logger = Logger.getLogger(this.getClass)
 
@@ -92,18 +96,10 @@ private[dsl] object ApplicationContextBuilder {
               }
               this.wireEndpoint(new MessagingBridge(), inputChannel, (if (outputChannel != null) outputChannel else null))
             }
-            case poller: Poller => {
-              if (logger.isTraceEnabled) {
-                logger.trace("[" + composition.parentComposition.parentComposition.target.asInstanceOf[Channel].name
-                  + " --> pollable bridge --> " + composition.target.asInstanceOf[Channel].name + "]")
-              }
-              //this.wireEndpoint(new MessagingBridge(), inputChannel, (if (outputChannel != null) outputChannel else null), poller)
-            }
             case _ =>
           }
         }
         case listComp: ListOfCompositions[BaseIntegrationComposition] => {
-
           for (comp <- listComp.compositions) {
             this.init(comp, null)
           }
@@ -277,6 +273,39 @@ private[dsl] object ApplicationContextBuilder {
       case sa: ServiceActivator => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
         this.defineHandlerTarget(sa, handlerBuilder)
+      }
+      case enricher: Enricher => {
+        enricher.target match {
+          case fn:Function1[_,AnyRef] => {
+            
+          }
+          case tp:Tuple2[String, AnyRef] => {
+            val map = new java.util.HashMap[String, HeaderValueMessageProcessor[_]]
+            if (tp._2.isInstanceOf[Function[_,_]]){
+                val clazz = Class.forName("org.springframework.integration.transformer.HeaderEnricher$MessageProcessingHeaderValueMessageProcessor")
+                val functionInvoker = new FunctionInvoker(tp._2.asInstanceOf[Function[_, _]], endpoint)
+                val const = clazz.getDeclaredConstructor(classOf[Any], classOf[String])
+                const.setAccessible(true)
+                val p = const.newInstance(functionInvoker, functionInvoker.methodName)
+                map.put(tp._1, p.asInstanceOf[HeaderValueMessageProcessor[_]])
+              }
+              else if (tp._2.isInstanceOf[String] || tp._2.isInstanceOf[Option[_]]){
+                val clazz = Class.forName("org.springframework.integration.transformer.HeaderEnricher$StaticHeaderValueMessageProcessor")
+                val const = clazz.getDeclaredConstructor(classOf[Any])
+	            const.setAccessible(true)
+	            val p = const.newInstance(tp._2)
+	            map.put(tp._1, p.asInstanceOf[HeaderValueMessageProcessor[_]])
+              }
+              else
+                throw new RuntimeException("")
+            
+            
+            handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[MessageTransformingHandler])
+            val transformerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderEnricher])
+            transformerBuilder.addConstructorArg(map)
+            handlerBuilder.addConstructorArg(transformerBuilder.getBeanDefinition())
+          }
+        }
       }
       case xfmr: Transformer => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.eip.dsl
+package org.springframework.integration.dsl
 
 import org.junit.{Assert, Test}
 import org.springframework.scheduling.support.PeriodicTrigger

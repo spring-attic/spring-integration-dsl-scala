@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.eip.dsl
+package org.springframework.integration.dsl
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.WrappedArray
 import java.lang.Long

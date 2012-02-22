@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.eip.dsl
+package org.springframework.integration.dsl
 import org.springframework.integration.store.SimpleMessageStore
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.junit.{Assert, Test}
-import org.springframework.eip.dsl.DSL._
+import org.springframework.integration.dsl.DSL._
 
 /**
  * @author Oleg Zhurakousky

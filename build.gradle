@@ -4,9 +4,12 @@ group = 'org.springframework.integration'
 
 apply plugin: 'scala'
 apply plugin: 'maven'
+apply plugin: 'eclipse'
 
 repositories {
     mavenCentral()
+    maven { url 'http://repo.springsource.org/libs-milestone' }
+    maven { url 'https://repo.springsource.org/libs-snapshot' }
 }
 
 dependencies {
@@ -17,7 +20,7 @@ dependencies {
     // Libraries needed for scala api
     compile 'org.scala-lang:scala-library:2.9.1'
     compile 'log4j:log4j:1.2.16'
-    compile 'org.springframework.integration:spring-integration-core:2.1.0.RELEASE'
+    compile 'org.springframework.integration:spring-integration-core:2.1.1.BUILD-SNAPSHOT'
     testCompile 'com.novocode:junit-interface:0.7'
 }
 

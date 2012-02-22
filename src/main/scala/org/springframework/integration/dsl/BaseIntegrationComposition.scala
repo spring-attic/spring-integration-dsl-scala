@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.eip.dsl
+package org.springframework.integration.dsl
 import java.util.UUID
 
 import scala.collection.mutable.ListBuffer
@@ -23,7 +23,7 @@ import org.apache.log4j.Logger
 /**
  * @author Oleg Zhurakousky
  */
-case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIntegrationComposition, private[dsl] val target: IntegrationComponent) {
+case class BaseIntegrationComposition(private[integration] val parentComposition: BaseIntegrationComposition, private[integration] val target: IntegrationComponent) {
 
   private[dsl] val logger = Logger.getLogger(this.getClass)
 

@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.eip.dsl
+package org.springframework.integration.dsl
 
-import org.springframework.eip.dsl.DSL._
+import org.springframework.integration.dsl.DSL._
 
 import org.junit.{Assert, Test}
 import org.springframework.scheduling.support.PeriodicTrigger
 import org.springframework.core.task.{SyncTaskExecutor, SimpleAsyncTaskExecutor, AsyncTaskExecutor}
 import org.springframework.integration.Message
+
 
 /**
  * @author Oleg Zhurakousky
