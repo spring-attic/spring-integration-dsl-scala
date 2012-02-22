@@ -16,7 +16,6 @@
 package org.springframework.integration.dsl
 import scala.collection.mutable.WrappedArray
 import org.springframework.integration.dsl.builders._
-import org.apache.log4j.Logger
 import java.util.UUID
 
 /**

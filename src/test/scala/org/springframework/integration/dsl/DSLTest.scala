@@ -12,8 +12,11 @@ import org.springframework.integration.dsl.builders.MessageFilter
 import org.springframework.integration.dsl.builders.Channel
 import org.springframework.integration.dsl.builders.Transformer
 import org.springframework.integration.dsl.builders.transform
+import org.apache.commons.logging.LogFactory
 
 class DSLTest {
+  
+  private val logger = LogFactory.getLog(this.getClass());
 
   @Test
   def validateCompositionTypes() {
@@ -50,6 +53,13 @@ class DSLTest {
 //      Channel("channelB").withQueue() --> poll.usingFixedDelay(1) -->
 //      new IntegrationComposition(null, "Second")
 
+  }
+  
+  @Test
+  def validateLogger = {
+    
+    this.logger.debug("foo")
+    
   }
 
   @Test

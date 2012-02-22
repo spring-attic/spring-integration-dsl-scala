@@ -120,13 +120,43 @@ class DSLUsageDemo {
   @Test
   def headerEnricherWithMultiTuple = {
     val expression = new SpelExpressionParser(new SpelParserConfiguration(true, true)).parseExpression("(2 * 6) + ' days of Christmas'");
-    val enricherB =
+    val enricher =
       enrich.headers("foo" -> "foo",
         "bar" -> { m: Message[String] => m.getPayload().toUpperCase() },
         "phrase" -> expression) -->
       handle.using { m: Message[_] => println(m) }
       
-    enricherB.send("Hello")
+    enricher.send("Hello")
+    println("done")
+  }
+  
+  @Test
+  def contentEnricher = {  
+    val employee = new Employee("John", "Doe", 23)
+    val enricher =
+      enrich{p:Person => p.name = employee.firstName +  " " + employee.lastName; p.age = employee.age; p} -->
+      handle.using { m: Message[_] => println(m) }
+      
+    enricher.send(new Person)
+    println("done")
+  }
+  
+  @Test
+  def contentEnricherWithSubFlow = {  
+    
+    val employeeBuldingFlow = 
+      transform.using{attributes:List[String] => new Employee(attributes(0), attributes(1), Integer.parseInt(attributes(2)))}
+    
+    val enricher =
+      enrich{p:Person => 
+        val employee = employeeBuldingFlow.sendAndReceive[Employee](List[String]("John", "Doe", "25")) 
+        p.name = employee.firstName +  " " + employee.lastName 
+        p.age = employee.age
+        p
+      } -->
+      handle.using { m: Message[_] => println(m) }
+      
+    enricher.send(new Person)
     println("done")
   }
 
@@ -169,7 +199,7 @@ class DSLUsageDemo {
     //val enricherF = enrich{""}
   }
 
-  class Person(var name: String, var age: Int)
+  case class Person(var name: String = null, var age: Int = 0)
 
   class Employee(val firstName: String, val lastName: String, val age: Int)
 }

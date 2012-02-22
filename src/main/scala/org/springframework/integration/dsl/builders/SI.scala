@@ -16,31 +16,25 @@
 package org.springframework.integration.dsl.builders
 
 import java.lang.IllegalStateException
-
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.asScalaSet
 import scala.collection.JavaConversions.mapAsScalaMap
 import scala.collection.JavaConversions
-
-import org.apache.log4j.Logger
 import org.springframework.context.ApplicationContext
 import org.springframework.integration.channel.QueueChannel
-import org.springframework.integration.dsl.builders.AbstractChannel
-import org.springframework.integration.dsl.builders.BaseIntegrationComposition
-import org.springframework.integration.dsl.builders.Channel
-import org.springframework.integration.dsl.builders.Poller
 import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.integration.support.MessageBuilder
 import org.springframework.integration.Message
 import org.springframework.integration.MessageChannel
 import org.springframework.util.CollectionUtils
+import org.apache.commons.logging.LogFactory
 
 /**
  * @author Oleg Zhurakousky
  */
 private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegrationComposition) {
 
-  private val logger = Logger.getLogger(this.getClass)
+   private val logger = LogFactory.getLog(this.getClass());
 
   if (logger.isDebugEnabled) logger.debug("Creating new EIP context")
 

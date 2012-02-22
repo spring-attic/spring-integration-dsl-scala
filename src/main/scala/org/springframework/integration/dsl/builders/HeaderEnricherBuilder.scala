@@ -1,21 +1,33 @@
-/**
+/*
+ * Copyright 2002-2012 the original author or authors.
  *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.springframework.integration.dsl.builders
 
-import org.springframework.beans.factory.support.BeanDefinitionBuilder
-import org.springframework.integration.dsl._
-import org.springframework.integration.transformer.HeaderEnricher.StaticHeaderValueMessageProcessor
-import org.springframework.integration.transformer.HeaderEnricher.HeaderValueMessageProcessor
-import org.springframework.integration.transformer.MessageTransformingHandler
-import org.springframework.integration.transformer.HeaderEnricher
-import scala.collection.JavaConversions
-import org.springframework.expression.Expression
 import scala.collection.mutable.WrappedArray
+import scala.collection.JavaConversions
+
+import org.springframework.beans.factory.support.BeanDefinitionBuilder
+import org.springframework.expression.Expression
+import org.springframework.integration.config.TransformerFactoryBean
+import org.springframework.integration.dsl._
+import org.springframework.integration.transformer.HeaderEnricher.HeaderValueMessageProcessor
+import org.springframework.integration.transformer.HeaderEnricher
+import org.springframework.integration.transformer.MessageTransformingHandler
 
 /**
- * @author ozhurakousky
- *
+ * @author Oleg Zhurakousky
  */
 private[dsl] object HeaderEnricherBuilder {
 
@@ -48,18 +60,29 @@ private[dsl] object HeaderEnricherBuilder {
           }
           map
         }
+        case fn: Function1[_, AnyRef] => null
       }
 
-    val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[MessageTransformingHandler])
-    val transformerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderEnricher])
-    transformerBuilder.addConstructorArg(JavaConversions.asJavaMap(headerValueMessageProcessorMap))
-    handlerBuilder.addConstructorArg(transformerBuilder.getBeanDefinition())
+    val handlerBuilder =
+      if (headerValueMessageProcessorMap == null) {
+        val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
+        val functionInvoker = new FunctionInvoker(enricher.target.asInstanceOf[Function[_, _]], enricher)
+        handlerBuilder.addPropertyValue("targetObject", functionInvoker);
+        handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
+        handlerBuilder
+      } else {
+        val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[MessageTransformingHandler])
+        val transformerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderEnricher])
+        transformerBuilder.addConstructorArg(JavaConversions.asJavaMap(headerValueMessageProcessorMap))
+        handlerBuilder.addConstructorArg(transformerBuilder.getBeanDefinition())
+        handlerBuilder
+      }
     handlerBuilder
   }
 
   private def doWithFunction(fn: Function1[_, _], enricher: Enricher): HeaderValueMessageProcessor[_] = {
     val clazz = Class.forName("org.springframework.integration.transformer.HeaderEnricher$MessageProcessingHeaderValueMessageProcessor")
-    val functionInvoker = new ApplicationContextBuilder.FunctionInvoker(fn, enricher)
+    val functionInvoker = new FunctionInvoker(fn, enricher)
     val const = clazz.getDeclaredConstructor(classOf[Any], classOf[String])
     const.setAccessible(true)
     val p = const.newInstance(functionInvoker, functionInvoker.methodName)

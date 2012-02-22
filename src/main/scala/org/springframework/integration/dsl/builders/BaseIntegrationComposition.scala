@@ -15,8 +15,10 @@
  */
 package org.springframework.integration.dsl.builders
 import java.util.UUID
+
 import scala.collection.mutable.ListBuffer
-import org.apache.log4j.Logger
+
+import org.apache.commons.logging.LogFactory
 import org.springframework.integration.dsl.utils.DslUtils
 
 /**
@@ -24,7 +26,7 @@ import org.springframework.integration.dsl.utils.DslUtils
  */
 case class BaseIntegrationComposition(private[integration] val parentComposition: BaseIntegrationComposition, private[integration] val target: IntegrationComponent) {
 
-  private[dsl] val logger = Logger.getLogger(this.getClass)
+  private[dsl] val logger = LogFactory.getLog(this.getClass());
 
   private val threadLocal: ThreadLocal[SI] = new ThreadLocal[SI]
 

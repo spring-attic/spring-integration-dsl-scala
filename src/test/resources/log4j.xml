@@ -12,8 +12,8 @@
 
 	<!-- Loggers -->
 
-	<logger name="org.springframework.eip">
-		<level value="info" />
+	<logger name="org.springframework.integration">
+		<level value="debug" />
 	</logger>
 
 	<!-- Root Logger -->

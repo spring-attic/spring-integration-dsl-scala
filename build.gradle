@@ -19,8 +19,12 @@ dependencies {
 
     // Libraries needed for scala api
     compile 'org.scala-lang:scala-library:2.9.1'
-    compile 'log4j:log4j:1.2.16'
+    
+    // dependent libraries
     compile 'org.springframework.integration:spring-integration-core:2.1.1.BUILD-SNAPSHOT'
+    
+    // libraries only needed for test
+    testCompile "log4j:log4j:1.2.16"
     testCompile 'com.novocode:junit-interface:0.7'
 }
 

@@ -12,8 +12,8 @@ resolvers += "Spring Snapshot Repository" at "https://repo.springsource.org/libs
 
 resolvers += "Spring Release Repository" at "https://repo.springsource.org/libs-release"
 
-libraryDependencies += "log4j" % "log4j" % "1.2.16"
-
 libraryDependencies += "org.springframework.integration" % "spring-integration-core" % "2.1.1.BUILD-SNAPSHOT"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.7" % "test->default"
+
+libraryDependencies += "log4j" % "log4j" % "1.2.16" % "test->default"

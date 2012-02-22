@@ -15,16 +15,11 @@
  */
 package org.springframework.integration.dsl.builders
 
-import java.lang.reflect.Method
-import java.lang.Object
 import java.lang.IllegalStateException
+import java.lang.Object
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
 import java.util.HashMap
 import java.util.UUID
-
-import scala.collection.JavaConversions
-
-import org.apache.log4j.Logger
 import org.springframework.beans.factory.config.BeanDefinitionHolder
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionReaderUtils
@@ -49,18 +44,17 @@ import org.springframework.integration.handler.BridgeHandler
 import org.springframework.integration.router.HeaderValueRouter
 import org.springframework.integration.router.PayloadTypeRouter
 import org.springframework.integration.scheduling.PollerMetadata
-import org.springframework.integration.support.MessageBuilder
-import org.springframework.integration.Message
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import org.springframework.scheduling.support.PeriodicTrigger
 import org.springframework.util.StringUtils
+import org.apache.commons.logging.LogFactory
 
 /**
  * @author Oleg Zhurakousky
  */
 private[dsl] object ApplicationContextBuilder {
 
-  private val logger = Logger.getLogger(this.getClass)
+   private val logger = LogFactory.getLog(this.getClass());
 
   /**
    *
@@ -379,106 +373,6 @@ private[dsl] object ApplicationContextBuilder {
       case _ => {
         throw new IllegalArgumentException("Unsupported value for 'target' - " + endpoint.target)
       }
-    }
-  }
-
-  private[dsl] final class FunctionInvoker(val f: Function[_, _], endpoint: IntegrationComponent) {
-    private val logger = Logger.getLogger(this.getClass)
-    var methodName: String = ""
-
-    var method: Method = null
-    val methods = f.getClass().getDeclaredMethods()
-    if (methods.size > 1) {
-      for (m <- f.getClass().getDeclaredMethods()) {
-        var returnType = m.getReturnType()
-        val inputParameter = m.getParameterTypes()(0)
-        if (!(returnType.isAssignableFrom(classOf[Object]) && inputParameter.isAssignableFrom(classOf[Object]))) {
-          if (logger.isDebugEnabled) {
-            logger.debug("Selecting method: " + m)
-          }
-          method = m
-          if (returnType.isAssignableFrom(Void.TYPE) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
-            methodName = "sendMessage"
-          } else if (returnType.isAssignableFrom(Void.TYPE) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
-            methodName = "sendPayload"
-          } else if (returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
-            methodName = "sendMessageAndReceiveMessage"
-          } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
-            methodName = "sendMessageAndReceivePayload"
-          } else if (returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
-            methodName = "sendPayloadAndReceiveMessage"
-          } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
-            methodName = "sendPayloadAndReceivePayload"
-          }
-        }
-      }
-    } else {
-      method = f.getClass.getDeclaredMethod("apply", classOf[Object])
-      methodName = "sendPayoadAndReceive"
-      if (logger.isDebugEnabled) {
-        logger.debug("Selecting method: " + method)
-      }
-    }
-    if (logger.isDebugEnabled) {
-      logger.debug("FunctionInvoker method name: " + methodName)
-    }
-    def sendPayload(m: Object): Unit = {
-      method.setAccessible(true)
-      method.invoke(f, m)
-    }
-    def sendMessage(m: Message[_]): Unit = {
-      method.setAccessible(true)
-      method.invoke(f, m)
-    }
-    def sendPayloadAndReceivePayload(m: Object): Object = {
-      var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
-      method.setAccessible(true)
-      this.normalizeResult[Object](method.invoke(f, m))
-    }
-    def sendPayloadAndReceiveMessage(m: Object): Message[_] = {
-      var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
-      method.setAccessible(true)
-      this.normalizeResult[Message[_]](method.invoke(f, m).asInstanceOf[Message[_]])
-    }
-    def sendMessageAndReceivePayload(m: Message[_]): Object = {
-      var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
-      method.setAccessible(true)
-      this.normalizeResult[Object](method.invoke(f, m))
-    }
-    def sendMessageAndReceiveMessage(m: Message[_]): Message[_] = {
-      var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
-      method.setAccessible(true)
-
-      this.normalizeResult[Message[_]](method.invoke(f, m).asInstanceOf[Message[_]])
-    }
-
-    private def normalizeResult[T](result: Any): T = {
-      endpoint match {
-        case splitter: MessageSplitter => {
-          result match {
-            case message: Message[_] => {
-              val payload = message.getPayload
-              if (payload.isInstanceOf[Iterable[_]]) {
-                MessageBuilder.withPayload(JavaConversions.asJavaCollection(payload.asInstanceOf[Iterable[_]])).
-                  copyHeaders(message.getHeaders).build().asInstanceOf[T]
-              } else {
-                message.asInstanceOf[T]
-              }
-            }
-            case _ => {
-              if (result.isInstanceOf[Iterable[_]]) {
-                JavaConversions.asJavaCollection(result.asInstanceOf[Iterable[_]]).asInstanceOf[T]
-              } else {
-                result.asInstanceOf[T]
-              }
-            }
-          }
-        }
-        case _ => {
-          result.asInstanceOf[T]
-        }
-      }
-
     }
   }
 
