@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.integration.dsl
+package org.springframework.integration.dsl.utils
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.WrappedArray
 import java.lang.Long
+import org.springframework.integration.dsl.builders.BaseIntegrationComposition
+import org.springframework.integration.dsl.builders.ListOfCompositions
 /**
  * @author Oleg Zhurakousky
  */

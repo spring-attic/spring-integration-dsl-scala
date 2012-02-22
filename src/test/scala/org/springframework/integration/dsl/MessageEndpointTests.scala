@@ -16,11 +16,19 @@
 package org.springframework.integration.dsl
 
 import org.springframework.integration.dsl.DSL._
-
 import org.junit.{Assert, Test}
 import org.springframework.scheduling.support.PeriodicTrigger
 import org.springframework.core.task.{SyncTaskExecutor, SimpleAsyncTaskExecutor, AsyncTaskExecutor}
 import org.springframework.integration.Message
+import org.springframework.integration.dsl.builders.aggregate
+import org.springframework.integration.dsl.builders.MessageSplitter
+import org.springframework.integration.dsl.builders.filter
+import org.springframework.integration.dsl.builders.split
+import org.springframework.integration.dsl.builders.transform
+import org.springframework.integration.dsl.builders.handle
+import org.springframework.integration.dsl.builders.ServiceActivator
+import org.springframework.integration.dsl.builders.MessageFilter
+import org.springframework.integration.dsl.builders.Transformer
 
 
 /**

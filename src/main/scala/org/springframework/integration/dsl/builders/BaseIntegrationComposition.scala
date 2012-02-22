@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.integration.dsl
+package org.springframework.integration.dsl.builders
 import java.util.UUID
-
 import scala.collection.mutable.ListBuffer
-
 import org.apache.log4j.Logger
+import org.springframework.integration.dsl.utils.DslUtils
 
 /**
  * @author Oleg Zhurakousky

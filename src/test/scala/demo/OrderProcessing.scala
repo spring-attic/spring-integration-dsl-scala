@@ -20,6 +20,13 @@ import org.springframework.integration.Message
 import java.util.Random
 import org.junit._
 import java.util.concurrent.Executors
+import org.springframework.integration.dsl.builders.filter
+import org.springframework.integration.dsl.builders.handle
+import org.springframework.integration.dsl.builders.Channel
+import org.springframework.integration.dsl.builders.aggregate
+import org.springframework.integration.dsl.builders.split
+import org.springframework.integration.dsl.builders.route
+import org.springframework.integration.dsl.builders.when
 
 /**
  * @author Oleg Zhurakousky

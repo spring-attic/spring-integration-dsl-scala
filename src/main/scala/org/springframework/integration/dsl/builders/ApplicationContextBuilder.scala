@@ -13,39 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.integration.dsl
+package org.springframework.integration.dsl.builders
 
-import org.springframework.context.ApplicationContext
-import org.springframework.context.support.GenericApplicationContext
-import org.springframework.integration.Message
 import java.lang.reflect.Method
-import org.apache.log4j.Logger
-import org.springframework.util.StringUtils
-import org.springframework.beans.factory.support.{ BeanDefinitionReaderUtils, BeanDefinitionBuilder }
-import org.springframework.beans.factory.config.BeanDefinitionHolder
-import org.springframework.integration.scheduling.PollerMetadata
-import org.springframework.scheduling.support.PeriodicTrigger
-import org.springframework.integration.context.IntegrationContextUtils
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
-import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
-import org.springframework.integration.channel._
-import org.springframework.integration.router.{ PayloadTypeRouter, HeaderValueRouter }
-import java.util.{ HashMap, UUID }
+import java.lang.Object
 import java.lang.IllegalStateException
-import org.springframework.integration.config._
-import org.springframework.integration.aggregator.{ AggregatingMessageHandler, DefaultAggregatingMessageGroupProcessor }
-import collection.JavaConversions
-import org.springframework.integration.support.MessageBuilder
+import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy
+import java.util.HashMap
+import java.util.UUID
+
+import scala.collection.JavaConversions
+
+import org.apache.log4j.Logger
+import org.springframework.beans.factory.config.BeanDefinitionHolder
+import org.springframework.beans.factory.support.BeanDefinitionBuilder
+import org.springframework.beans.factory.support.BeanDefinitionReaderUtils
+import org.springframework.context.support.GenericApplicationContext
+import org.springframework.context.ApplicationContext
+import org.springframework.integration.aggregator.AggregatingMessageHandler
+import org.springframework.integration.aggregator.DefaultAggregatingMessageGroupProcessor
+import org.springframework.integration.channel.DirectChannel
+import org.springframework.integration.channel.ExecutorChannel
+import org.springframework.integration.channel.MessagePublishingErrorHandler
+import org.springframework.integration.channel.PublishSubscribeChannel
+import org.springframework.integration.channel.QueueChannel
+import org.springframework.integration.config.ConsumerEndpointFactoryBean
+import org.springframework.integration.config.FilterFactoryBean
+import org.springframework.integration.config.RouterFactoryBean
+import org.springframework.integration.config.ServiceActivatorFactoryBean
+import org.springframework.integration.config.SplitterFactoryBean
+import org.springframework.integration.config.TransformerFactoryBean
+import org.springframework.integration.context.IntegrationContextUtils
+import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.integration.handler.BridgeHandler
-import org.springframework.integration.transformer.HeaderEnricher
-import org.springframework.integration.transformer.HeaderEnricher.StaticHeaderValueMessageProcessor
-import org.springframework.integration.transformer.HeaderEnricher.HeaderValueMessageProcessor
-import org.springframework.integration.transformer.MessageTransformingHandler
+import org.springframework.integration.router.HeaderValueRouter
+import org.springframework.integration.router.PayloadTypeRouter
+import org.springframework.integration.scheduling.PollerMetadata
+import org.springframework.integration.support.MessageBuilder
+import org.springframework.integration.Message
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
+import org.springframework.scheduling.support.PeriodicTrigger
+import org.springframework.util.StringUtils
 
 /**
  * @author Oleg Zhurakousky
  */
-private[integration] object ApplicationContextBuilder {
+private[dsl] object ApplicationContextBuilder {
 
   private val logger = Logger.getLogger(this.getClass)
 
@@ -67,7 +80,7 @@ private[integration] object ApplicationContextBuilder {
       this.logger.debug("Initializing the following composition segment: " + DslUtils.toProductList(composition))
 
     this.init(composition, null)
-   
+
     applicationContext.refresh()
     logger.info("\n*** Spring Integration Message Flow composition was initialized successfully ***\n")
     applicationContext
@@ -119,7 +132,7 @@ private[integration] object ApplicationContextBuilder {
                   (if (outputChannel != null) (" --> " + outputChannel.name) else "") + "]")
               }
               if (!endpoint.isInstanceOf[Poller])
-            	  this.wireEndpoint(endpoint, inputChannel, (if (outputChannel != null) outputChannel else null))
+                this.wireEndpoint(endpoint, inputChannel, (if (outputChannel != null) outputChannel else null))
             }
           }
         }
@@ -174,25 +187,22 @@ private[integration] object ApplicationContextBuilder {
         case ch: Channel => {
           if (ch.capacity == Integer.MIN_VALUE) { // DirectChannel
             BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
-          } 
-          else if (ch.capacity > Integer.MIN_VALUE) {
+          } else if (ch.capacity > Integer.MIN_VALUE) {
             val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
             builder.addConstructorArgValue(ch.capacity)
             builder
-          } 
-          else if (ch.taskExecutor != null) {
+          } else if (ch.taskExecutor != null) {
             val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ExecutorChannel])
             builder.addConstructorArgValue(ch.taskExecutor)
             builder
-          } 
-          else throw new IllegalArgumentException("Unsupported Channel type: " + channelDefinition)
+          } else throw new IllegalArgumentException("Unsupported Channel type: " + channelDefinition)
         }
         case _ => BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
       }
 
     if (!applicationContext.containsBean(channelDefinition.name)) {
       if (logger.isDebugEnabled) logger.debug("Creating " + channelDefinition)
-      
+
       applicationContext.registerBeanDefinition(channelDefinition.name, channelBuilder.getBeanDefinition)
     }
 
@@ -203,7 +213,7 @@ private[integration] object ApplicationContextBuilder {
    */
   private def wireEndpoint(endpoint: IntegrationComponent, inputChannel: AbstractChannel, outputChannel: AbstractChannel, poller: Poller = null)(implicit applicationContext: GenericApplicationContext) {
     require(endpoint.name != null, "Each component must be named " + endpoint)
-    
+
     if (!applicationContext.containsBean(endpoint.name)) {
       if (logger.isDebugEnabled) logger.debug("Creating " + endpoint)
 
@@ -231,7 +241,7 @@ private[integration] object ApplicationContextBuilder {
       consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
       val consumerName = endpoint.name
       if (StringUtils.hasText(consumerName)) BeanDefinitionReaderUtils.
-          registerBeanDefinition(new BeanDefinitionHolder(consumerBuilder.getBeanDefinition, consumerName), applicationContext)
+        registerBeanDefinition(new BeanDefinitionHolder(consumerBuilder.getBeanDefinition, consumerName), applicationContext)
       else BeanDefinitionReaderUtils.registerWithGeneratedName(consumerBuilder.getBeanDefinition, applicationContext)
     }
 
@@ -247,7 +257,7 @@ private[integration] object ApplicationContextBuilder {
       BeanDefinitionBuilder.rootBeanDefinition(classOf[PollerMetadata])
 
     var triggerBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[PeriodicTrigger])
-    
+
     if (pollerConfig.fixedRate > Integer.MIN_VALUE) {
       triggerBuilder.addConstructorArgValue(pollerConfig.fixedRate);
       triggerBuilder.addPropertyValue("fixedRate", true);
@@ -275,37 +285,7 @@ private[integration] object ApplicationContextBuilder {
         this.defineHandlerTarget(sa, handlerBuilder)
       }
       case enricher: Enricher => {
-        enricher.target match {
-          case fn:Function1[_,AnyRef] => {
-            
-          }
-          case tp:Tuple2[String, AnyRef] => {
-            val map = new java.util.HashMap[String, HeaderValueMessageProcessor[_]]
-            if (tp._2.isInstanceOf[Function[_,_]]){
-                val clazz = Class.forName("org.springframework.integration.transformer.HeaderEnricher$MessageProcessingHeaderValueMessageProcessor")
-                val functionInvoker = new FunctionInvoker(tp._2.asInstanceOf[Function[_, _]], endpoint)
-                val const = clazz.getDeclaredConstructor(classOf[Any], classOf[String])
-                const.setAccessible(true)
-                val p = const.newInstance(functionInvoker, functionInvoker.methodName)
-                map.put(tp._1, p.asInstanceOf[HeaderValueMessageProcessor[_]])
-              }
-              else if (tp._2.isInstanceOf[String] || tp._2.isInstanceOf[Option[_]]){
-                val clazz = Class.forName("org.springframework.integration.transformer.HeaderEnricher$StaticHeaderValueMessageProcessor")
-                val const = clazz.getDeclaredConstructor(classOf[Any])
-	            const.setAccessible(true)
-	            val p = const.newInstance(tp._2)
-	            map.put(tp._1, p.asInstanceOf[HeaderValueMessageProcessor[_]])
-              }
-              else
-                throw new RuntimeException("")
-            
-            
-            handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[MessageTransformingHandler])
-            val transformerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderEnricher])
-            transformerBuilder.addConstructorArg(map)
-            handlerBuilder.addConstructorArg(transformerBuilder.getBeanDefinition())
-          }
-        }
+        handlerBuilder =  HeaderEnricherBuilder.buildHandler(enricher)
       }
       case xfmr: Transformer => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
@@ -321,10 +301,9 @@ private[integration] object ApplicationContextBuilder {
             case hv: ValueCondition => {
               if (router.headerName != null) {
                 if (logger.isDebugEnabled) logger.debug("Router is HeaderValueRouter")
-                
+
                 BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderValueRouter])
-              } 
-              else {
+              } else {
                 if (logger.isDebugEnabled) logger.debug("Router is MethodInvoking")
 
                 val hBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
@@ -420,20 +399,15 @@ private[integration] object ApplicationContextBuilder {
           method = m
           if (returnType.isAssignableFrom(Void.TYPE) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
             methodName = "sendMessage"
-          } 
-          else if (returnType.isAssignableFrom(Void.TYPE) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          } else if (returnType.isAssignableFrom(Void.TYPE) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
             methodName = "sendPayload"
-          } 
-          else if (returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          } else if (returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
             methodName = "sendMessageAndReceiveMessage"
-          } 
-          else if (!returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
             methodName = "sendMessageAndReceivePayload"
-          } 
-          else if (returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          } else if (returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
             methodName = "sendPayloadAndReceiveMessage"
-          } 
-          else if (!returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
+          } else if (!returnType.isAssignableFrom(classOf[Message[_]]) && !inputParameter.isAssignableFrom(classOf[Message[_]])) {
             methodName = "sendPayloadAndReceivePayload"
           }
         }

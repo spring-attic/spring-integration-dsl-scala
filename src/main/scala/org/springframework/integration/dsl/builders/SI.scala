@@ -13,18 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.integration.dsl
+package org.springframework.integration.dsl.builders
 
 import java.lang.IllegalStateException
+
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConversions.asScalaSet
+import scala.collection.JavaConversions.mapAsScalaMap
 import scala.collection.JavaConversions
+
 import org.apache.log4j.Logger
 import org.springframework.context.ApplicationContext
+import org.springframework.integration.channel.QueueChannel
+import org.springframework.integration.dsl.builders.AbstractChannel
+import org.springframework.integration.dsl.builders.BaseIntegrationComposition
+import org.springframework.integration.dsl.builders.Channel
+import org.springframework.integration.dsl.builders.Poller
+import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.integration.support.MessageBuilder
 import org.springframework.integration.Message
 import org.springframework.integration.MessageChannel
 import org.springframework.util.CollectionUtils
-import org.springframework.integration.channel.QueueChannel
-import scala.collection.JavaConversions._
 
 /**
  * @author Oleg Zhurakousky

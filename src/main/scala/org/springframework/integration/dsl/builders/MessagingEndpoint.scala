@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.integration.dsl
+package org.springframework.integration.dsl.builders
 
 import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
 import java.util.UUID

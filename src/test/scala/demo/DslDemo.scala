@@ -21,6 +21,13 @@ import org.springframework.integration.store.SimpleMessageStore
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.springframework.integration.support.MessageBuilder
 import org.springframework.integration.dsl.DSL._
+import org.springframework.integration.dsl.builders.PubSubChannel
+import org.springframework.integration.dsl.utils.DslUtils
+import org.springframework.integration.dsl.builders.handle
+import org.springframework.integration.dsl.builders.Channel
+import org.springframework.integration.dsl.builders.transform
+import org.springframework.integration.dsl.builders.poll
+import org.springframework.integration.dsl.builders.filter
 
 /**
  /**
