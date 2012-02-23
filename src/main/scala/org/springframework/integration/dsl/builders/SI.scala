@@ -70,7 +70,7 @@ private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegr
   /**
    *
    */
-  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: BaseIntegrationComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
+  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: IntegrationComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
 
     val inputChannel = this.applicationContext.getBean[MessageChannel](this.inputChannelName, classOf[MessageChannel])
 

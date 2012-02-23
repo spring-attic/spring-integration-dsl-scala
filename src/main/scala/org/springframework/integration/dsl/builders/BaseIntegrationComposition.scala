@@ -24,32 +24,16 @@ import org.springframework.integration.dsl.utils.DslUtils
 /**
  * @author Oleg Zhurakousky
  */
-case class BaseIntegrationComposition(private[integration] val parentComposition: BaseIntegrationComposition, private[integration] val target: IntegrationComponent) {
+private[dsl] case class BaseIntegrationComposition(private[integration] val parentComposition: BaseIntegrationComposition, private[integration] val target: IntegrationComponent) {
 
-  private[dsl] val logger = LogFactory.getLog(this.getClass());
+  val logger = LogFactory.getLog(this.getClass());
 
   private val threadLocal: ThreadLocal[SI] = new ThreadLocal[SI]
 
   /**
-   *
-   */
-  def send(message: Any, timeout: Long = 0, headers: Map[String, Any] = null): Boolean = {
-    val context = this.getContext()
-    context.send(message, timeout, headers)
-  }
-
-  /**
-   *
-   */
-  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: BaseIntegrationComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
-    val context = this.getContext()
-    context.sendAndReceive[T](message, timeout, headers, errorFlow)
-  }
-
-  /**
    * Will produce a copy of this composition
    */
-  private[dsl] def copy(): BaseIntegrationComposition = {
+  def copy(): BaseIntegrationComposition = {
 
     this.target match {
       case ic: IntegrationComponent => {
@@ -63,7 +47,7 @@ case class BaseIntegrationComposition(private[integration] val parentComposition
   /**
    * Will merge to compositions by assigning 'this' composition as a 'parentComposition' of 'toComposition'
    */
-  private[dsl] def merge(toComposition: BaseIntegrationComposition) = {
+  def merge(toComposition: BaseIntegrationComposition) = {
     val startingComposition = DslUtils.getStartingComposition(toComposition)
     DslUtils.injectParentComposition(startingComposition, this)
   }
@@ -71,7 +55,7 @@ case class BaseIntegrationComposition(private[integration] val parentComposition
   /**
    * Will add an input-channel to this composition (as a DirectChannel) if it does not begin with one
    */
-  private[dsl] def normalizeComposition(): BaseIntegrationComposition = {
+  def normalizeComposition(): BaseIntegrationComposition = {
 
     val newComposition = this.copy()
     val startingComposition = DslUtils.getStartingComposition(newComposition)
@@ -82,7 +66,7 @@ case class BaseIntegrationComposition(private[integration] val parentComposition
   /**
    *
    */
-  private[dsl] def generateComposition[T <: BaseIntegrationComposition](parent: T, child: IntegrationComponent): IntegrationComposition = {
+  def generateComposition[T <: BaseIntegrationComposition](parent: T, child: IntegrationComponent): IntegrationComposition = {
     val composition = child match {
       case ch: Channel => new ChannelIntegrationComposition(parent, child)
       case psch: PubSubChannel => new ChannelIntegrationComposition(parent, child)
@@ -91,7 +75,7 @@ case class BaseIntegrationComposition(private[integration] val parentComposition
     composition
   }
 
-  private def getContext(): SI = {
+  def getContext(): SI = {
 
     threadLocal.get() match {
       case eipContext: SI => {
@@ -110,8 +94,30 @@ case class BaseIntegrationComposition(private[integration] val parentComposition
 /**
  *
  */
-class IntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
+class SendingIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends BaseIntegrationComposition(parentComposition, target) {
+  /**
+   *
+   */
+  def send(message: Any, timeout: Long = 0, headers: Map[String, Any] = null): Boolean = {
+    val context = this.getContext()
+    context.send(message, timeout, headers)
+  }
+
+  /**
+   *
+   */
+  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: IntegrationComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
+    val context = this.getContext()
+    context.sendAndReceive[T](message, timeout, headers, errorFlow)
+  }
+}
+
+/**
+ *
+ */
+class IntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
+  extends SendingIntegrationComposition(parentComposition, target) {
   /**
    *
    */
@@ -130,7 +136,7 @@ class ChannelIntegrationComposition(parentComposition: BaseIntegrationCompositio
   /**
    *
    */
-  def --<[T <: BaseIntegrationComposition](a: T*)(implicit g: ComposableIntegrationComponent[T]): BaseIntegrationComposition = {
+  def --<[T <: BaseIntegrationComposition](a: T*)(implicit g: ComposableIntegrationComponent[T]): SendingIntegrationComposition = {
     if (this.logger.isDebugEnabled()) {
       for (element <- a) this.logger.debug("Adding " + DslUtils.getStartingComposition(element).target + " to " + this.target)
     }
@@ -157,7 +163,7 @@ class PollableChannelIntegrationComposition(parentComposition: IntegrationCompos
 private[dsl] abstract class ComposableIntegrationComponent[T] {
   def compose(c: IntegrationComposition, e: T): T
 
-  def compose(c: IntegrationComposition, e: BaseIntegrationComposition*): BaseIntegrationComposition = {
+  def compose(c: IntegrationComposition, e: BaseIntegrationComposition*): SendingIntegrationComposition = {
     val buffer = new ListBuffer[BaseIntegrationComposition]()
     for (element <- e) {
       val copiedComposition = element.copy()
@@ -165,7 +171,7 @@ private[dsl] abstract class ComposableIntegrationComponent[T] {
       DslUtils.injectParentComposition(startingComposition, c)
       buffer += copiedComposition
     }
-    new BaseIntegrationComposition(c, new ListOfCompositions(buffer.toList))
+    new SendingIntegrationComposition(c, new ListOfCompositions(buffer.toList))
   }
 }
 /**
