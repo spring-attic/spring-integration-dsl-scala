@@ -166,7 +166,7 @@ class DSLUsageDemo {
   class Employee(val firstName: String, val lastName: String, val age: Int)
 
   @Test
-  def httpOutbound = {
+  def httpOutboundWithFunctionUrl = {
 
     val tickerService =
       transform.using { s: String =>
@@ -183,9 +183,28 @@ class DSLUsageDemo {
     		handle.using{quotes:Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes)}
     		
     httpFlow.send("vmw")
+     
+    println("done")
+  }
+  
+  @Test
+  def httpOutboundWithStringUrl = {
+
+    val tickerService =
+      transform.using { s: String =>
+        s.toLowerCase() match {
+          case "vmware" => "vmw"
+          case "oracle" => "orcl"
+          case _ => ""
+        }
+      }
+
+    val httpFlow = 
+    		to.http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("Oracle")) -->
+    		handle.using{quotes:Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes)}
+    		
+    httpFlow.send("static")
     
-//    toAndFrom.http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("oracle"))
-      
     println("done")
   }
 }

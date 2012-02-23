@@ -17,23 +17,36 @@ package org.springframework.integration.dsl.builders
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.config.ServiceActivatorFactoryBean
 import org.springframework.integration.dsl.utils.HttpRequestExecutingMessageHandlerWrapper
+import org.springframework.integration.http.outbound.HttpRequestExecutingMessageHandler
 /**
  * @author Oleg Zhurakousky
  */
 object HttpOutboundGatewayBuilder {
 
-  def buildHandler(gateway: HttpOutboundGateway): BeanDefinitionBuilder = {//HttpRequestExecutingMessageHandlerWrapper
-    val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HttpRequestExecutingMessageHandlerWrapper])
-    gateway.target match {
-      case fn:Function[_, _] => {
-        val functionInvoker = new FunctionInvoker(fn, gateway)
-        handlerBuilder.addConstructorArgValue(functionInvoker)
-        handlerBuilder.addConstructorArgValue(functionInvoker.methodName)
-        handlerBuilder.addConstructorArgValue(gateway.httpMethod)
-        handlerBuilder.addConstructorArgValue(gateway.expectedResponseType)
+  def buildHandler(gateway: HttpOutboundGateway): BeanDefinitionBuilder = {
+
+    val handlerBuilder: BeanDefinitionBuilder =
+      gateway.target match {
+        case fn: Function[_, _] => {
+          val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HttpRequestExecutingMessageHandlerWrapper])
+          val functionInvoker = new FunctionInvoker(fn, gateway)
+          handlerBuilder.addConstructorArgValue(functionInvoker)
+          handlerBuilder.addConstructorArgValue(functionInvoker.methodName)
+          handlerBuilder.addConstructorArgValue(gateway.httpMethod)
+          handlerBuilder.addConstructorArgValue(gateway.expectedResponseType)
+          handlerBuilder
+        }
+        case url: String => {
+          val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HttpRequestExecutingMessageHandler])
+          handlerBuilder.addConstructorArgValue(url)
+          handlerBuilder.addPropertyValue("httpMethod", gateway.httpMethod)
+          if (gateway.expectedResponseType != null) {
+            handlerBuilder.addPropertyValue("expectedResponseType", gateway.expectedResponseType)
+          }
+          handlerBuilder
+        }
+        case _ => throw new IllegalArgumentException("Unsupported HTTP Outbound Gateway Target")
       }
-      case _ =>
-    }
     handlerBuilder
   }
 }
