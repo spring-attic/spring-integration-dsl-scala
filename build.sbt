@@ -16,8 +16,14 @@ libraryDependencies += "org.springframework.integration" % "spring-integration-c
 
 libraryDependencies += "org.springframework.integration" % "spring-integration-http" % "2.1.1.BUILD-SNAPSHOT"
 
+libraryDependencies += "org.springframework.integration" % "spring-integration-jms" % "2.1.1.BUILD-SNAPSHOT"
+
+libraryDependencies += "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.1"
+
 libraryDependencies += "org.codehaus.jackson" % "jackson-mapper-asl" % "1.9.2"
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.7" % "test->default"
 
 libraryDependencies += "log4j" % "log4j" % "1.2.16" % "test->default"
+
+libraryDependencies += "org.apache.activemq" % "activemq-core" % "5.3.0" % "test->default"

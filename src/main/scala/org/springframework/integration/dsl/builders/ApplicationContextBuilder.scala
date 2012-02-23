@@ -60,7 +60,7 @@ private[dsl] object ApplicationContextBuilder {
    *
    */
   def build(parentContext: ApplicationContext,
-    composition: BaseIntegrationComposition): ApplicationContext = {
+    composition: BaseIntegrationComposition): GenericApplicationContext = {
 
     implicit val applicationContext = new GenericApplicationContext()
 
@@ -85,11 +85,11 @@ private[dsl] object ApplicationContextBuilder {
    */
   private def init(composition: BaseIntegrationComposition, outputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext): Unit = {
 
-    val inputChannel: AbstractChannel = this.determineInputChannel(composition)
+    val inputChannel: AbstractChannel = if (composition.target.isInstanceOf[InboundMessageSource]) null else this.determineInputChannel(composition) 
 
     if (inputChannel != null) this.buildChannel(inputChannel)
 
-    val nextOutputChannel: AbstractChannel = this.determineNextOutputChannel(composition, inputChannel)
+    val nextOutputChannel: AbstractChannel = if (composition.target.isInstanceOf[InboundMessageSource]) null else this.determineNextOutputChannel(composition, inputChannel)
 
     if (nextOutputChannel != null) this.buildChannel(nextOutputChannel)
 
@@ -128,6 +128,21 @@ private[dsl] object ApplicationContextBuilder {
               if (!endpoint.isInstanceOf[Poller])
                 this.wireEndpoint(endpoint, inputChannel, (if (outputChannel != null) outputChannel else null))
             }
+          }
+        }
+        case _ =>
+      }
+    }
+    else {
+      composition.target match {
+        case ims:InboundMessageSource => {
+          ims match {
+            case jmsIn:JmsInboundAdapter => {
+              val handlerBuilder = JmsInboundAdapterBuilder.buildHandler(jmsIn, outputChannel.name, applicationContext)
+              val jmsInHolder = new BeanDefinitionHolder(handlerBuilder.getBeanDefinition, jmsIn.name)
+              BeanDefinitionReaderUtils.registerBeanDefinition(jmsInHolder, applicationContext)
+            }
+            case _ => throw new IllegalArgumentException("Unsupported InboundMessageSource")
           }
         }
         case _ =>

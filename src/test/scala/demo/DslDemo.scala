@@ -30,10 +30,7 @@ import org.springframework.integration.dsl.builders.poll
 import org.springframework.integration.dsl.builders.filter
 
 /**
- /**
-  * @author Oleg Zhurakousky
-  */
- *
+ * @author Oleg Zhurakousky
  */
 class DslDemo {
  @Test

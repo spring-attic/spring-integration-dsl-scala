@@ -20,9 +20,7 @@ import org.springframework.http.HttpMethod
 /**
  * @author Oleg Zhurakousky
  */
-object to {
-
-  def http = new {
+object http {
     def GET[T](httpUrl: String)(implicit m: scala.reflect.Manifest[T]) =
       new IntegrationComposition(null, new HttpOutboundGateway(target = httpUrl,
         														httpMethod = HttpMethod.GET,
@@ -45,8 +43,7 @@ object to {
             														requestTimeout = requestTimeout,
             														httpMethod = HttpMethod.GET,
             														expectedResponseType = m.erasure))
-      }
-  }
+    }
 }
 
 private[dsl] class HttpOutboundGateway(name: String = "$http_out_" + UUID.randomUUID().toString.substring(0, 8),

@@ -28,13 +28,14 @@ import org.springframework.integration.Message
 import org.springframework.integration.MessageChannel
 import org.springframework.util.CollectionUtils
 import org.apache.commons.logging.LogFactory
+import org.springframework.util.StringUtils
 
 /**
  * @author Oleg Zhurakousky
  */
 private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegrationComposition) {
 
-   private val logger = LogFactory.getLog(this.getClass());
+  private val logger = LogFactory.getLog(this.getClass());
 
   if (logger.isDebugEnabled) logger.debug("Creating new EIP context")
 
@@ -50,14 +51,26 @@ private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegr
     case _ =>
   }
 
-  val inputChannelName: String = DslUtils.getStartingComposition(normalizedComposition).target.asInstanceOf[AbstractChannel].name
+  val inputChannelName: String = {
+    
+    val startComp = DslUtils.getStartingComposition(normalizedComposition)
+    println(startComp.getClass().getName())
+    startComp.target match {
+      case ch:AbstractChannel => ch.name
+      case _ => null
+    }
+  }
 
   val applicationContext = ApplicationContextBuilder.build(parentContext, normalizedComposition)
+  
+  def start() = this.applicationContext.start()
+  
+  def stop() = this.applicationContext.stop()
   /**
    *
    */
   def send(message: Any, timeout: Long = 0, headers: Map[String, Any] = null): Boolean = {
-
+    require(StringUtils.hasText(this.inputChannelName), "Can not determine Input Channel for this composition")
     val inputChannel = this.applicationContext.getBean[MessageChannel](this.inputChannelName, classOf[MessageChannel])
 
     val messageToSend = this.constructMessage(message, headers)
@@ -71,7 +84,7 @@ private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegr
    *
    */
   def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: IntegrationComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
-
+    require(StringUtils.hasText(this.inputChannelName), "Can not determine Input Channel for this composition")
     val inputChannel = this.applicationContext.getBean[MessageChannel](this.inputChannelName, classOf[MessageChannel])
 
     val replyChannel = new QueueChannel()

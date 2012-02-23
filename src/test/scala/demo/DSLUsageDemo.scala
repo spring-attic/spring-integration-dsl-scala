@@ -1,3 +1,18 @@
+/*
+ * Copyright 2002-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package demo
 
 import org.junit.Test
@@ -9,12 +24,22 @@ import org.springframework.integration.dsl.builders.Channel
 import org.springframework.integration.dsl.builders.PubSubChannel
 import org.springframework.integration.dsl.builders.enrich
 import org.springframework.integration.dsl.builders.handle
+import org.springframework.integration.dsl.builders.http
+import org.springframework.integration.dsl.builders.jms
 import org.springframework.integration.dsl.builders.poll
-import org.springframework.integration.dsl.builders.to
 import org.springframework.integration.dsl.builders.transform
-import org.springframework.integration.json.JsonToObjectTransformer
+import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.integration.Message
+import org.springframework.jms.connection.CachingConnectionFactory
+import org.springframework.jms.core.JmsTemplate
+import org.springframework.jms.core.MessageCreator
+import javax.jms.Session
+import javax.jms.TextMessage
+import org.springframework.integration.dsl.utils.JmsDslTestUtils
 
+/**
+ * @author Oleg Zhurakousky
+ */
 class DSLUsageDemo {
 
   @Test
@@ -179,7 +204,7 @@ class DSLUsageDemo {
 
     val httpFlow = 
             enrich.header("company" -> {name:String => tickerService.sendAndReceive[String](name)}) -->
-    		to.http.GET[String] { m: Message[String] => "http://www.google.com/finance/info?q=" + m.getPayload()} -->
+    		http.GET[String] { m: Message[String] => "http://www.google.com/finance/info?q=" + m.getPayload()} -->
     		handle.using{quotes:Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes)}
     		
     httpFlow.send("vmw")
@@ -200,11 +225,42 @@ class DSLUsageDemo {
       }
 
     val httpFlow = 
-    		to.http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("Oracle")) -->
+    		http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("Oracle")) -->
     		handle.using{quotes:Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes)}
     		
     httpFlow.send("static")
     
+    println("done")
+  }
+  
+  //@Test
+  def listening  = {
+    val connectionFactory = JmsDslTestUtils.localConnectionFactory
+    
+    val flow = 
+      jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
+      handle.using{m:Message[_] => println("logging existing message and passing through " + m); m} -->
+      transform.using{value:String => value.toUpperCase()}
+    
+    flow.start  
+    
+    val jmsTemplate = new JmsTemplate(connectionFactory);
+    val request = new org.apache.activemq.command.ActiveMQQueue("myQueue")
+    val reply = new org.apache.activemq.command.ActiveMQQueue("myReply")
+    jmsTemplate.send(request, new MessageCreator {
+		def  createMessage(session:Session) = {
+			val message = session.createTextMessage();
+			message.setText("Hello from JMS");
+			message.setJMSReplyTo(reply);
+			message;
+		}
+	});
+    
+    val replyMessage = jmsTemplate.receive(reply);
+    println("Reply Message: " + replyMessage.asInstanceOf[TextMessage].getText())
+   
+    System.in.read()
+    //flow.stop
     println("done")
   }
 }
