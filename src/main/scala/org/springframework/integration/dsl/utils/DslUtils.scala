@@ -62,15 +62,16 @@ object DslUtils {
 
   private def doToList(integrationComposition: BaseIntegrationComposition, lb: ListBuffer[Any]): Unit = {
     for (p <- integrationComposition.productIterator) {
-
       if (p != null) {
         p match {
           case c: BaseIntegrationComposition => this.doToList(c, lb)
 
           case lc: ListOfCompositions[BaseIntegrationComposition] =>
-            if (lc.compositions.size == 1) lb += lc.compositions(0).target
-            else for (element <- lc.compositions) lb += this.toProductList(element)
-
+            if (lc.compositions.size == 1) 
+              lb += lc.compositions(0).target
+            else 
+              for (element <- lc.compositions) lb += this.toProductList(element)
+              
           case _ => lb += p
         }
       }

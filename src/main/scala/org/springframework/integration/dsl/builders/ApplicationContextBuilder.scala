@@ -48,32 +48,31 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 import org.springframework.scheduling.support.PeriodicTrigger
 import org.springframework.util.StringUtils
 import org.apache.commons.logging.LogFactory
+import org.springframework.beans.factory.config.BeanDefinition
 
 /**
  * @author Oleg Zhurakousky
  */
 private[dsl] object ApplicationContextBuilder {
 
-   private val logger = LogFactory.getLog(this.getClass());
+  private val logger = LogFactory.getLog(this.getClass());
 
   /**
    *
    */
-  def build(parentContext: ApplicationContext,
-    composition: BaseIntegrationComposition): GenericApplicationContext = {
+  def build(parentContext: ApplicationContext, composition: BaseIntegrationComposition): GenericApplicationContext = {
 
     implicit val applicationContext = new GenericApplicationContext()
 
-    if (parentContext != null) {
-      applicationContext.setParent(parentContext)
-    }
+    if (parentContext != null) applicationContext.setParent(parentContext)
+
     //TODO make it conditional based on what may already be registered in parent
     this.preProcess(applicationContext)
 
-    if (this.logger.isDebugEnabled())
+    if (this.logger.isDebugEnabled)
       this.logger.debug("Initializing the following composition segment: " + DslUtils.toProductList(composition))
 
-    this.init(composition, null)
+    this.init(composition)
 
     applicationContext.refresh()
     logger.info("\n*** Spring Integration Message Flow composition was initialized successfully ***\n")
@@ -81,79 +80,107 @@ private[dsl] object ApplicationContextBuilder {
   }
 
   /**
-   *
+   * will initialize Spring ApplicationContext by using various BeanDefinitionBuilders specific to each SI component
    */
-  private def init(composition: BaseIntegrationComposition, outputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext): Unit = {
+  private def init(composition: BaseIntegrationComposition, outputChannel: AbstractChannel = null)(implicit applicationContext: GenericApplicationContext): Unit = {
 
-    val inputChannel: AbstractChannel = if (composition.target.isInstanceOf[InboundMessageSource]) null else this.determineInputChannel(composition) 
+    val inputChannel: AbstractChannel =
+      if (composition.target.isInstanceOf[InboundMessageSource]) null else this.determineInputChannel(composition)
 
     if (inputChannel != null) this.buildChannel(inputChannel)
 
-    val nextOutputChannel: AbstractChannel = if (composition.target.isInstanceOf[InboundMessageSource]) null else this.determineNextOutputChannel(composition, inputChannel)
+    val nextOutputChannel: AbstractChannel =
+      if (composition.target.isInstanceOf[InboundMessageSource]) null else this.determineNextOutputChannel(composition, inputChannel)
 
     if (nextOutputChannel != null) this.buildChannel(nextOutputChannel)
 
-    if (composition.parentComposition != null) {
-      composition.target match {
-        case channel: AbstractChannel => {
-          composition.parentComposition.target match {
-            case parentChannel: Channel => {
-              if (logger.isTraceEnabled) {
-                logger.trace("[" + inputChannel.name + " --> bridge --> " + composition.target.asInstanceOf[Channel].name + "]")
-              }
-              this.wireEndpoint(new MessagingBridge(), inputChannel, (if (outputChannel != null) outputChannel else null))
-            }
-            case _ =>
-          }
-        }
-        case listComp: ListOfCompositions[BaseIntegrationComposition] => {
-          for (comp <- listComp.compositions) {
-            this.init(comp, null)
-          }
-        }
-        case endpoint: IntegrationComponent => {
-          composition.parentComposition.target match {
-            case poller: Poller => {
-              if (logger.isTraceEnabled) {
-                logger.trace("[" + inputChannel.name + " --> Polling(" + composition.target + ")" +
-                  (if (outputChannel != null) (" --> " + outputChannel.name) else "") + "]")
-              }
-              this.wireEndpoint(endpoint, inputChannel, (if (outputChannel != null) outputChannel else null), poller)
-            }
-            case _ => {
-              if (logger.isTraceEnabled) {
-                logger.trace("[" + inputChannel.name + " --> " + composition.target +
-                  (if (outputChannel != null) (" --> " + outputChannel.name) else "") + "]")
-              }
-              if (!endpoint.isInstanceOf[Poller])
-                this.wireEndpoint(endpoint, inputChannel, (if (outputChannel != null) outputChannel else null))
-            }
-          }
-        }
-        case _ =>
-      }
-    }
-    else {
-      composition.target match {
-        case ims:InboundMessageSource => {
-          ims match {
-            case jmsIn:JmsInboundAdapter => {
-              val handlerBuilder = JmsInboundAdapterBuilder.buildHandler(jmsIn, outputChannel.name, applicationContext)
-              val jmsInHolder = new BeanDefinitionHolder(handlerBuilder.getBeanDefinition, jmsIn.name)
-              BeanDefinitionReaderUtils.registerBeanDefinition(jmsInHolder, applicationContext)
-            }
-            case _ => throw new IllegalArgumentException("Unsupported InboundMessageSource")
-          }
-        }
-        case _ =>
-      }
+    composition.target match {
+      case channel: AbstractChannel =>
+        this.processChannel(composition, inputChannel, outputChannel)
+
+      case ims: InboundMessageSource =>
+        this.processInboundMessageSource(ims, outputChannel)
+
+      case listComp: ListOfCompositions[BaseIntegrationComposition] =>
+        this.processListOfCompositions(listComp, inputChannel)
+
+      case endpoint: SimpleEndpoint =>
+        this.processEndpoint(composition, inputChannel, outputChannel)
+        
+      case aggregator: MessageAggregator =>
+        this.processEndpoint(composition, inputChannel, outputChannel)
+
+      case poller: Poller => //ignore since its going to be configured as part of the endpoint's parent
+
+      case _ => throw new IllegalArgumentException("Unrecognized BaseIntegrationComposition: " + composition.target)
     }
 
-    if (composition.parentComposition != null) {
+    if (composition.parentComposition != null)
       this.init(composition.parentComposition, nextOutputChannel)
+  }
+
+  /**
+   *
+   */
+  private def processListOfCompositions(listComp: ListOfCompositions[BaseIntegrationComposition], inputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext) {
+    for (comp <- listComp.compositions) {
+      this.init(comp, inputChannel)
+      val startingCompositionName: String = DslUtils.getStartingComposition(comp).target.name
+      val bd = applicationContext.getBeanDefinition(startingCompositionName)
+      bd.getPropertyValues.addPropertyValue("inputChannelName", inputChannel.name)
     }
   }
 
+  /**
+   *
+   */
+  private def processInboundMessageSource(ims: InboundMessageSource, outputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext) {
+    ims match {
+      case jmsIn: JmsInboundAdapter => {
+        val handlerBuilder = JmsInboundAdapterBuilder.buildHandler(jmsIn, outputChannel.name, applicationContext)
+        val jmsInHolder = new BeanDefinitionHolder(handlerBuilder.getBeanDefinition, jmsIn.name)
+        BeanDefinitionReaderUtils.registerBeanDefinition(jmsInHolder, applicationContext)
+      }
+      case _ => throw new IllegalArgumentException("Unsupported InboundMessageSource")
+    }
+  }
+
+  /**
+   * Since channel itself will be processed at the time of endpoint wiring, this method will
+   * only be called when two channels are bridged together (e.g., channel --> channel), so essentially
+   * this method defines a MessagingBridge
+   */
+  private def processChannel(composition: BaseIntegrationComposition, inputChannel: AbstractChannel, outputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext) {
+    if (composition.parentComposition != null) {
+      composition.parentComposition.target match {
+        case parentChannel: Channel => {
+          if (logger.isTraceEnabled)
+            logger.trace("[" + inputChannel.name + " --> bridge --> " + composition.target.asInstanceOf[Channel].name + "]")
+
+          this.wireEndpoint(new MessagingBridge(), inputChannel, (if (outputChannel != null) outputChannel else null))
+        }
+        case _ =>
+      }
+    }
+  }
+
+  /**
+   *
+   */
+  private def processEndpoint(composition: BaseIntegrationComposition, inputChannel: AbstractChannel, outputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext) {
+    val poller: Poller = if (composition.parentComposition != null) {
+      composition.parentComposition.target match {
+        case poller: Poller => poller
+        case _ => null
+      }
+    } else null
+
+    this.wireEndpoint(composition.target, inputChannel, (if (outputChannel != null) outputChannel else null), poller)
+  }
+
+  /**
+   *
+   */
   private def determineInputChannel(composition: BaseIntegrationComposition): AbstractChannel = {
 
     val inputChannel: AbstractChannel = if (composition.parentComposition != null) {
@@ -194,7 +221,7 @@ private[dsl] object ApplicationContextBuilder {
     val channelBuilder: BeanDefinitionBuilder =
       channelDefinition match {
         case ch: Channel => {
-          if (ch.capacity == Integer.MIN_VALUE) { // DirectChannel
+          if (ch.capacity == Integer.MIN_VALUE) { 
             BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
           } else if (ch.capacity > Integer.MIN_VALUE) {
             val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
@@ -230,7 +257,8 @@ private[dsl] object ApplicationContextBuilder {
         BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
       var handlerBuilder = this.getHandlerDefinitionBuilder(endpoint, outputChannel)
 
-      consumerBuilder.addPropertyValue("inputChannelName", inputChannel.name)
+      if (inputChannel != null)
+        consumerBuilder.addPropertyValue("inputChannelName", inputChannel.name)
 
       if (poller != null) {
         this.configurePoller(endpoint, poller, consumerBuilder)
@@ -294,7 +322,7 @@ private[dsl] object ApplicationContextBuilder {
         this.defineHandlerTarget(sa, handlerBuilder)
       }
       case enricher: Enricher => {
-        handlerBuilder =  HeaderEnricherBuilder.buildHandler(enricher)
+        handlerBuilder = HeaderEnricherBuilder.buildHandler(enricher)
       }
       case xfmr: Transformer => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
@@ -366,7 +394,7 @@ private[dsl] object ApplicationContextBuilder {
         val processorBuilder = BeanDefinitionBuilder.genericBeanDefinition(classOf[DefaultAggregatingMessageGroupProcessor]);
         handlerBuilder.addConstructorArgValue(processorBuilder.getBeanDefinition());
       }
-      case httpOut:HttpOutboundGateway => {
+      case httpOut: HttpOutboundGateway => {
         handlerBuilder = HttpOutboundGatewayBuilder.buildHandler(httpOut)
       }
       case _ => throw new IllegalArgumentException("handler is not currently supported: " + endpoint)

@@ -191,12 +191,9 @@ private[dsl] abstract class ComposableIntegrationComponent[T] {
 
   def compose(c: IntegrationComposition, e: BaseIntegrationComposition*): SendingIntegrationComposition = {
     val buffer = new ListBuffer[BaseIntegrationComposition]()
-    for (element <- e) {
-      val copiedComposition = element.copy()
-      val startingComposition = DslUtils.getStartingComposition(copiedComposition)
-      DslUtils.injectParentComposition(startingComposition, c)
-      buffer += copiedComposition
-    }
+    
+    for (element <- e) buffer += element
+   
     new SendingIntegrationComposition(c, new ListOfCompositions(buffer.toList))
   }
 }

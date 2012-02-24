@@ -300,5 +300,7 @@ private[dsl] class MessageAggregator(name:String = "$ag_" + UUID.randomUUID().to
                                           val sendPartialResultsOnExpiry:Boolean = false,
                                           val expireGroupsUponCompletion:Boolean = false) extends IntegrationComponent(name)
 
-private[dsl] abstract class SimpleEndpoint(name:String, val target:Any = null) extends IntegrationComponent(name)
+private[dsl] abstract class SimpleEndpoint(name:String, val target:Any = null) extends IntegrationComponent(name) {
+  override def toString = name
+}
 
