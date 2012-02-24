@@ -16,6 +16,7 @@
 package org.springframework.integration.dsl.builders
 import java.util.UUID
 import org.springframework.integration.dsl.utils.DslUtils
+import org.springframework.util.StringUtils
 
 
 /**
@@ -30,11 +31,13 @@ object route {
     def where(name:String) = new IntegrationComposition(null, new Router(name, null, null)(conditionCompositions: _*))
   }
 
-  def onValueOfHeader(headerName: String)(conditionCompositions: ValueCondition*) =
+  def onValueOfHeader(headerName: String)(conditionCompositions: ValueCondition*) = {
+    require(StringUtils.hasText(headerName), "'headerName' must not be empty")
     new IntegrationComposition(null, new Router(null, null, headerName)(conditionCompositions: _*)) {
 
       def where(name: String) = new IntegrationComposition(null, new Router(name, null, headerName)(conditionCompositions: _*))
     }
+  }
 
   def using(target: String)(conditions: ValueCondition* ) =
     new IntegrationComposition(null, new Router(target = target)(conditions: _*))  {

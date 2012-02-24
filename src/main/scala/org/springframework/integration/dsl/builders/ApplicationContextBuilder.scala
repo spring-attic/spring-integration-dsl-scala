@@ -83,6 +83,7 @@ private[dsl] object ApplicationContextBuilder {
    * will initialize Spring ApplicationContext by using various BeanDefinitionBuilders specific to each SI component
    */
   private def init(composition: BaseIntegrationComposition, outputChannel: AbstractChannel = null)(implicit applicationContext: GenericApplicationContext): Unit = {
+    require(composition.target.name != null, "Each component must be named " + composition.target)
 
     val inputChannel: AbstractChannel =
       if (composition.target.isInstanceOf[InboundMessageSource]) null else this.determineInputChannel(composition)
@@ -93,7 +94,7 @@ private[dsl] object ApplicationContextBuilder {
       if (composition.target.isInstanceOf[InboundMessageSource]) null else this.determineNextOutputChannel(composition, inputChannel)
 
     if (nextOutputChannel != null) this.buildChannel(nextOutputChannel)
-
+    
     composition.target match {
       case channel: AbstractChannel =>
         this.processChannel(composition, inputChannel, outputChannel)
@@ -106,7 +107,7 @@ private[dsl] object ApplicationContextBuilder {
 
       case endpoint: SimpleEndpoint =>
         this.processEndpoint(composition, inputChannel, outputChannel)
-        
+
       case aggregator: MessageAggregator =>
         this.processEndpoint(composition, inputChannel, outputChannel)
 
@@ -175,45 +176,41 @@ private[dsl] object ApplicationContextBuilder {
       }
     } else null
 
-    this.wireEndpoint(composition.target, inputChannel, (if (outputChannel != null) outputChannel else null), poller)
+    if (!applicationContext.containsBean(composition.target.name))
+      this.wireEndpoint(composition.target, inputChannel, (if (outputChannel != null) outputChannel else null), poller)
   }
 
   /**
    *
    */
   private def determineInputChannel(composition: BaseIntegrationComposition): AbstractChannel = {
-
-    val inputChannel: AbstractChannel = if (composition.parentComposition != null) {
+    if (composition.parentComposition != null) {
       composition.parentComposition.target match {
-        case ch: AbstractChannel => {
+        case ch: AbstractChannel =>
           ch
-        }
-        case poller: Poller => {
+
+        case poller: Poller =>
           composition.parentComposition.parentComposition.target.asInstanceOf[AbstractChannel]
-        }
-        case endpoint: IntegrationComponent => {
-          if (!composition.target.isInstanceOf[AbstractChannel]) {
+
+        case endpoint: IntegrationComponent =>
+          if (!composition.target.isInstanceOf[AbstractChannel])
             Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
-          } else null
-        }
+          else null
+
         case _ => throw new IllegalStateException("Unrecognized component " + composition)
       }
-    } else {
-      null
-    }
-    inputChannel
+    } else null
   }
   /**
    *
    */
   private def determineNextOutputChannel(composition: BaseIntegrationComposition, previousInputChannel: AbstractChannel): AbstractChannel = {
     composition.target match {
-      case ch: AbstractChannel => {
+      case ch: AbstractChannel =>
         ch
-      }
-      case _ => {
+
+      case _ =>
         previousInputChannel
-      }
     }
   }
 
@@ -221,7 +218,7 @@ private[dsl] object ApplicationContextBuilder {
     val channelBuilder: BeanDefinitionBuilder =
       channelDefinition match {
         case ch: Channel => {
-          if (ch.capacity == Integer.MIN_VALUE) { 
+          if (ch.capacity == Integer.MIN_VALUE) {
             BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
           } else if (ch.capacity > Integer.MIN_VALUE) {
             val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
@@ -248,39 +245,35 @@ private[dsl] object ApplicationContextBuilder {
    *
    */
   private def wireEndpoint(endpoint: IntegrationComponent, inputChannel: AbstractChannel, outputChannel: AbstractChannel, poller: Poller = null)(implicit applicationContext: GenericApplicationContext) {
-    require(endpoint.name != null, "Each component must be named " + endpoint)
+    
+    if (logger.isDebugEnabled) logger.debug("Creating " + endpoint)
 
-    if (!applicationContext.containsBean(endpoint.name)) {
-      if (logger.isDebugEnabled) logger.debug("Creating " + endpoint)
+    val consumerBuilder =
+      BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
+      
+    var handlerBuilder = this.getHandlerDefinitionBuilder(endpoint, outputChannel)
 
-      val consumerBuilder =
-        BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
-      var handlerBuilder = this.getHandlerDefinitionBuilder(endpoint, outputChannel)
+    if (inputChannel != null)
+      consumerBuilder.addPropertyValue("inputChannelName", inputChannel.name)
 
-      if (inputChannel != null)
-        consumerBuilder.addPropertyValue("inputChannelName", inputChannel.name)
+    if (poller != null) 
+      this.configurePoller(endpoint, poller, consumerBuilder)
 
-      if (poller != null) {
-        this.configurePoller(endpoint, poller, consumerBuilder)
+    if (outputChannel != null) {
+      val outputChannelPropertyName:String = endpoint match {
+        case rt: Router => "defaultOutputChannel"       
+        case _ => "outputChannel"
       }
-
-      if (outputChannel != null) {
-        endpoint match {
-          case rt: Router => {
-            handlerBuilder.addPropertyReference("defaultOutputChannel", outputChannel.name);
-          }
-          case _ => {
-            handlerBuilder.addPropertyReference("outputChannel", outputChannel.name);
-          }
-        }
-      }
-
-      consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
-      val consumerName = endpoint.name
-      if (StringUtils.hasText(consumerName)) BeanDefinitionReaderUtils.
-        registerBeanDefinition(new BeanDefinitionHolder(consumerBuilder.getBeanDefinition, consumerName), applicationContext)
-      else BeanDefinitionReaderUtils.registerWithGeneratedName(consumerBuilder.getBeanDefinition, applicationContext)
+      handlerBuilder.addPropertyReference(outputChannelPropertyName, outputChannel.name)
     }
+
+    consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
+
+    if (StringUtils.hasText(endpoint.name)) 
+      BeanDefinitionReaderUtils.registerBeanDefinition(
+          new BeanDefinitionHolder(consumerBuilder.getBeanDefinition, endpoint.name), applicationContext)
+    else 
+      BeanDefinitionReaderUtils.registerWithGeneratedName(consumerBuilder.getBeanDefinition, applicationContext)
 
   }
 
@@ -303,10 +296,9 @@ private[dsl] object ApplicationContextBuilder {
     val triggerBeanName = BeanDefinitionReaderUtils.registerWithGeneratedName(triggerBuilder.getBeanDefinition, applicationContext)
     pollerBuilder.addPropertyReference("trigger", triggerBeanName)
 
-    if (pollerConfig.maxMessagesPerPoll > Integer.MIN_VALUE) {
+    if (pollerConfig.maxMessagesPerPoll > Integer.MIN_VALUE) 
       pollerBuilder.addPropertyValue("maxMessagesPerPoll", pollerConfig.maxMessagesPerPoll)
-    }
-
+    
     consumerBuilder.addPropertyValue("pollerMetadata", pollerBuilder.getBeanDefinition)
   }
 
@@ -317,66 +309,20 @@ private[dsl] object ApplicationContextBuilder {
     var handlerBuilder: BeanDefinitionBuilder = null
 
     endpoint match {
-      case sa: ServiceActivator => {
-        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
-        this.defineHandlerTarget(sa, handlerBuilder)
-      }
-      case enricher: Enricher => {
-        handlerBuilder = HeaderEnricherBuilder.buildHandler(enricher)
-      }
+      case sa: ServiceActivator => 
+        handlerBuilder = ServiceActivatorBuilder.build(sa, this.defineHandlerTarget)
+      
+      case enricher: Enricher => 
+        handlerBuilder = EnricherBuilder.build(enricher)
+     
       case xfmr: Transformer => {
-        handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
-        this.defineHandlerTarget(xfmr, handlerBuilder)
+        handlerBuilder = TransformerBuilder.build(xfmr, this.defineHandlerTarget)
       }
       case mb: MessagingBridge => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[BridgeHandler])
       }
       case router: Router => {
-        val conditions = router.conditions
-        if (conditions.size > 0) {
-          handlerBuilder = conditions(0) match {
-            case hv: ValueCondition => {
-              if (router.headerName != null) {
-                if (logger.isDebugEnabled) logger.debug("Router is HeaderValueRouter")
-
-                BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderValueRouter])
-              } else {
-                if (logger.isDebugEnabled) logger.debug("Router is MethodInvoking")
-
-                val hBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
-                this.defineHandlerTarget(router, hBuilder)
-                hBuilder
-              }
-            }
-            case pt: PayloadTypeCondition => {
-              if (logger.isDebugEnabled) logger.debug("Router is PayloadTypeRouter")
-
-              BeanDefinitionBuilder.rootBeanDefinition(classOf[PayloadTypeRouter])
-            }
-            case _ => throw new IllegalStateException("Unrecognized Router type: " + conditions(0))
-          }
-        }
-
-        if (StringUtils.hasText(router.headerName)) {
-          handlerBuilder.addConstructorArgValue(router.headerName)
-        }
-
-        val channelMappings = new HashMap[Any, Any]()
-
-        for (condition <- conditions) {
-          val composition = condition.integrationComposition.copy()
-          val normailizedCompositon = composition.normalizeComposition()
-          val startingComposition = DslUtils.getStartingComposition(normailizedCompositon)
-          startingComposition.target match {
-            case ch: AbstractChannel => {
-              channelMappings.put(condition.value, ch.name)
-              this.init(normailizedCompositon, null)
-            }
-            case _ => throw new IllegalArgumentException("Starting composition is not a channel")
-          }
-
-        }
-        handlerBuilder.addPropertyValue("channelMappings", channelMappings)
+        handlerBuilder = RouterBuilder.build(router, this.defineHandlerTarget, this.init)
       }
       case fltr: MessageFilter => {
         handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])

@@ -29,9 +29,9 @@ import org.springframework.integration.transformer.MessageTransformingHandler
 /**
  * @author Oleg Zhurakousky
  */
-private[dsl] object HeaderEnricherBuilder {
+private[dsl] object EnricherBuilder {
 
-  def buildHandler(enricher: Enricher): BeanDefinitionBuilder = {
+  def build(enricher: Enricher): BeanDefinitionBuilder = {
     val headerValueMessageProcessorMap: Map[String, HeaderValueMessageProcessor[_]] =
       enricher.target match {
         case tp: Tuple2[String, AnyRef] => {

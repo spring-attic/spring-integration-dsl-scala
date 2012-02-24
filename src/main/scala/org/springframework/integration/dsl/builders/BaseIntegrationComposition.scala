@@ -200,7 +200,7 @@ private[dsl] abstract class ComposableIntegrationComponent[T] {
 /**
  *
  */
-private[dsl] class ListOfCompositions[T](val compositions: List[BaseIntegrationComposition]) extends IntegrationComponent(null)
+private[dsl] class ListOfCompositions[T](val compositions: List[BaseIntegrationComposition]) extends IntegrationComponent("ListOfCompositions")
 /**
  *
  */
