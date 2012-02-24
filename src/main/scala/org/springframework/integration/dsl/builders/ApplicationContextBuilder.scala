@@ -94,7 +94,7 @@ private object ApplicationContextBuilder {
       if (composition.target.isInstanceOf[InboundMessageSource]) null else this.determineNextOutputChannel(composition, inputChannel)
 
     if (nextOutputChannel != null) this.buildChannel(nextOutputChannel)
-    
+
     composition.target match {
       case channel: AbstractChannel =>
         this.processChannel(composition, inputChannel, outputChannel)
@@ -183,7 +183,7 @@ private object ApplicationContextBuilder {
   /**
    *
    */
-  private def determineInputChannel(composition: BaseIntegrationComposition): AbstractChannel = {
+  private def determineInputChannel(composition: BaseIntegrationComposition)(implicit applicationContext: GenericApplicationContext): AbstractChannel = {
     if (composition.parentComposition != null) {
       composition.parentComposition.target match {
         case ch: AbstractChannel =>
@@ -192,10 +192,21 @@ private object ApplicationContextBuilder {
         case poller: Poller =>
           composition.parentComposition.parentComposition.target.asInstanceOf[AbstractChannel]
 
-        case endpoint: IntegrationComponent =>
-          if (!composition.target.isInstanceOf[AbstractChannel])
-            Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
-          else null
+        case endpoint: SimpleEndpoint =>
+          val channel: AbstractChannel =
+            if (applicationContext.containsBean(composition.target.name)) {
+              val beanDefinition = applicationContext.getBeanDefinition(composition.target.name)
+              val pv = beanDefinition.getPropertyValues().getPropertyValue("inputChannelName")
+
+              val inputChannelName: String =
+                if (pv != null) pv.getValue().asInstanceOf[String] else null
+
+              if (StringUtils.hasText(inputChannelName)) Channel(inputChannelName)
+              else Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
+            } 
+            else Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
+           
+          channel
 
         case _ => throw new IllegalStateException("Unrecognized component " + composition)
       }
@@ -245,23 +256,23 @@ private object ApplicationContextBuilder {
    *
    */
   private def wireEndpoint(endpoint: IntegrationComponent, inputChannel: AbstractChannel, outputChannel: AbstractChannel, poller: Poller = null)(implicit applicationContext: GenericApplicationContext) {
-    
+
     if (logger.isDebugEnabled) logger.debug("Creating " + endpoint)
 
     val consumerBuilder =
       BeanDefinitionBuilder.rootBeanDefinition(classOf[ConsumerEndpointFactoryBean])
-      
+
     var handlerBuilder = this.getHandlerDefinitionBuilder(endpoint, outputChannel)
 
     if (inputChannel != null)
       consumerBuilder.addPropertyValue("inputChannelName", inputChannel.name)
 
-    if (poller != null) 
+    if (poller != null)
       this.configurePoller(endpoint, poller, consumerBuilder)
 
     if (outputChannel != null) {
-      val outputChannelPropertyName:String = endpoint match {
-        case rt: Router => "defaultOutputChannel"       
+      val outputChannelPropertyName: String = endpoint match {
+        case rt: Router => "defaultOutputChannel"
         case _ => "outputChannel"
       }
       handlerBuilder.addPropertyReference(outputChannelPropertyName, outputChannel.name)
@@ -269,10 +280,10 @@ private object ApplicationContextBuilder {
 
     consumerBuilder.addPropertyValue("handler", handlerBuilder.getBeanDefinition)
 
-    if (StringUtils.hasText(endpoint.name)) 
+    if (StringUtils.hasText(endpoint.name))
       BeanDefinitionReaderUtils.registerBeanDefinition(
-          new BeanDefinitionHolder(consumerBuilder.getBeanDefinition, endpoint.name), applicationContext)
-    else 
+        new BeanDefinitionHolder(consumerBuilder.getBeanDefinition, endpoint.name), applicationContext)
+    else
       BeanDefinitionReaderUtils.registerWithGeneratedName(consumerBuilder.getBeanDefinition, applicationContext)
 
   }
@@ -296,9 +307,9 @@ private object ApplicationContextBuilder {
     val triggerBeanName = BeanDefinitionReaderUtils.registerWithGeneratedName(triggerBuilder.getBeanDefinition, applicationContext)
     pollerBuilder.addPropertyReference("trigger", triggerBeanName)
 
-    if (pollerConfig.maxMessagesPerPoll > Integer.MIN_VALUE) 
+    if (pollerConfig.maxMessagesPerPoll > Integer.MIN_VALUE)
       pollerBuilder.addPropertyValue("maxMessagesPerPoll", pollerConfig.maxMessagesPerPoll)
-    
+
     consumerBuilder.addPropertyValue("pollerMetadata", pollerBuilder.getBeanDefinition)
   }
 
@@ -309,12 +320,12 @@ private object ApplicationContextBuilder {
     var handlerBuilder: BeanDefinitionBuilder = null
 
     endpoint match {
-      case sa: ServiceActivator => 
+      case sa: ServiceActivator =>
         handlerBuilder = ServiceActivatorBuilder.build(sa, this.defineHandlerTarget)
-      
-      case enricher: Enricher => 
+
+      case enricher: Enricher =>
         handlerBuilder = EnricherBuilder.build(enricher)
-     
+
       case xfmr: Transformer => {
         handlerBuilder = TransformerBuilder.build(xfmr, this.defineHandlerTarget)
       }

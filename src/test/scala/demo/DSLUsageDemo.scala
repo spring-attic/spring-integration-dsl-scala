@@ -272,8 +272,8 @@ class DSLUsageDemo {
     println("done")
   }
   
-//  @Test
-  def listening  = {
+  @Test
+  def jmsInboundGateway  = {
     val connectionFactory = JmsDslTestUtils.localConnectionFactory
     
     val flow = 
@@ -298,8 +298,7 @@ class DSLUsageDemo {
     val replyMessage = jmsTemplate.receive(reply);
     println("Reply Message: " + replyMessage.asInstanceOf[TextMessage].getText())
    
-    System.in.read()
-    //flow.stop
+    flow.stop
     println("done")
   }
 }
