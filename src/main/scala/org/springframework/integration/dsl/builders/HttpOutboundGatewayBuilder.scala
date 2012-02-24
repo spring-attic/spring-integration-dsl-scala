@@ -21,7 +21,7 @@ import org.springframework.integration.http.outbound.HttpRequestExecutingMessage
 /**
  * @author Oleg Zhurakousky
  */
-object HttpOutboundGatewayBuilder {
+private object HttpOutboundGatewayBuilder {
 
   def buildHandler(gateway: HttpOutboundGateway): BeanDefinitionBuilder = {
 

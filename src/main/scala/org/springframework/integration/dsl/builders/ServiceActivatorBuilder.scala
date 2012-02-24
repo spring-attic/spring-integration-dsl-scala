@@ -20,7 +20,7 @@ import org.springframework.integration.config.ServiceActivatorFactoryBean
  * 
  * @author Oleg Zhurakousky
  */
-object ServiceActivatorBuilder {
+private object ServiceActivatorBuilder {
 
    def build(serviceActivator: ServiceActivator, function:Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit]): BeanDefinitionBuilder = {
      val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])

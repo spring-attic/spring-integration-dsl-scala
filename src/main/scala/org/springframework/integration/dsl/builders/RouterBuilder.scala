@@ -28,7 +28,7 @@ import org.apache.commons.logging.LogFactory
  *
  * @author Oleg Zhurakousky
  */
-object RouterBuilder {
+private object RouterBuilder {
 
   private val logger = LogFactory.getLog(this.getClass());
 

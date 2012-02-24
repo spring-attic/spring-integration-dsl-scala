@@ -21,7 +21,7 @@ import org.springframework.integration.config.TransformerFactoryBean
  * 
  * @author Oleg Zhurakousky
  */
-object TransformerBuilder {
+private object TransformerBuilder {
 
    def build(transformer: Transformer, function:Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit]): BeanDefinitionBuilder = {
      val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])

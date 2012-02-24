@@ -53,7 +53,7 @@ import org.springframework.beans.factory.config.BeanDefinition
 /**
  * @author Oleg Zhurakousky
  */
-private[dsl] object ApplicationContextBuilder {
+private object ApplicationContextBuilder {
 
   private val logger = LogFactory.getLog(this.getClass());
 

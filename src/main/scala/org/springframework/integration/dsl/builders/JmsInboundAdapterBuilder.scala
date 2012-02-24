@@ -24,7 +24,7 @@ import org.springframework.jms.listener.DefaultMessageListenerContainer
 /**
  * @author Oleg Zhurakousky
  */
-object JmsInboundAdapterBuilder {
+private object JmsInboundAdapterBuilder {
   
   def buildHandler(gateway: JmsInboundAdapter, requestChannelName: String, applicationContext:GenericApplicationContext): BeanDefinitionBuilder = {
     
