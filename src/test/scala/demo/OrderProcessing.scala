@@ -44,10 +44,7 @@ class OrderProcessing {
 
     val invalidOrder = PurchaseOrder(List())
     
-    val bookChannel = Channel("bookChannel")
-    val bikesChannel = Channel("bikesChannel")
     val eFlow = handle.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
-//    val aggregationChannel = Channel("aggregationChannel")
     
     val aggregationFlow = aggregate()
 
