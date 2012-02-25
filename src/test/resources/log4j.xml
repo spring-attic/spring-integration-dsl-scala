@@ -12,8 +12,8 @@
 
 	<!-- Loggers -->
 
-	<logger name="org.springframework.integration">
-		<level value="debug" />
+	<logger name="org.springframework.integration.dsl.*">
+		<level value="info" />
 	</logger>
 
 	<!-- Root Logger -->

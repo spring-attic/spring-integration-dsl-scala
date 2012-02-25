@@ -36,21 +36,4 @@ object DSL {
       mergedComposition.asInstanceOf[T]
     }
   }
-
-  /**
-   *
-   */
-  implicit def channelComponent = new ComposableIntegrationComponent[ChannelIntegrationComposition] {
-    def compose(i: IntegrationComposition, c: ChannelIntegrationComposition) = {
-      new ChannelIntegrationComposition(i, c.target)
-    }
-  }
-
-  /**
-   *
-   */
-  implicit def pollableChannelComponent = new ComposableIntegrationComponent[PollableChannelIntegrationComposition] {
-    def compose(i: IntegrationComposition, c: PollableChannelIntegrationComposition) = new PollableChannelIntegrationComposition(i, c.target)
-  }
-
 }

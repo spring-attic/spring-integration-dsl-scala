@@ -19,6 +19,7 @@ import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.junit.{Assert, Test}
 import org.springframework.integration.dsl.DSL._
 import org.springframework.integration.dsl.builders.Channel
+import org.springframework.integration.dsl.builders.PollableChannel
 
 /**
  * @author Oleg Zhurakousky
@@ -64,31 +65,24 @@ class MessageChannelTests {
     val targetChannelA:Channel = channelA.target.asInstanceOf[Channel]
 
     Assert.assertEquals("myChannel", targetChannelA.name)
-    Assert.assertEquals(Integer.MIN_VALUE, targetChannelA.capacity)
     Assert.assertTrue(targetChannelA.failover)
-    Assert.assertNull(targetChannelA.messageStore)
     Assert.assertNull(targetChannelA.loadBalancer)
     Assert.assertNull(targetChannelA.taskExecutor)
 
     val channelB = Channel("myChannel") withQueue(capacity = 2, messageStore = new SimpleMessageStore)
 
-    val targetChannelB:Channel = channelB.target.asInstanceOf[Channel]
+    val targetChannelB:PollableChannel = channelB.target.asInstanceOf[PollableChannel]
 
     Assert.assertEquals("myChannel", targetChannelB.name)
     Assert.assertEquals(2, targetChannelB.capacity)
-    Assert.assertTrue(targetChannelB.failover)
     Assert.assertNotNull(targetChannelB.messageStore)
-    Assert.assertNull(targetChannelB.loadBalancer)
-    Assert.assertNull(targetChannelB.taskExecutor)
 
     val channelC = Channel("myChannel") withDispatcher(failover = false, loadBalancer = "round-robin", taskExecutor = new SimpleAsyncTaskExecutor)
 
     val targetChannelC:Channel = channelC.target.asInstanceOf[Channel]
 
     Assert.assertEquals("myChannel", targetChannelC.name)
-    Assert.assertEquals(Integer.MIN_VALUE, targetChannelC.capacity)
     Assert.assertFalse(targetChannelC.failover)
-    Assert.assertNull(targetChannelC.messageStore)
     Assert.assertEquals("round-robin", targetChannelC.loadBalancer)
     Assert.assertNotNull(targetChannelC.taskExecutor)
   }

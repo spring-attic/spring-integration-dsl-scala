@@ -203,9 +203,8 @@ private object ApplicationContextBuilder {
 
               if (StringUtils.hasText(inputChannelName)) Channel(inputChannelName)
               else Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
-            } 
-            else Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
-           
+            } else Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
+
           channel
 
         case _ => throw new IllegalStateException("Unrecognized component " + composition)
@@ -228,20 +227,23 @@ private object ApplicationContextBuilder {
   private def buildChannel(channelDefinition: AbstractChannel)(implicit applicationContext: GenericApplicationContext): Unit = {
     val channelBuilder: BeanDefinitionBuilder =
       channelDefinition match {
-        case ch: Channel => {
-          if (ch.capacity == Integer.MIN_VALUE) {
-            BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
-          } else if (ch.capacity > Integer.MIN_VALUE) {
-            val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
-            builder.addConstructorArgValue(ch.capacity)
-            builder
-          } else if (ch.taskExecutor != null) {
+        case ch: Channel =>
+          if (ch.taskExecutor != null) {
             val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ExecutorChannel])
             builder.addConstructorArgValue(ch.taskExecutor)
             builder
-          } else throw new IllegalArgumentException("Unsupported Channel type: " + channelDefinition)
+          } else
+            BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
+
+        case queue: PollableChannel => {
+          val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
+          builder.addConstructorArgValue(queue.capacity)
+          builder
         }
-        case _ => BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
+        case pubsub: PubSubChannel =>
+          BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
+        case _ =>
+          throw new IllegalArgumentException("Unsupported Channel type: " + channelDefinition)
       }
 
     if (!applicationContext.containsBean(channelDefinition.name)) {

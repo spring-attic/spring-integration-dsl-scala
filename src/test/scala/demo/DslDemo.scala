@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 package demo
-import org.springframework.integration.dsl._
 import org.junit._
-import org.springframework.integration.Message
-import org.springframework.integration.store.SimpleMessageStore
-import org.springframework.core.task.SimpleAsyncTaskExecutor
-import org.springframework.integration.support.MessageBuilder
-import org.springframework.integration.dsl.DSL._
-import org.springframework.integration.dsl.builders.PubSubChannel
 import org.springframework.integration.dsl.utils.DslUtils
+import org.springframework.integration.dsl._
+import org.springframework.integration.dsl.DSL.anyComponent
+import org.springframework.integration.dsl.builders.PubSubChannel
 import org.springframework.integration.dsl.builders.handle
 import org.springframework.integration.dsl.builders.Channel
 import org.springframework.integration.dsl.builders.transform

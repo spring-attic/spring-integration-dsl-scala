@@ -72,7 +72,8 @@ private[dsl] case class BaseIntegrationComposition(private[integration] val pare
   private[dsl] def generateComposition[T <: BaseIntegrationComposition](parent: T, child: IntegrationComponent): IntegrationComposition = {
     val composition = child match {
       case ch: Channel => new ChannelIntegrationComposition(parent, child)
-      case psch: PubSubChannel => new ChannelIntegrationComposition(parent, child)
+      case queue: PollableChannel => new PollableChannelIntegrationComposition(parent, child)
+      case pubsub: PubSubChannel => new ChannelIntegrationComposition(parent, child)
       case _ => new IntegrationComposition(parent, child)
     }
     composition
@@ -170,7 +171,7 @@ class ChannelIntegrationComposition(parentComposition: BaseIntegrationCompositio
 /**
  *
  */
-class PollableChannelIntegrationComposition(parentComposition: IntegrationComposition, target: IntegrationComponent)
+class PollableChannelIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends ChannelIntegrationComposition(parentComposition, target) {
   /**
    *

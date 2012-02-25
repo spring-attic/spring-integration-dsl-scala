@@ -44,10 +44,12 @@ private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegr
   normalizedComposition.target match {
     case poller: Poller => throw new IllegalStateException("The resulting message flow configuration ends with Poller which " +
       "has no consumer Consumer: " + poller)
-    case ch: Channel => if (ch.capacity == Integer.MIN_VALUE) {
+    case ch: Channel => 
       throw new IllegalStateException("The resulting message flow configuration ends with " +
-        "Direct or PubSub Channel but no subscribers are configured: " + ch)
-    }
+        "Direct Channel but no subscribers are configured: " + ch)
+    case ch: PubSubChannel => 
+      logger.warn("The resulting message flow configuration ends with " +
+        "Publish Subscribe Channel but no subscribers are configured: " + ch)
     case _ =>
   }
 

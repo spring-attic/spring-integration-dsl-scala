@@ -30,7 +30,7 @@ object Channel {
    * 
    */
   def apply(name:String) = new ChannelIntegrationComposition(null, new Channel(name = name)) {
-
+    require(StringUtils.hasText(name), "'name' must not be empty")
     def withQueue(capacity: Int = Int.MaxValue, messageStore: MessageStore = null) =
           new PollableChannelIntegrationComposition(null, doWithQueue(name, capacity, messageStore))
 
@@ -44,37 +44,28 @@ object Channel {
    * 
    */
   def withDispatcher(failover: Boolean = true, loadBalancer:String = null, taskExecutor:Executor = null) =
-    new ChannelIntegrationComposition(null, doWithDispatcher(null, failover, loadBalancer, taskExecutor))
+    new ChannelIntegrationComposition(null, 
+        doWithDispatcher(failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor))
   
   /**
    * 
    */
-  def withQueue = new PollableChannelIntegrationComposition(null, doWithQueue(null, Int.MaxValue, new SimpleMessageStore))
+  def withQueue = new PollableChannelIntegrationComposition(null, doWithQueue())
   
   /**
    * 
    */
   def withQueue(capacity:Int = Int.MaxValue, messageStore: MessageStore = new SimpleMessageStore) = 
-    	new PollableChannelIntegrationComposition(null, doWithQueue(null, capacity, messageStore))
-
-  private def doWithQueue(name:String,  capacity: Int, messageStore: MessageStore): Channel  = {
-    val channelName:String = if (!StringUtils.hasText(name)){
-      "$ch_" + UUID.randomUUID().toString.substring(0,8)
-    }
-    else {
-      name
-    }
-    new Channel(name = channelName, capacity = capacity, messageStore = messageStore)
+    	new PollableChannelIntegrationComposition(null, doWithQueue(capacity = capacity, messageStore = messageStore)){
+    require(messageStore != null, "'messageStore' must not be null")
   }
 
-  private def doWithDispatcher(name:String,  failover: Boolean, loadBalancer:String, taskExecutor:Executor): Channel = {
-    val channelName:String = if (!StringUtils.hasText(name)){
-      "$ch_" + UUID.randomUUID().toString.substring(0,8)
-    }
-    else {
-      name
-    }
-    new Channel(name = channelName, failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor)
+  private def doWithQueue(name:String = "$queue_ch_" + UUID.randomUUID().toString.substring(0,8),  capacity: Int = Int.MaxValue, messageStore: MessageStore = new SimpleMessageStore): PollableChannel  = {
+    new PollableChannel(name = name, capacity = capacity, messageStore = messageStore)
+  }
+
+  private def doWithDispatcher(name:String = "$ch_" + UUID.randomUUID().toString.substring(0,8),  failover: Boolean, loadBalancer:String, taskExecutor:Executor): Channel = {
+    new Channel(name = name, failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor)
   }
 }
 /**
@@ -82,14 +73,15 @@ object Channel {
  */
 object PubSubChannel {
   def apply() = new ChannelIntegrationComposition(null, new PubSubChannel(name = null)) {
-    def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(name = null, applySequence=true))
+    def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(applySequence=true))
   }
   
   def apply(name:String) = new ChannelIntegrationComposition(null, new PubSubChannel(name = name)) {
-    def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(name = name, applySequence=true))
+    require(StringUtils.hasText(name), "'name' must not be empty")
+    def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(name = name, applySequence = true))
   }
   
-  def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(name = null, applySequence=true))
+  def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(applySequence = true))
 }
 
 private[dsl] abstract class AbstractChannel(override val name:String) extends IntegrationComponent(name)
@@ -97,15 +89,20 @@ private[dsl] abstract class AbstractChannel(override val name:String) extends In
 /**
  *
  */
-private[dsl] case class Channel(override val name:String,
+private[dsl] case class Channel(override val name:String = "$ch_" + UUID.randomUUID().toString.substring(0,8),
                            val failover: Boolean = true,
                            val loadBalancer:String = null,
-                           val taskExecutor:Executor = null,
+                           val taskExecutor:Executor = null) extends AbstractChannel(name)
+
+/**
+ *
+ */
+private[dsl] case class PollableChannel(override val name:String = "$queue_ch_" + UUID.randomUUID().toString.substring(0,8),
                            val capacity: Int = Integer.MIN_VALUE,
                            val messageStore: MessageStore = null) extends AbstractChannel(name)
 /**
  *                            
  */
-private[dsl] case class PubSubChannel(override val name:String,
+private[dsl] case class PubSubChannel(override val name:String = "$pub_sub_ch_" + UUID.randomUUID().toString.substring(0,8),
                            val applySequence: Boolean = false,
                            val taskExecutor:Executor = null) extends AbstractChannel(name)
