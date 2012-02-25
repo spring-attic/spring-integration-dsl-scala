@@ -73,7 +73,7 @@ private[dsl] object EnricherBuilder {
       } else {
         val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[MessageTransformingHandler])
         val transformerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderEnricher])
-        transformerBuilder.addConstructorArgValue(JavaConversions.asJavaMap(headerValueMessageProcessorMap))
+        transformerBuilder.addConstructorArgValue(JavaConversions.mapAsJavaMap(headerValueMessageProcessorMap))
         handlerBuilder.addConstructorArgValue(transformerBuilder.getBeanDefinition())
         handlerBuilder
       }
