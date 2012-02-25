@@ -56,7 +56,6 @@ private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegr
   val inputChannelName: String = {
     
     val startComp = DslUtils.getStartingComposition(normalizedComposition)
-    println(startComp.getClass().getName())
     startComp.target match {
       case ch:AbstractChannel => ch.name
       case _ => null
