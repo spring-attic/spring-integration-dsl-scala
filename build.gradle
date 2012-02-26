@@ -5,6 +5,8 @@ group = 'org.springframework.integration'
 apply plugin: 'scala'
 apply plugin: 'maven'
 apply plugin: 'eclipse'
+sourceCompatibility=1.5
+targetCompatibility=1.5
 
 repositories {
     mavenCentral()
@@ -35,6 +37,14 @@ dependencies {
     testCompile ("org.apache.activemq:activemq-core:5.3.0") {
          exclude group: 'org.springframework', module: 'spring-context'
     }
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+}
+
+artifacts {
+    archives sourcesJar
 }
 
 task wrapper(type: Wrapper) {

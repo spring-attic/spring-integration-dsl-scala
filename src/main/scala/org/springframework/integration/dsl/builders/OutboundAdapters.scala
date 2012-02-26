@@ -44,6 +44,78 @@ object http {
             														httpMethod = HttpMethod.GET,
             														expectedResponseType = m.erasure))
     }
+    
+    def POST[T](httpUrl: String)(implicit m: scala.reflect.Manifest[T]) =
+      new IntegrationComposition(null, new HttpOutboundGateway(target = httpUrl,
+        														httpMethod = HttpMethod.POST,
+																expectedResponseType = m.erasure)) {
+        def where(name: String, requestTimeout: Int) =
+          new IntegrationComposition(null, new HttpOutboundGateway(name = name,
+            														target = httpUrl,
+            														requestTimeout = requestTimeout,
+            														httpMethod = HttpMethod.POST,
+            														expectedResponseType = m.erasure))
+      }
+
+    def POST[T](function: Function[_, String])(implicit m: scala.reflect.Manifest[T]) =
+      new IntegrationComposition(null, new HttpOutboundGateway(target = function,
+        														httpMethod = HttpMethod.POST,
+        														expectedResponseType = m.erasure)) {
+        def where(name: String, requestTimeout: Int) =
+          new IntegrationComposition(null, new HttpOutboundGateway(name = name,
+            														target = function,
+            														requestTimeout = requestTimeout,
+            														httpMethod = HttpMethod.POST,
+            														expectedResponseType = m.erasure))
+    }
+    
+    def PUT[T](httpUrl: String)(implicit m: scala.reflect.Manifest[T]) =
+      new IntegrationComposition(null, new HttpOutboundGateway(target = httpUrl,
+        														httpMethod = HttpMethod.PUT,
+																expectedResponseType = m.erasure)) {
+        def where(name: String, requestTimeout: Int) =
+          new IntegrationComposition(null, new HttpOutboundGateway(name = name,
+            														target = httpUrl,
+            														requestTimeout = requestTimeout,
+            														httpMethod = HttpMethod.PUT,
+            														expectedResponseType = m.erasure))
+      }
+
+    def PUT[T](function: Function[_, String])(implicit m: scala.reflect.Manifest[T]) =
+      new IntegrationComposition(null, new HttpOutboundGateway(target = function,
+        														httpMethod = HttpMethod.PUT,
+        														expectedResponseType = m.erasure)) {
+        def where(name: String, requestTimeout: Int) =
+          new IntegrationComposition(null, new HttpOutboundGateway(name = name,
+            														target = function,
+            														requestTimeout = requestTimeout,
+            														httpMethod = HttpMethod.PUT,
+            														expectedResponseType = m.erasure))
+    }
+    
+    def DELETE[T](httpUrl: String)(implicit m: scala.reflect.Manifest[T]) =
+      new IntegrationComposition(null, new HttpOutboundGateway(target = httpUrl,
+        														httpMethod = HttpMethod.DELETE,
+																expectedResponseType = m.erasure)) {
+        def where(name: String, requestTimeout: Int) =
+          new IntegrationComposition(null, new HttpOutboundGateway(name = name,
+            														target = httpUrl,
+            														requestTimeout = requestTimeout,
+            														httpMethod = HttpMethod.DELETE,
+            														expectedResponseType = m.erasure))
+      }
+
+    def DELETE[T](function: Function[_, String])(implicit m: scala.reflect.Manifest[T]) =
+      new IntegrationComposition(null, new HttpOutboundGateway(target = function,
+        														httpMethod = HttpMethod.DELETE,
+        														expectedResponseType = m.erasure)) {
+        def where(name: String, requestTimeout: Int) =
+          new IntegrationComposition(null, new HttpOutboundGateway(name = name,
+            														target = function,
+            														requestTimeout = requestTimeout,
+            														httpMethod = HttpMethod.DELETE,
+            														expectedResponseType = m.erasure))
+    }
 }
 
 private[dsl] class HttpOutboundGateway(name: String = "$http_out_" + UUID.randomUUID().toString.substring(0, 8),

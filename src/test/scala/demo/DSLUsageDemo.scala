@@ -35,6 +35,7 @@ import org.springframework.jms.core.MessageCreator
 import javax.jms.Session
 import javax.jms.TextMessage
 import org.springframework.integration.dsl.utils.JmsDslTestUtils
+import org.springframework.http.HttpStatus
 
 /**
  * @author Oleg Zhurakousky
@@ -267,6 +268,21 @@ class DSLUsageDemo {
     		handle.using{quotes:Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes)}
     		
     httpFlow.send("static")
+    
+    println("done")
+  }
+  
+  @Test
+  def httpOutboundWithPOSTthenGET = {
+
+    val httpFlow = 
+    		http.POST[String]("http://posttestserver.com/post.php") -->
+            transform.using{response:String => println(response) // poor man transformer to extract URL from which the POST results are visible
+              response.substring(response.indexOf("View") + 11, response.indexOf("Post") - 1)} -->
+            http.GET[String]{url:String => url} -->
+    		handle.using{response:String => println(response)}
+    				
+    httpFlow.send("Spring Integration")
     
     println("done")
   }
