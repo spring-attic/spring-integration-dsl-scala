@@ -17,7 +17,7 @@ package org.springframework.integration.dsl
 import org.springframework.integration.store.SimpleMessageStore
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.junit.{Assert, Test}
-import org.springframework.integration.dsl.DSL._
+import org.springframework.integration.dsl.implicites._
 import org.springframework.integration.dsl.builders.Channel
 import org.springframework.integration.dsl.builders.PollableChannel
 

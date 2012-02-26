@@ -12,11 +12,11 @@ resolvers += "Spring Snapshot Repository" at "https://repo.springsource.org/libs
 
 resolvers += "Spring Release Repository" at "https://repo.springsource.org/libs-release"
 
-libraryDependencies += "org.springframework.integration" % "spring-integration-core" % "2.1.1.BUILD-SNAPSHOT"
+libraryDependencies += "org.springframework.integration" % "spring-integration-core" % "2.1.0.RELEASE"
 
-libraryDependencies += "org.springframework.integration" % "spring-integration-http" % "2.1.1.BUILD-SNAPSHOT"
+libraryDependencies += "org.springframework.integration" % "spring-integration-http" % "2.1.0.RELEASE"
 
-libraryDependencies += "org.springframework.integration" % "spring-integration-jms" % "2.1.1.BUILD-SNAPSHOT"
+libraryDependencies += "org.springframework.integration" % "spring-integration-jms" % "2.1.0.RELEASE"
 
 libraryDependencies += "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.1"
 

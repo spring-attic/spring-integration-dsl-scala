@@ -81,7 +81,16 @@ private[dsl] object EnricherBuilder {
   }
 
   private def doWithFunction(fn: Function1[_, _], enricher: Enricher): HeaderValueMessageProcessor[_] = {
-    val clazz = Class.forName("org.springframework.integration.transformer.HeaderEnricher$MessageProcessingHeaderValueMessageProcessor")
+    
+    // The following try/catch is necessary to maintain backward compatibility with 2.0 and 2.1.0. See INT-2399 for more details
+    val clazz =
+      try {
+        Class.forName("org.springframework.integration.transformer.HeaderEnricher$MessageProcessingHeaderValueMessageProcessor")
+      } catch {
+        case e: ClassNotFoundException =>
+          Class.forName("org.springframework.integration.transformer.HeaderEnricher$MethodInvokingHeaderValueMessageProcessor")
+      }
+   
     val functionInvoker = new FunctionInvoker(fn, enricher)
     val const = clazz.getDeclaredConstructor(classOf[Any], classOf[String])
     const.setAccessible(true)

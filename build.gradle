@@ -8,10 +8,9 @@ apply plugin: 'eclipse'
 
 repositories {
     mavenCentral()
-    mavenRepo ( url: 'http://repo.springsource.org/libs-milestone' )
-    mavenRepo ( url: 'https://repo.springsource.org/libs-snapshot'){
-    	snapshotTimeout = 0
-    }
+    maven { url 'http://repo.springsource.org/libs-milestone' }
+    maven { url 'https://repo.springsource.org/libs-snapshot'}
+    maven { url 'https://repo.springsource.org/libs-release'}
 }
 
 dependencies {
@@ -23,9 +22,9 @@ dependencies {
     compile 'org.scala-lang:scala-library:2.9.1'
     
     // dependent libraries
-    compile 'org.springframework.integration:spring-integration-core:2.1.1.BUILD-SNAPSHOT'
-    compile 'org.springframework.integration:spring-integration-http:2.1.1.BUILD-SNAPSHOT'
-    compile 'org.springframework.integration:spring-integration-jms:2.1.1.BUILD-SNAPSHOT'
+    compile 'org.springframework.integration:spring-integration-core:2.1.0.RELEASE'
+    compile ('org.springframework.integration:spring-integration-http:2.1.0.RELEASE'){ optional = true }
+    compile ('org.springframework.integration:spring-integration-jms:2.1.0.RELEASE'){ optional = true }	
     compile ("org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1") { provided = true }
     compile("org.codehaus.jackson:jackson-mapper-asl:1.9.2") { optional = true }
     
