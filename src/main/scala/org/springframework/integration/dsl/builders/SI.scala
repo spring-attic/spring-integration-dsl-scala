@@ -29,6 +29,7 @@ import org.springframework.integration.MessageChannel
 import org.springframework.util.CollectionUtils
 import org.apache.commons.logging.LogFactory
 import org.springframework.util.StringUtils
+import org.springframework.integration.MessagingException
 
 /**
  * @author Oleg Zhurakousky
@@ -44,28 +45,28 @@ private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegr
   normalizedComposition.target match {
     case poller: Poller => throw new IllegalStateException("The resulting message flow configuration ends with Poller which " +
       "has no consumer Consumer: " + poller)
-    case ch: Channel => 
+    case ch: Channel =>
       throw new IllegalStateException("The resulting message flow configuration ends with " +
         "Direct Channel but no subscribers are configured: " + ch)
-    case ch: PubSubChannel => 
+    case ch: PubSubChannel =>
       logger.warn("The resulting message flow configuration ends with " +
         "Publish Subscribe Channel but no subscribers are configured: " + ch)
     case _ =>
   }
 
   val inputChannelName: String = {
-    
+
     val startComp = DslUtils.getStartingComposition(normalizedComposition)
     startComp.target match {
-      case ch:AbstractChannel => ch.name
+      case ch: AbstractChannel => ch.name
       case _ => null
     }
   }
 
   val applicationContext = ApplicationContextBuilder.build(parentContext, normalizedComposition)
-  
+
   def start() = this.applicationContext.start()
-  
+
   def stop() = this.applicationContext.stop()
   /**
    *
@@ -93,32 +94,43 @@ private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegr
     val messageToSend = MessageBuilder.
       fromMessage(this.constructMessage(message, headers)).setReplyChannel(replyChannel).build()
 
-    val sent = try {
-      if (timeout > 0) inputChannel.send(messageToSend, timeout)
-      else inputChannel.send(messageToSend)
-    } catch {
-      case ex: Exception => {
-        if (errorFlow != null) {
-          errorFlow.sendAndReceive[T](ex)
-        } else throw ex
-      }
-    }   
+    val reply =
+      try {
+        val sent =
+          if (timeout > 0)
+            inputChannel.send(messageToSend, timeout)
+          else
+            inputChannel.send(messageToSend)
+ 
+        if (!sent)
+          throw new MessagingException(messageToSend, "Failed to send message")
 
-    val replyMessage = replyChannel.receive(1000)
-    
-    val convertedReply =
-      if (m.erasure.isAssignableFrom(classOf[Message[_]])) replyMessage
-      else {
-        val reply = replyMessage.getPayload
-        reply match {
-          case list: java.util.List[_] => list.toList
-          case set: java.util.Set[_] => set.toSet
-          case map: java.util.Map[_, _] => map.toMap
-          case _ => reply
+        val replyMessage = replyChannel.receive(1000)
+        this.convertReply(replyMessage, m)
+      } catch {
+        case ex: Exception => {
+          if (errorFlow != null) {
+            errorFlow.sendAndReceive[T](ex)
+          } else throw ex
         }
       }
 
-    convertedReply.asInstanceOf[T]
+    reply.asInstanceOf[T]
+  }
+
+  private def convertReply(replyMessage: Message[_], m: scala.reflect.Manifest[_]): Any = {
+
+    if (m.erasure.isAssignableFrom(classOf[Message[_]]))
+      replyMessage
+    else {
+      val reply = replyMessage.getPayload
+      reply match {
+        case list: java.util.List[_] => list.toList
+        case set: java.util.Set[_] => set.toSet
+        case map: java.util.Map[_, _] => map.toMap
+        case _ => reply
+      }
+    }
   }
 
   private def constructMessage(message: Any, headers: Map[String, Any] = null): Message[_] = {

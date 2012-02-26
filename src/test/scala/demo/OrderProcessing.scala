@@ -28,7 +28,7 @@ import org.springframework.integration.dsl.builders.split
 import org.springframework.integration.dsl.builders.route
 import org.springframework.integration.dsl.builders.when
 
-/**
+/**  
  * @author Oleg Zhurakousky
  *
  */
@@ -44,7 +44,7 @@ class OrderProcessing {
 
     val invalidOrder = PurchaseOrder(List())
     
-    val eFlow = handle.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
+    val errorFlow = handle.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
     
     val aggregationFlow = aggregate()
 
@@ -64,10 +64,12 @@ class OrderProcessing {
             bikeFlow    	 
       ) 
 
-    val result = orderProcessingFlow.sendAndReceive[Any](validOrder, errorFlow = eFlow)
-//    val result = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = eFlow)
-
-    println("Result: " + result)
+    val resultValid = orderProcessingFlow.sendAndReceive[Any](validOrder, errorFlow = errorFlow)
+    println("Result: " + resultValid)
+    
+    val resultInvalid = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = errorFlow)
+    println("Result: " + resultInvalid)
+    
   }
 
   case class PurchaseOrder(val items: List[PurchaseOrderItem])
