@@ -8,8 +8,10 @@ apply plugin: 'eclipse'
 
 repositories {
     mavenCentral()
-    maven { url 'http://repo.springsource.org/libs-milestone' }
-    maven { url 'https://repo.springsource.org/libs-snapshot' }
+    mavenRepo ( url: 'http://repo.springsource.org/libs-milestone' )
+    mavenRepo ( url: 'https://repo.springsource.org/libs-snapshot'){
+    	snapshotTimeout = 0
+    }
 }
 
 dependencies {

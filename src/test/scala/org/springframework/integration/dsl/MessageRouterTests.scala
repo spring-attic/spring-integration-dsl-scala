@@ -18,7 +18,7 @@ package org.springframework.integration.dsl
 import org.junit.{Assert, Test}
 import org.springframework.integration.Message
 import org.springframework.core.task.SimpleAsyncTaskExecutor
-import org.springframework.integration.dsl.implicits._
+import org.springframework.integration.dsl.DSL._
 import org.springframework.integration.dsl.builders.IntegrationComposition
 import org.springframework.integration.dsl.builders.ValueCondition
 import org.springframework.integration.dsl.builders.PayloadTypeCondition

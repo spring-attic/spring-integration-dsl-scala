@@ -17,7 +17,7 @@ package demo
 import org.junit._
 import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.integration.dsl._
-import org.springframework.integration.dsl.implicits._
+import org.springframework.integration.dsl.DSL._
 import org.springframework.integration.dsl.builders.PubSubChannel
 import org.springframework.integration.dsl.builders.handle
 import org.springframework.integration.dsl.builders.Channel

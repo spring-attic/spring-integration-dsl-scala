@@ -18,7 +18,7 @@ package demo
 import org.junit.Test
 import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.SpelParserConfiguration
-import org.springframework.integration.dsl.implicits._
+import org.springframework.integration.dsl.DSL._
 import org.springframework.integration.dsl.builders.Channel
 import org.springframework.integration.dsl.builders.PubSubChannel
 import org.springframework.integration.dsl.builders.enrich

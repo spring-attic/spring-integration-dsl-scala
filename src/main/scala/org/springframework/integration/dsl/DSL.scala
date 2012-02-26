@@ -21,7 +21,7 @@ import java.util.UUID
 /**
  * @author Oleg Zhurakousky
  */
-object implicits {
+object DSL {
 
   implicit def anyComponent[T <: BaseIntegrationComposition] = new ComposableIntegrationComponent[T] {
     def compose(i: IntegrationComposition, s: T): T = {

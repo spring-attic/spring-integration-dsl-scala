@@ -15,7 +15,7 @@
  */
 package demo
 import org.springframework.integration.dsl._
-import org.springframework.integration.dsl.implicits._
+import org.springframework.integration.dsl.DSL._
 import org.springframework.integration.Message
 import java.util.Random
 import org.junit._

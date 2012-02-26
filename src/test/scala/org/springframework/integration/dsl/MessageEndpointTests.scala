@@ -15,7 +15,7 @@
  */
 package org.springframework.integration.dsl
 
-import org.springframework.integration.dsl.implicits._
+import org.springframework.integration.dsl.DSL._
 import org.junit.{Assert, Test}
 import org.springframework.scheduling.support.PeriodicTrigger
 import org.springframework.core.task.{SyncTaskExecutor, SimpleAsyncTaskExecutor, AsyncTaskExecutor}
