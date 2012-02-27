@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 package org.springframework.integration.dsl.builders
-import org.springframework.http.HttpMethod
-import java.util.UUID
-import org.springframework.jms.connection.CachingConnectionFactory
 import javax.jms.ConnectionFactory
+import java.util.UUID
 /**
  * @author Oleg Zhurakousky
  */

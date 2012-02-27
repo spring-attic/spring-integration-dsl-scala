@@ -22,7 +22,7 @@ import org.apache.commons.logging.LogFactory
 /**
  * @author Oleg Zhurakousky
  */
-private[dsl] final class FunctionInvoker(val f: Function[_, _], endpoint: IntegrationComponent) {
+private final class FunctionInvoker(val f: Function[_, _], endpoint: IntegrationComponent) {
   private val logger = LogFactory.getLog(this.getClass());
   
   var methodName: String = ""

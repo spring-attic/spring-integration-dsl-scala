@@ -29,7 +29,7 @@ import org.springframework.integration.transformer.MessageTransformingHandler
 /**
  * @author Oleg Zhurakousky
  */
-private[dsl] object EnricherBuilder {
+private object EnricherBuilder {
 
   def build(enricher: Enricher): BeanDefinitionBuilder = {
     val headerValueMessageProcessorMap: Map[String, HeaderValueMessageProcessor[_]] =

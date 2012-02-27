@@ -72,7 +72,7 @@ object poll {
 /**
  * 
  */
-case class Poller(override val name:String = "$poll_" + UUID.randomUUID().toString.substring(0, 8), val fixedRate:Int = Integer.MIN_VALUE,
+private[dsl] case class Poller(override val name:String = "$poll_" + UUID.randomUUID().toString.substring(0, 8), val fixedRate:Int = Integer.MIN_VALUE,
                                val fixedDelay:Int = Integer.MIN_VALUE,
                                val maxMessagesPerPoll:Int = Integer.MIN_VALUE,
                                val taskExecutor:Executor = new SyncTaskExecutor,
