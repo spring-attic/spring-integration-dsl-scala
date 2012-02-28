@@ -4,7 +4,6 @@ group = 'org.springframework.integration'
 
 apply plugin: 'scala'
 apply plugin: 'maven'
-apply plugin: 'eclipse'
 sourceCompatibility=1.5
 targetCompatibility=1.5
 

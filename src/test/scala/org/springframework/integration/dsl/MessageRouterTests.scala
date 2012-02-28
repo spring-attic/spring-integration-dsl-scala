@@ -19,7 +19,6 @@ import org.junit.{Assert, Test}
 import org.springframework.integration.Message
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.springframework.integration.dsl.implicites._
-import org.springframework.integration.dsl.builders.IntegrationComposition
 import org.springframework.integration.dsl.builders.ValueCondition
 import org.springframework.integration.dsl.builders.PayloadTypeCondition
 import org.springframework.integration.dsl.builders.route
@@ -56,8 +55,7 @@ class MessageRouterTests {
       when(classOf[Int]) then Channel("IntChannel")
 
     ).where(name = "myRouter")
-    
-    Assert.assertTrue(routerA.isInstanceOf[IntegrationComposition])
+  
     val targetRouter = routerA.target.asInstanceOf[Router]
     Assert.assertTrue(targetRouter.name equals "myRouter")
     // infix notation

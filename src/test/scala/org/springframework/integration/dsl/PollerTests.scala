@@ -19,6 +19,7 @@ import org.junit.{Assert, Test}
 import org.springframework.scheduling.support.PeriodicTrigger
 import org.springframework.core.task.{SimpleAsyncTaskExecutor, SyncTaskExecutor}
 import org.springframework.integration.dsl.builders.poll
+import org.springframework.integration.dsl.builders.Poller
 
 /**
  * @author Oleg Zhurakousky
@@ -58,13 +59,13 @@ class PollerTests {
     val executor = new SimpleAsyncTaskExecutor
 
     val pollerWithFixedRate = poll.usingFixedRate(4).withMaxMessagesPerPoll(90).withExecutor(executor)
-    Assert.assertEquals(4, pollerWithFixedRate.fixedRate)
-    Assert.assertEquals(Integer.MIN_VALUE, pollerWithFixedRate.fixedDelay)
-    Assert.assertEquals(90, pollerWithFixedRate.maxMessagesPerPoll)
-    Assert.assertEquals(executor, pollerWithFixedRate.taskExecutor)
+    Assert.assertEquals(4, pollerWithFixedRate.target.asInstanceOf[Poller].fixedRate)
+    Assert.assertEquals(Integer.MIN_VALUE, pollerWithFixedRate.target.asInstanceOf[Poller].fixedDelay)
+    Assert.assertEquals(90, pollerWithFixedRate.target.asInstanceOf[Poller].maxMessagesPerPoll)
+    Assert.assertEquals(executor, pollerWithFixedRate.target.asInstanceOf[Poller].taskExecutor)
 
     val pollerWithFixedDelay = poll.usingFixedDelay(5)
-    Assert.assertEquals(5, pollerWithFixedDelay.fixedDelay)
+    Assert.assertEquals(5, pollerWithFixedDelay.target.asInstanceOf[Poller].fixedDelay)
 
   }
 }

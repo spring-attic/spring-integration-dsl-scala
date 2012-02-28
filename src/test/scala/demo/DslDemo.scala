@@ -40,7 +40,7 @@ class DslDemo {
 	  transform.using("3") -->
 	  Channel.withQueue --> poll.usingFixedDelay(1) -->
 	  filter.using("5") -->
-	  Channel("6") --< 
+	  Channel("6") --> 
 	  (
 	      handle.using("InnerA-1") -->
 	      Channel("InnerA-2") 
@@ -56,7 +56,7 @@ class DslDemo {
 	  transform.using("3") -->
 	  Channel.withQueue(34) --> poll.usingFixedDelay(1) -->
 	  filter.using("5") -->
-	  Channel("6") --< (
+	  Channel("6") --> (
 	      handle.using("InnerA-1") -->
 	      Channel("InnerA-2") 
       ,
@@ -67,14 +67,14 @@ class DslDemo {
 	  val c = 
 	   PubSubChannel.applyingSequence --> 
 	   handle.using("1") -->
-	   PubSubChannel("2") --< (
+	   PubSubChannel("2") --> (
 	      handle.using("InnerA-1") -->
 	      Channel("InnerA-2").withDispatcher(failover=true)
 	      ,
 	      handle.using("InnerB-1") -->
 	      Channel("InnerB-2") -->
 	      handle.using("InnerB-3") -->
-	      PubSubChannel("InnerB-4").applyingSequence --< (
+	      PubSubChannel("InnerB-4").applyingSequence --> (
 	          handle.using("InnerB-4A-1") -->
 	          Channel("InnerB-4A-2") 
 	          ,

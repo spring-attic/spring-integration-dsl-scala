@@ -1,18 +1,17 @@
 package org.springframework.integration.dsl
 
-import org.junit.{ Assert, Test }
-import org.springframework.integration.dsl.implicites._
-import org.springframework.integration.dsl.builders.IntegrationComposition
-import org.springframework.integration.dsl.builders.filter
-import org.springframework.integration.dsl.builders.PubSubChannel
-import org.springframework.integration.dsl.utils.DslUtils
-import org.springframework.integration.dsl.builders.handle
-import org.springframework.integration.dsl.builders.ServiceActivator
-import org.springframework.integration.dsl.builders.MessageFilter
+import org.junit.Assert
+import org.junit.Test
 import org.springframework.integration.dsl.builders.Channel
+import org.springframework.integration.dsl.builders.MessageFilter
+import org.springframework.integration.dsl.builders.PubSubChannel
+import org.springframework.integration.dsl.builders.ServiceActivator
 import org.springframework.integration.dsl.builders.Transformer
+import org.springframework.integration.dsl.builders.filter
+import org.springframework.integration.dsl.builders.handle
 import org.springframework.integration.dsl.builders.transform
-import org.apache.commons.logging.LogFactory
+import org.springframework.integration.dsl.implicites._
+import org.springframework.integration.dsl.utils.DslUtils
 
 class DSLTest {
 
@@ -24,15 +23,19 @@ class DSLTest {
   @Test
   def validateCompositionTypesWithDsl = {
 
-    val messageFlowA: IntegrationComposition =
-      handle.using("messageFlowA-1") -->
-        Channel("messageFlowA-2") -->
-        transform.using("messageFlowA-3")
+    val messageFlowA =
+      handle.using("messageFlowA-1") --> 
+      Channel("messageFlowA-2") -->
+      transform.using("messageFlowA-3")
+      
+    println(DslUtils.toProductList(messageFlowA))
 
-    val messageFlowB: IntegrationComposition =
+    val messageFlowB =
       filter.using("messageFlowB-1") -->
         PubSubChannel("messageFlowB-2") -->
         transform.using("messageFlowB-3")
+        
+    println(DslUtils.toProductList(messageFlowB))
 
     val messageFlowBParentBeforeMerge = messageFlowB.parentComposition
 

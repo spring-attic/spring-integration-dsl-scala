@@ -24,16 +24,29 @@ import java.util.UUID
 object implicites {
 
   implicit def anyComponent[T <: BaseIntegrationComposition] = new ComposableIntegrationComponent[T] {
-    def compose(i: IntegrationComposition, s: T): T = {
+    def compose(i: BaseIntegrationComposition, s: T): T = {
       val mergedComposition =
         if (s.parentComposition != null) {
           val copyComposition = s.copy()
           i.merge(copyComposition)
-          i.generateComposition(copyComposition.parentComposition, copyComposition.target)
+          i.generateComposition(copyComposition.parentComposition, copyComposition)
         } 
-        else i.generateComposition(i, s.target)
+        else 
+          i.generateComposition(i, s)
 
       mergedComposition.asInstanceOf[T]
+    }
+    
+    def composeFinal(i: SendingEndpointComposition, s: T) = {
+      val returnValue = s match {
+        case pch:PollableChannelIntegrationComposition => 
+          new PollableChannelIntegrationComposition(s.parentComposition, s.target)
+        case ch:ChannelIntegrationComposition => 
+          new ChannelIntegrationComposition(s.parentComposition, s.target)
+        case _ => 
+          new SendingEndpointComposition(s.parentComposition, s.target)
+      }
+      returnValue.asInstanceOf[T]
     }
   }
 }

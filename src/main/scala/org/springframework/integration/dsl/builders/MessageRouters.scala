@@ -26,27 +26,27 @@ import org.springframework.util.StringUtils
 
 object route {
 
-  def onPayloadType(conditionCompositions:PayloadTypeCondition*) = new IntegrationComposition(null,  new Router()(conditionCompositions: _*)) { 
+  def onPayloadType(conditionCompositions:PayloadTypeCondition*) = new SendingEndpointComposition(null,  new Router()(conditionCompositions: _*)) { 
 
-    def where(name:String) = new IntegrationComposition(null, new Router(name, null, null)(conditionCompositions: _*))
+    def where(name:String) = new SendingEndpointComposition(null, new Router(name, null, null)(conditionCompositions: _*))
   }
 
   def onValueOfHeader(headerName: String)(conditionCompositions: ValueCondition*) = {
     require(StringUtils.hasText(headerName), "'headerName' must not be empty")
-    new IntegrationComposition(null, new Router(null, null, headerName)(conditionCompositions: _*)) {
+    new SendingEndpointComposition(null, new Router(null, null, headerName)(conditionCompositions: _*)) {
 
-      def where(name: String) = new IntegrationComposition(null, new Router(name, null, headerName)(conditionCompositions: _*))
+      def where(name: String) = new SendingEndpointComposition(null, new Router(name, null, headerName)(conditionCompositions: _*))
     }
   }
 
   def using(target: String)(conditions: ValueCondition* ) =
-    new IntegrationComposition(null, new Router(target = target)(conditions: _*))  {
-      def where(name: String) = new IntegrationComposition(null, new Router(name, target, null)(conditions: _*))
+    new SendingEndpointComposition(null, new Router(target = target)(conditions: _*))  {
+      def where(name: String) = new SendingEndpointComposition(null, new Router(name, target, null)(conditions: _*))
     }
 
   def using(target: Function1[_, Any])(conditions: ValueCondition*) =
-    new IntegrationComposition(null, new Router(target = target)(conditions: _*)) {
-      def where(name: String) = new IntegrationComposition(null, new Router(name = name, target = target)(conditions: _*))
+    new SendingEndpointComposition(null, new Router(target = target)(conditions: _*)) {
+      def where(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
     }
 }
 /**
@@ -54,13 +54,13 @@ object route {
  */
 object when {
   def apply(payloadType:Class[_]) = new {
-    def then(composition:IntegrationComposition) = new PayloadTypeCondition(payloadType, composition)
-    def -->(composition:IntegrationComposition) = new PayloadTypeCondition(payloadType, composition)
+    def then(composition:BaseIntegrationComposition) = new PayloadTypeCondition(payloadType, composition)
+    //def -->(composition:IntegrationComposition) = new PayloadTypeCondition(payloadType, composition)
   }
  
   def apply(value:Any) = new  {
-    def then(composition:IntegrationComposition) = new ValueCondition(value, composition)
-    def -->(composition:IntegrationComposition) = new ValueCondition(value, composition)
+    def then(composition:BaseIntegrationComposition) = new ValueCondition(value, composition)
+    //def -->(composition:IntegrationComposition) = new ValueCondition(value, composition)
   } 
 }
 

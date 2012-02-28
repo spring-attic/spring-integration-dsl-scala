@@ -30,42 +30,42 @@ object poll {
    * org.springframework.scheduling.Trigger
    */
   def usingTrigger(trigger:Trigger) = new Poller()  {
-    def withExecutor(taskExecutor:Executor = new SyncTaskExecutor) = new Poller(taskExecutor = taskExecutor)
+    def withExecutor(taskExecutor:Executor = new SyncTaskExecutor) = new PollerComposition(null, new Poller(taskExecutor = taskExecutor))
   }
 
   /**
    *
    */
-  def usingFixedRate(fixedRate:Int) = new Poller(fixedRate = fixedRate)  {
+  def usingFixedRate(fixedRate:Int) = new PollerComposition(null, new Poller(fixedRate = fixedRate))  {
 
     def withExecutor(taskExecutor:Executor) = new Poller(fixedRate = fixedRate)  {
       def withMaxMessagesPerPoll(maxMessagesPerPoll:Int) =
-        new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll)
+        new PollerComposition(null, new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll))
     }
 
     def withMaxMessagesPerPoll(maxMessagesPerPoll:Int) =
-      new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll)  {
+      new PollerComposition(null, new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll))  {
 
       def withExecutor(taskExecutor:Executor = new SyncTaskExecutor) =
-        new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor)
+        new PollerComposition(null, new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor))
     }
   }
 
   /**
    *
    */
-  def usingFixedDelay(fixedDelay:Int) = new Poller(fixedDelay = fixedDelay)  {
+  def usingFixedDelay(fixedDelay:Int) = new PollerComposition(null, new Poller(fixedDelay = fixedDelay))  {
 
     def withExecutor(taskExecutor:Executor) = new Poller(fixedDelay = fixedDelay)  {
       def withMaxMessagesPerPoll(maxMessagesPerPoll:Int) =
-        new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll)
+        new PollerComposition(null, new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll))
     }
 
     def withMaxMessagesPerPoll(maxMessagesPerPoll:Int) =
-      new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll) {
+      new PollerComposition(null, new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll)) {
 
       def withExecutor(taskExecutor:Executor = new SyncTaskExecutor) =
-        new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor)
+        new PollerComposition(null, new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor))
       }
   }
 }
@@ -78,5 +78,5 @@ private[dsl] case class Poller(override val name:String = "$poll_" + UUID.random
                                val taskExecutor:Executor = new SyncTaskExecutor,
                                val trigger:Trigger = null) extends IntegrationComponent (name){
 
-  def -->[T](a: T)(implicit g :ComposableIntegrationComponent[T]):IntegrationComposition = null
+  //def -->[T](a: T)(implicit g :ComposableIntegrationComponent[T]):BaseIntegrationComposition = null
 }

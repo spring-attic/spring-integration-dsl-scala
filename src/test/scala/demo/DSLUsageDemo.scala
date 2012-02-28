@@ -77,13 +77,13 @@ class DSLUsageDemo {
   @Test
   def demoSendWithExplicitPubSubChannelMultipleSubscriber = {
     val messageFlow =
-      PubSubChannel("direct") --< (
+      PubSubChannel("direct") --> (
 	      transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
 	      handle.using { m: Message[_] => println("Subscriber-1 - " + m) }
 	      ,
 	      transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
 	      handle.using { m: Message[_] => println("Subscriber-2 - " + m) }
-      )
+      ) 
 
     messageFlow.send("hello")
     println("done")
@@ -102,16 +102,19 @@ class DSLUsageDemo {
   @Test
   def demoSendWithPubSubChannel = {
     val messageFlow =
-      transform.using { m: Message[String] => m.getPayload().toUpperCase() }.where(name="myTransformer") -->
-        PubSubChannel("pubSub") --< (
-          transform.using { m: Message[_] => m.getPayload() + " - subscriber-1" } -->
-          handle.using { m: Message[_] => println(m) },
-          transform.using { m: Message[_] => m.getPayload() + " - subscriber-2" } -->
-          handle.using { m: Message[_] => println(m) })
-
-    println(messageFlow)
-    println(DslUtils.toProductList(messageFlow))      
-    messageFlow.send("hello")
+      handle.using { m: Message[String] => m.getPayload().toUpperCase() }.where(name="myTransformer") -->
+        PubSubChannel("pubSub") 
+//        --> (
+//          transform.using { m: Message[_] => m.getPayload() + " - subscriber-1" } -->
+//          handle.using { m: Message[_] => println(m) }
+//          ,
+//          transform.using { m: Message[_] => m.getPayload() + " - subscriber-2" } -->
+//          handle.using { m: Message[_] => println(m) }
+//        ) 
+//
+//    println(messageFlow)
+//    println(DslUtils.toProductList(messageFlow))      
+//    messageFlow.send("hello")
     println("done")
   }
 
@@ -296,7 +299,8 @@ class DSLUsageDemo {
       handle.using{m:Message[_] => println("logging existing message and passing through " + m); m} -->
       transform.using{value:String => value.toUpperCase()}
     
-    flow.start  
+      println()
+      flow.start  
     
     val jmsTemplate = new JmsTemplate(connectionFactory);
     val request = new org.apache.activemq.command.ActiveMQQueue("myQueue")

@@ -28,13 +28,13 @@ import java.util.UUID
  */
 object handle {
 
-  def using(function:Function1[_,_]) = new IntegrationComposition(null, new ServiceActivator(target = function)) {
+  def using(function:Function1[_,_]) = new SendingEndpointComposition(null, new ServiceActivator(target = function)) {
     
-    def where(name:String)= new IntegrationComposition(null, new ServiceActivator(name = name, target = function))
+    def where(name:String)= new SendingEndpointComposition(null, new ServiceActivator(name = name, target = function))
   }
 
-  def using(spelExpression:String) = new IntegrationComposition(null, new ServiceActivator(target = spelExpression))  {
-    def where(name:String)= new IntegrationComposition(null, new ServiceActivator(name = name, target = spelExpression))
+  def using(spelExpression:String) = new SendingEndpointComposition(null, new ServiceActivator(target = spelExpression))  {
+    def where(name:String)= new SendingEndpointComposition(null, new ServiceActivator(name = name, target = spelExpression))
   }
 }
 
@@ -45,12 +45,12 @@ object handle {
  */
 object transform {
 
-  def using(function:Function1[_,AnyRef]) = new IntegrationComposition(null, new Transformer(target = function)) {
-    def where(name:String)= new IntegrationComposition(null, new Transformer(name = name, target = function))
+  def using(function:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
+    def where(name:String)= new SendingEndpointComposition(null, new Transformer(name = name, target = function))
   }
 
-  def using(spelExpression:String) = new IntegrationComposition(null, new Transformer(target = spelExpression)) {
-    def where(name:String)= new IntegrationComposition(null, new Transformer(name = name, target = spelExpression))
+  def using(spelExpression:String) = new SendingEndpointComposition(null, new Transformer(target = spelExpression)) {
+    def where(name:String)= new SendingEndpointComposition(null, new Transformer(name = name, target = spelExpression))
   }
 }
 
@@ -59,14 +59,14 @@ object transform {
  */
 object filter {
 
-  def using(function:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageFilter(target = function)) {
+  def using(function:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
     def where(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) =
-      new IntegrationComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
+      new SendingEndpointComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
   }
 
-  def using(spelExpression:String) = new IntegrationComposition(null, new MessageFilter(target = spelExpression))  {
+  def using(spelExpression:String) = new SendingEndpointComposition(null, new MessageFilter(target = spelExpression))  {
     def where(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) =
-      new IntegrationComposition(null, new MessageFilter(name = name, target = spelExpression, exceptionOnRejection = exceptionOnRejection))
+      new SendingEndpointComposition(null, new MessageFilter(name = name, target = spelExpression, exceptionOnRejection = exceptionOnRejection))
   }
 }
 
@@ -76,19 +76,19 @@ object filter {
  */
 object enrich {
   
-  def apply(function:Function1[_,AnyRef]) = new IntegrationComposition(null, new Enricher(target = function)) {
+  def apply(function:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = function)) {
     def where(name:String = "$henr" + UUID.randomUUID().toString.substring(0, 8)) =
-      new IntegrationComposition(null, new Enricher(name = name, target = function))
+      new SendingEndpointComposition(null, new Enricher(name = name, target = function))
   }
   
-  def headers(headersMap:(Tuple2[String, AnyRef])*) = new IntegrationComposition(null, new Enricher(target = headersMap)) {
+  def headers(headersMap:(Tuple2[String, AnyRef])*) = new SendingEndpointComposition(null, new Enricher(target = headersMap)) {
     def where(name:String = "$henr" + UUID.randomUUID().toString.substring(0, 8)) =
-      new IntegrationComposition(null, new Enricher(name = name, target = headersMap))
+      new SendingEndpointComposition(null, new Enricher(name = name, target = headersMap))
   }
  
-  def header(headerMap:Tuple2[String, AnyRef]) = new IntegrationComposition(null, new Enricher(target = headerMap)) {
+  def header(headerMap:Tuple2[String, AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = headerMap)) {
     def where(name:String = "$henr" + UUID.randomUUID().toString.substring(0, 8)) =
-      new IntegrationComposition(null, new Enricher(name = name, target = headerMap))
+      new SendingEndpointComposition(null, new Enricher(name = name, target = headerMap))
   }
 }
 
@@ -97,14 +97,14 @@ object enrich {
  */
 object split {
 
-  def using(function:Function1[_,Iterable[Any]]) = new IntegrationComposition(null, new MessageSplitter(target=function)) {
+  def using(function:Function1[_,Iterable[Any]]) = new SendingEndpointComposition(null, new MessageSplitter(target=function)) {
     def where(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
-      new IntegrationComposition(null, new MessageSplitter(name = name, target = function, applySequence = applySequence))
+      new SendingEndpointComposition(null, new MessageSplitter(name = name, target = function, applySequence = applySequence))
   }
 
-  def using(spelExpression:String) = new IntegrationComposition(null, new MessageSplitter(null, target = spelExpression))  {
+  def using(spelExpression:String) = new SendingEndpointComposition(null, new MessageSplitter(null, target = spelExpression))  {
     def where(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
-      new IntegrationComposition(null, new MessageSplitter(name = name, target = spelExpression, applySequence = applySequence))
+      new SendingEndpointComposition(null, new MessageSplitter(name = name, target = spelExpression, applySequence = applySequence))
   }
 }
 
@@ -115,13 +115,13 @@ object aggregate {
   /**
    * 
    */
-  def apply() = new IntegrationComposition(null, new MessageAggregator()) {
+  def apply() = new SendingEndpointComposition(null, new MessageAggregator()) {
     def where(name:String,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-      new IntegrationComposition(null, new MessageAggregator(name = name,
+      new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
@@ -130,38 +130,38 @@ object aggregate {
   /**
    * 
    */
-  def on(correlationFunction:Function1[_,AnyRef]) = new IntegrationComposition(null, new MessageAggregator())  {
+  def on(correlationFunction:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new MessageAggregator())  {
     def where(name:String,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-      new IntegrationComposition(null, new MessageAggregator(name = name,
+      new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
 
-    def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator())  {
+    def until(releaseFunction:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageAggregator())  {
       def where(name:String,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-        new IntegrationComposition(null, new MessageAggregator(name = name,
+        new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                           keepReleasedMessages = keepReleasedMessages,
                                                           messageStore = messageStore,
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                           expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
-    def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator())  {
+    def until(releaseExpression:String) = new SendingEndpointComposition(null, new MessageAggregator())  {
       def where(name:String ,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-        new IntegrationComposition(null, new MessageAggregator(name = name,
+        new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                           keepReleasedMessages = keepReleasedMessages,
                                                           messageStore = messageStore,
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
@@ -171,38 +171,38 @@ object aggregate {
   /**
    * 
    */
-  def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator())  {
+  def on(correlationKey:AnyRef) = new SendingEndpointComposition(null, new MessageAggregator())  {
     def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-      new IntegrationComposition(null, new MessageAggregator(name = name,
+      new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
 
-    def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator())  {
+    def until(releaseFunction:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageAggregator())  {
       def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-        new IntegrationComposition(null, new MessageAggregator(name = name,
+        new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                           keepReleasedMessages = keepReleasedMessages,
                                                           messageStore = messageStore,
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                            expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
 
-    def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator())  {
+    def until(releaseExpression:String) = new SendingEndpointComposition(null, new MessageAggregator())  {
       def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-        new IntegrationComposition(null, new MessageAggregator(name = name,
+        new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                           keepReleasedMessages = keepReleasedMessages,
                                                           messageStore = messageStore,
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
@@ -212,25 +212,25 @@ object aggregate {
   /**
    *  
    */
-  def until(releaseFunction:Function1[_,Boolean]) = new IntegrationComposition(null, new MessageAggregator()) {
+  def until(releaseFunction:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageAggregator()) {
     def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-      new IntegrationComposition(null, new MessageAggregator(name = name,
+      new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
     
-    def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator())  {
+    def on(correlationKey:AnyRef) = new SendingEndpointComposition(null, new MessageAggregator())  {
     	def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-              new IntegrationComposition(null, new MessageAggregator(name = name,
+              new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
@@ -238,25 +238,25 @@ object aggregate {
     }
   }
 
-  def until(releaseExpression:String) = new IntegrationComposition(null, new MessageAggregator())  {
+  def until(releaseExpression:String) = new SendingEndpointComposition(null, new MessageAggregator())  {
     def where(name:String,
               keepReleasedMessages:Boolean,
               messageStore:MessageStore,
               sendPartialResultsOnExpiry:Boolean,
               expireGroupsUponCompletion:Boolean) =
-      new IntegrationComposition(null, new MessageAggregator(name = name,
+      new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
     
-    def on(correlationKey:AnyRef) = new IntegrationComposition(null, new MessageAggregator())  {
+    def on(correlationKey:AnyRef) = new SendingEndpointComposition(null, new MessageAggregator())  {
     	def where(name:String = null,
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-              new IntegrationComposition(null, new MessageAggregator(name = name,
+              new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
                                                         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
@@ -269,7 +269,7 @@ object aggregate {
             messageStore:MessageStore = new SimpleMessageStore,
             sendPartialResultsOnExpiry:Boolean = false,
             expireGroupsUponCompletion:Boolean = false) =
-    new IntegrationComposition(null, new MessageAggregator(name = name,
+    new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                       keepReleasedMessages = keepReleasedMessages,
                                                       messageStore = messageStore,
                                                       sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
