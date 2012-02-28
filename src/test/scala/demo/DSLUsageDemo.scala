@@ -103,18 +103,17 @@ class DSLUsageDemo {
   def demoSendWithPubSubChannel = {
     val messageFlow =
       handle.using { m: Message[String] => m.getPayload().toUpperCase() }.where(name="myTransformer") -->
-        PubSubChannel("pubSub") 
-//        --> (
-//          transform.using { m: Message[_] => m.getPayload() + " - subscriber-1" } -->
-//          handle.using { m: Message[_] => println(m) }
-//          ,
-//          transform.using { m: Message[_] => m.getPayload() + " - subscriber-2" } -->
-//          handle.using { m: Message[_] => println(m) }
-//        ) 
-//
-//    println(messageFlow)
-//    println(DslUtils.toProductList(messageFlow))      
-//    messageFlow.send("hello")
+        PubSubChannel("pubSub") --> (
+          transform.using { m: Message[_] => m.getPayload() + " - subscriber-1" } -->
+          handle.using { m: Message[_] => println(m) }
+          ,
+          transform.using { m: Message[_] => m.getPayload() + " - subscriber-2" } -->
+          handle.using { m: Message[_] => println(m) }
+        ) 
+
+    println(messageFlow)
+    println(DslUtils.toProductList(messageFlow))      
+    messageFlow.send("hello")
     println("done")
   }
 
