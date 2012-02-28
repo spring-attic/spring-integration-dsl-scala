@@ -32,12 +32,25 @@ object Channel {
   def apply(name: String) = new ChannelIntegrationComposition(null, new Channel(name = name)) {
     require(StringUtils.hasText(name), "'name' must not be empty")
     def withQueue(capacity: Int = Int.MaxValue, messageStore: MessageStore = null) =
-      new PollableChannelIntegrationComposition(null, doWithQueue(name, capacity, messageStore))
+      new PollableChannelIntegrationComposition(null, doWithQueue(name = name, capacity = capacity, messageStore = messageStore))
 
-    def withQueue() = new PollableChannelIntegrationComposition(null, doWithQueue(name, Int.MaxValue, new SimpleMessageStore))
+    def withQueue() = new PollableChannelIntegrationComposition(null, doWithQueue(name = name))
 
     def withDispatcher(failover: Boolean = false, loadBalancer: String = null, taskExecutor: Executor = null) =
-      new ChannelIntegrationComposition(null, doWithDispatcher(name, failover, loadBalancer, taskExecutor))
+      new ChannelIntegrationComposition(null, doWithDispatcher(name = name, failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor))
+  }
+  
+  /**
+   * 
+   */
+  def apply() = new ChannelIntegrationComposition(null, new Channel()) {
+    def withQueue(capacity: Int = Int.MaxValue, messageStore: MessageStore = null) =
+      new PollableChannelIntegrationComposition(null, doWithQueue(capacity = capacity, messageStore = messageStore))
+
+    def withQueue() = new PollableChannelIntegrationComposition(null, doWithQueue())
+
+    def withDispatcher(failover: Boolean = false, loadBalancer: String = null, taskExecutor: Executor = null) =
+      new ChannelIntegrationComposition(null, doWithDispatcher(failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor))
   }
 
   /**
@@ -64,7 +77,7 @@ object Channel {
     new PollableChannel(name = name, capacity = capacity, messageStore = messageStore)
   }
 
-  private def doWithDispatcher(name: String = "$ch_" + UUID.randomUUID().toString.substring(0, 8), failover: Boolean, loadBalancer: String, taskExecutor: Executor): Channel = {
+  private def doWithDispatcher(name: String = "$ch_" + UUID.randomUUID().toString.substring(0, 8), failover: Boolean = true, loadBalancer: String = null, taskExecutor: Executor = null): Channel = {
     new Channel(name = name, failover = failover, loadBalancer = loadBalancer, taskExecutor = taskExecutor)
   }
 }
@@ -72,7 +85,7 @@ object Channel {
  *
  */
 object PubSubChannel {
-  def apply() = new ChannelIntegrationComposition(null, new PubSubChannel(name = null)) {
+  def apply() = new ChannelIntegrationComposition(null, new PubSubChannel) {
     def applyingSequence = new ChannelIntegrationComposition(null, new PubSubChannel(applySequence = true)) {
       def withExecutor(taskExecutor: Executor) =
         new ChannelIntegrationComposition(null, new PubSubChannel(applySequence = true, taskExecutor = taskExecutor))
@@ -98,12 +111,12 @@ object PubSubChannel {
   }
 }
 
-private[dsl] abstract class AbstractChannel(override val name: String) extends IntegrationComponent(name)
+private[dsl] abstract class AbstractChannel(name: String) extends IntegrationComponent(name)
 
 /**
  *
  */
-private[dsl] case class Channel(override val name: String = "$ch_" + UUID.randomUUID().toString.substring(0, 8),
+private[dsl] class Channel(name: String = "$ch_" + UUID.randomUUID().toString.substring(0, 8),
   val failover: Boolean = true,
   val loadBalancer: String = null,
   val taskExecutor: Executor = null) extends AbstractChannel(name)
@@ -111,12 +124,12 @@ private[dsl] case class Channel(override val name: String = "$ch_" + UUID.random
 /**
  *
  */
-private[dsl] case class PollableChannel(override val name: String = "$queue_ch_" + UUID.randomUUID().toString.substring(0, 8),
+private[dsl] class PollableChannel(name: String = "$queue_ch_" + UUID.randomUUID().toString.substring(0, 8),
   val capacity: Int = Integer.MIN_VALUE,
   val messageStore: MessageStore = null) extends AbstractChannel(name)
 /**
  *
  */
-private[dsl] case class PubSubChannel(override val name: String = "$pub_sub_ch_" + UUID.randomUUID().toString.substring(0, 8),
+private[dsl] class PubSubChannel(name: String = "$pub_sub_ch_" + UUID.randomUUID().toString.substring(0, 8),
   val applySequence: Boolean = false,
-  val taskExecutor: Executor = null) extends AbstractChannel(name)
+  val taskExecutor: Executor = null) extends AbstractChannel(name) 

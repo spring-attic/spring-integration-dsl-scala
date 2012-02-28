@@ -201,9 +201,13 @@ private object ApplicationContextBuilder {
               val inputChannelName: String =
                 if (pv != null) pv.getValue().asInstanceOf[String] else null
 
-              if (StringUtils.hasText(inputChannelName)) Channel(inputChannelName)
-              else Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
-            } else Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
+              if (StringUtils.hasText(inputChannelName)) 
+                new Channel(inputChannelName)
+              else 
+                new Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
+            } 
+            else 
+              new Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
 
           channel
 
