@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.integration.dsl.builders
+package org.springframework.integration.dsl
 import org.springframework.integration.support.MessageBuilder
 import scala.collection.JavaConversions
 import java.lang.reflect.Method

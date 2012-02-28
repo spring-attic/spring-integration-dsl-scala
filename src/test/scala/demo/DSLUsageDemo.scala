@@ -18,24 +18,22 @@ package demo
 import org.junit.Test
 import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.SpelParserConfiguration
-import org.springframework.integration.dsl.implicites._
-import org.springframework.integration.dsl.builders.Channel
-import org.springframework.integration.dsl.builders.PubSubChannel
-import org.springframework.integration.dsl.builders.enrich
-import org.springframework.integration.dsl.builders.handle
-import org.springframework.integration.dsl.builders.http
-import org.springframework.integration.dsl.builders.jms
-import org.springframework.integration.dsl.builders.poll
-import org.springframework.integration.dsl.builders.transform
 import org.springframework.integration.dsl.utils.DslUtils
-import org.springframework.integration.Message
-import org.springframework.jms.connection.CachingConnectionFactory
+import org.springframework.integration.dsl.utils.JmsDslTestUtils
 import org.springframework.jms.core.JmsTemplate
 import org.springframework.jms.core.MessageCreator
 import javax.jms.Session
 import javax.jms.TextMessage
-import org.springframework.integration.dsl.utils.JmsDslTestUtils
-import org.springframework.http.HttpStatus
+import org.springframework.integration.dsl.jms
+import org.springframework.integration.dsl.enrich
+import org.springframework.integration.dsl.filter
+import org.springframework.integration.dsl.PubSubChannel
+import org.springframework.integration.dsl.http
+import org.springframework.integration.dsl.transform
+import org.springframework.integration.dsl.handle
+import org.springframework.integration.dsl.Channel
+import org.springframework.integration.dsl.poll
+import org.springframework.integration.Message
 
 /**
  * @author Oleg Zhurakousky
@@ -44,7 +42,20 @@ class DSLUsageDemo {
 
   @Test
   def demoSend = {
+    
     val messageFlow =
+      transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
+      handle.using { m: Message[_] => println(m) }
+
+    messageFlow.send("hello")
+    println("done")
+  }
+  
+  @Test
+  def demoSendWithFilter = {
+    
+    val messageFlow =
+      filter.using{payload:String => payload == "hello"} -->
       transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
       handle.using { m: Message[_] => println(m) }
 

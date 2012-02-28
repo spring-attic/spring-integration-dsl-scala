@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.integration.dsl.builders
+package org.springframework.integration.dsl
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.config.ServiceActivatorFactoryBean
-import org.springframework.integration.config.TransformerFactoryBean
 /**
  * 
  * @author Oleg Zhurakousky
  */
-private object TransformerBuilder {
+private object ServiceActivatorBuilder {
 
-   def build(transformer: Transformer, function:Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit]): BeanDefinitionBuilder = {
-     val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
-     function.apply(transformer, handlerBuilder)
+   def build(serviceActivator: ServiceActivator, function:Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit]): BeanDefinitionBuilder = {
+     val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
+     function.apply(serviceActivator, handlerBuilder)
      handlerBuilder
    }
 }

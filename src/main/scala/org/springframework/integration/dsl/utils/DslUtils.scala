@@ -17,8 +17,8 @@ package org.springframework.integration.dsl.utils
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.WrappedArray
 import java.lang.Long
-import org.springframework.integration.dsl.builders.BaseIntegrationComposition
-import org.springframework.integration.dsl.builders.ListOfCompositions
+import org.springframework.integration.dsl.BaseIntegrationComposition
+import org.springframework.integration.dsl.ListOfCompositions
 /**
  * @author Oleg Zhurakousky
  */

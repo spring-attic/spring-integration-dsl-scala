@@ -2,15 +2,6 @@ package org.springframework.integration.dsl
 
 import org.junit.Assert
 import org.junit.Test
-import org.springframework.integration.dsl.builders.Channel
-import org.springframework.integration.dsl.builders.MessageFilter
-import org.springframework.integration.dsl.builders.PubSubChannel
-import org.springframework.integration.dsl.builders.ServiceActivator
-import org.springframework.integration.dsl.builders.Transformer
-import org.springframework.integration.dsl.builders.filter
-import org.springframework.integration.dsl.builders.handle
-import org.springframework.integration.dsl.builders.transform
-import org.springframework.integration.dsl.implicites._
 import org.springframework.integration.dsl.utils.DslUtils
 
 class DSLTest {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.integration.dsl.builders
+package org.springframework.integration.dsl
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.beans.factory.support.BeanDefinitionReaderUtils
 import org.springframework.context.support.GenericApplicationContext

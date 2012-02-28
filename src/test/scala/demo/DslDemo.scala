@@ -17,13 +17,6 @@ package demo
 import org.junit._
 import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.integration.dsl._
-import org.springframework.integration.dsl.implicites._
-import org.springframework.integration.dsl.builders.PubSubChannel
-import org.springframework.integration.dsl.builders.handle
-import org.springframework.integration.dsl.builders.Channel
-import org.springframework.integration.dsl.builders.transform
-import org.springframework.integration.dsl.builders.poll
-import org.springframework.integration.dsl.builders.filter
 
 /**
  * @author Oleg Zhurakousky

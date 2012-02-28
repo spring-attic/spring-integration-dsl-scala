@@ -18,8 +18,6 @@ package org.springframework.integration.dsl
 import org.junit.{Assert, Test}
 import org.springframework.scheduling.support.PeriodicTrigger
 import org.springframework.core.task.{SimpleAsyncTaskExecutor, SyncTaskExecutor}
-import org.springframework.integration.dsl.builders.poll
-import org.springframework.integration.dsl.builders.Poller
 
 /**
  * @author Oleg Zhurakousky
