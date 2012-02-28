@@ -227,21 +227,26 @@ private object ApplicationContextBuilder {
   private def buildChannel(channelDefinition: AbstractChannel)(implicit applicationContext: GenericApplicationContext): Unit = {
     val channelBuilder: BeanDefinitionBuilder =
       channelDefinition match {
-        case ch: Channel =>
+        case ch: Channel =>      
           if (ch.taskExecutor != null) {
             val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ExecutorChannel])
             builder.addConstructorArgValue(ch.taskExecutor)
             builder
           } else
             BeanDefinitionBuilder.rootBeanDefinition(classOf[DirectChannel])
-
         case queue: PollableChannel => {
           val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[QueueChannel])
           builder.addConstructorArgValue(queue.capacity)
           builder
         }
         case pubsub: PubSubChannel =>
-          BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
+          val builder =  BeanDefinitionBuilder.rootBeanDefinition(classOf[PublishSubscribeChannel])
+          if (pubsub.taskExecutor != null) 
+             builder.addConstructorArgValue(pubsub.taskExecutor)
+          if (pubsub.applySequence)
+            builder.addPropertyValue("applySequence", pubsub.applySequence)
+      
+          builder
         case _ =>
           throw new IllegalArgumentException("Unsupported Channel type: " + channelDefinition)
       }
