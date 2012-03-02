@@ -124,7 +124,7 @@ private[dsl] class SendingEndpointComposition(parentComposition: BaseIntegration
     val g = new ComposableIntegrationComponent[T]
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)
     val composed = g.compose(this, a)
-    g.composeFinal(this, composed)
+    g.composeFinal(this, a, composed)
   }
 }
 
@@ -138,11 +138,12 @@ class SendingChannelComposition(parentComposition: BaseIntegrationComposition, t
 
     if (a.size == 1) {
       val composed = g.compose(this, a(0))
-      g.composeFinal(this, composed)
+      g.composeFinal(this, a(0), composed)
     } else {
       val buffer = new ListBuffer[BaseIntegrationComposition]()
       for (element <- a) buffer += element
-      g.composeFinal(this, new BaseIntegrationComposition(this, new ListOfCompositions(buffer.toList)))
+      val merged = new BaseIntegrationComposition(this, new ListOfCompositions(buffer.toList))
+      g.composeFinal(this, merged, merged)
     }
   }
 }
@@ -185,8 +186,11 @@ class PollableChannelIntegrationComposition(parentComposition: BaseIntegrationCo
   /**
    *
    */
-  def -->(p: Poller)(implicit g: ComposableIntegrationComponent[Poller]) =
-    g.composeFinal(this.asInstanceOf[SendingChannelComposition], new BaseIntegrationComposition(this, p))
+  def -->(p: Poller)(implicit g: ComposableIntegrationComponent[Poller]) = {
+    val merged = new BaseIntegrationComposition(this, p)
+    g.composeFinal(this.asInstanceOf[SendingChannelComposition], merged, merged)
+  }
+    
 }
 
 /**
@@ -210,20 +214,22 @@ private[dsl] class ComposableIntegrationComponent[T] {
   def composeFinal(c: ListeningIntegrationComposition, e: BaseIntegrationComposition) =
     new ListeningIntegrationComposition(c, e.target)
 
-  def composeFinal[T <: BaseIntegrationComposition](i: SendingEndpointComposition, s: T) = {
-    val returnValue = s match {
+  def composeFinal[T <: BaseIntegrationComposition](parent: SendingEndpointComposition, child: BaseIntegrationComposition, merged: T) = {
+    val returnValue = child match {
       case pch: PollableChannelIntegrationComposition =>
-        new PollableChannelIntegrationComposition(s.parentComposition, s.target)
+        new PollableChannelIntegrationComposition(merged.parentComposition, merged.target)
       case ch: ChannelIntegrationComposition =>
-        new ChannelIntegrationComposition(s.parentComposition, s.target)
+        new ChannelIntegrationComposition(merged.parentComposition, merged.target)
+      case sch: SendingChannelComposition =>
+        new SendingChannelComposition(merged.parentComposition, merged.target)
       case _ =>
-        new SendingEndpointComposition(s.parentComposition, s.target)
+        new SendingEndpointComposition(merged.parentComposition, merged.target)
     }
     returnValue.asInstanceOf[T]
   }
 
-  def composeFinal(i: SendingChannelComposition, s: BaseIntegrationComposition) = {
-    new SendingChannelComposition(s.parentComposition, s.target)
+  def composeFinal(parent: SendingChannelComposition, child: BaseIntegrationComposition, merged: BaseIntegrationComposition) = {
+    new SendingChannelComposition(merged.parentComposition, merged.target)
   }
 
 }

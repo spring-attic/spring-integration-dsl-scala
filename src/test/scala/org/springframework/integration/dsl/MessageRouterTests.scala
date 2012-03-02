@@ -103,7 +103,7 @@ class MessageRouterTests {
   @Test
   def validateFunctionRouterConfig(){
     
-    route.using{m:Message[_] => m.getHeaders.get("routeToChannel")}(
+    route.using{m:Message[String] => m.getHeaders.get("routeToChannel").asInstanceOf[String]}(
       when(1) then Channel("1"),
       when(2) then Channel("2")
     ) where(name = "myRouter")

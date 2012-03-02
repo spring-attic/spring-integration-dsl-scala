@@ -58,7 +58,8 @@ private object RouterBuilder {
     if (logger.isDebugEnabled)
       logger.debug("Creating Router of type: " + handlerBuilder.getBeanDefinition.getBeanClass.getSimpleName)
 
-    targetDefFunction(router, handlerBuilder)
+    if (router.target != null)
+    	targetDefFunction(router, handlerBuilder)
 
     val channelMappings = new HashMap[Any, Any]()
 

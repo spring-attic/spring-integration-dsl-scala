@@ -24,15 +24,7 @@ import org.springframework.jms.core.JmsTemplate
 import org.springframework.jms.core.MessageCreator
 import javax.jms.Session
 import javax.jms.TextMessage
-import org.springframework.integration.dsl.jms
-import org.springframework.integration.dsl.enrich
-import org.springframework.integration.dsl.filter
-import org.springframework.integration.dsl.PubSubChannel
-import org.springframework.integration.dsl.http
-import org.springframework.integration.dsl.transform
-import org.springframework.integration.dsl.handle
-import org.springframework.integration.dsl.Channel
-import org.springframework.integration.dsl.poll
+import org.springframework.integration.dsl._
 import org.springframework.integration.Message
 
 /**
@@ -174,20 +166,6 @@ class DSLUsageDemo {
   }
 
   @Test
-  def headerEnricherWithStringA = {
-    val enricherB = enrich.header("hello" -> { "boo" + "bar" }) --> handle.using { m: Message[_] => println(m) }
-    enricherB.send("Hello")
-    println("done")
-  }
-
-  @Test
-  def headerEnricherWithStringB = {
-    val enricherB = enrich.header("hello" -> "foo") --> handle.using { m: Message[_] => println(m) }
-    enricherB.send("Hello")
-    println("done")
-  }
-
-  @Test
   def headerEnricherWithExpression = {
     val expression = new SpelExpressionParser(new SpelParserConfiguration(true, true)).parseExpression("(2 * 6) + ' days of Christmas'");
     val enricherB = enrich.header("phrase" -> expression) --> handle.using { m: Message[_] => println(m) }
@@ -241,8 +219,78 @@ class DSLUsageDemo {
   case class Person(var name: String = null, var age: Int = 0)
 
   class Employee(val firstName: String, val lastName: String, val age: Int)
-
+  
   @Test
+  def headerValueRouter = {
+
+    val messageFlow =
+	    route.onValueOfHeader("someHeaderName") (
+	
+	      when("foo") then 
+	      	handle.using{m:Message[_] => println("Header is 'foo': " + m)}
+	      ,
+	      when("bar") then
+	        handle.using{m:Message[_] => println("Header is 'bar': " + m)}
+	    ) --> 
+        handle.using{m:Message[_] => println("Header is not set: " + m)}
+	    
+	messageFlow.send("FOO header", headers=Map("someHeaderName" -> "foo"))
+	
+	messageFlow.send("BAR header", headers=Map("someHeaderName" -> "bar"))
+	
+	messageFlow.send("Hello")
+	
+	println("done")
+  }
+  
+  @Test
+  def payloadTypeRouter = {
+
+    val messageFlow =
+	    route.onPayloadType(
+	
+	      when(classOf[String]) then 
+	      	handle.using{m:Message[_] => println("Payload is String: " + m)}
+	      ,
+	      when(classOf[Int]) then
+	        handle.using{m:Message[_] => println("Payload is Int: " + m)}
+	    ) --> 
+        handle.using{m:Message[_] => println("Payload is: " + m.getPayload())}
+	    
+	messageFlow.send("Hello")
+	
+	messageFlow.send(25)
+	
+	messageFlow.send(new Person)
+	
+	println("done")
+  }
+  
+  @Test
+  def customRouter = {
+
+    val messageFlow =
+	    route.using{m:Message[String] => m.getPayload}(
+	
+	      when("Hello") then 
+	      	handle.using{m:Message[_] => println("Payload is Hello: " + m)}
+	      ,
+	      when("Bye") then
+	        handle.using{m:Message[_] => println("Payload is Bye: " + m)}
+	    ) --> 
+        Channel("Hi") -->
+        handle.using{m:Message[_] => println("Payload is: " + m.getPayload())}
+	    
+	messageFlow.send("Hello")
+	
+	messageFlow.send("Bye")
+	
+	messageFlow.send("Hi")
+	
+	println("done")
+  }
+
+  //@Test
   def httpOutboundWithFunctionUrl = {
 
     val tickerService =
@@ -264,7 +312,7 @@ class DSLUsageDemo {
     println("done")
   }
   
-  @Test
+  //@Test
   def httpOutboundWithStringUrl = {
 
     val tickerService =
@@ -285,7 +333,7 @@ class DSLUsageDemo {
     println("done")
   }
   
-  @Test
+  //@Test
   def httpOutboundWithPOSTthenGET = {
 
     val httpFlow = 
@@ -300,7 +348,7 @@ class DSLUsageDemo {
     println("done")
   }
   
-  @Test
+  //@Test
   def jmsInboundGateway  = {
     val connectionFactory = JmsDslTestUtils.localConnectionFactory
     
