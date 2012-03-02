@@ -30,9 +30,9 @@ class DslDemo {
      val a = 
 	  handle.using("1") -->
 	  Channel("2") -->
-	  transform.using("3") -->
+	  transform.using{s:String => s} -->
 	  Channel.withQueue --> poll.usingFixedDelay(1) -->
-	  filter.using("5") -->
+	  filter.using{b:Boolean => b} -->
 	  Channel("6") --> 
 	  (
 	      handle.using("InnerA-1") -->
@@ -46,9 +46,9 @@ class DslDemo {
 	 val b = 
 	  handle.using("1") -->
 	  Channel("2").withDispatcher(failover=false) -->
-	  transform.using("3") -->
+	  transform.using{s:String => s} -->
 	  Channel.withQueue(34) --> poll.usingFixedDelay(1) -->
-	  filter.using("5") -->
+	  filter.using{s:Boolean => s} -->
 	  Channel("6") --> (
 	      handle.using("InnerA-1") -->
 	      Channel("InnerA-2") 

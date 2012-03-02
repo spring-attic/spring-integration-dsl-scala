@@ -49,6 +49,8 @@ import org.springframework.scheduling.support.PeriodicTrigger
 import org.springframework.util.StringUtils
 import org.apache.commons.logging.LogFactory
 import org.springframework.beans.factory.config.BeanDefinition
+import org.springframework.util.ReflectionUtils
+import org.springframework.integration.Message
 
 /**
  * @author Oleg Zhurakousky
@@ -380,9 +382,6 @@ private object ApplicationContextBuilder {
         val functionInvoker = new FunctionInvoker(function, endpoint)
         handlerBuilder.addPropertyValue("targetObject", functionInvoker);
         handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
-      }
-      case spel: String => {
-        handlerBuilder.addPropertyValue("expressionString", spel);
       }
       case _ => {
         throw new IllegalArgumentException("Unsupported value for 'target' - " + endpoint.target)

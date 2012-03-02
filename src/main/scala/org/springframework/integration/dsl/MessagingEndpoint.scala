@@ -17,6 +17,7 @@ package org.springframework.integration.dsl
 
 import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
 import java.util.UUID
+import org.springframework.util.StringUtils
 
 
 /**
@@ -27,15 +28,14 @@ import java.util.UUID
  * SERVICE ACTIVATOR
  */
 object handle {
-
+  
   def using(function:Function1[_,_]) = new SendingEndpointComposition(null, new ServiceActivator(target = function)) {
-    
-    def where(name:String)= new SendingEndpointComposition(null, new ServiceActivator(name = name, target = function))
+    def where(name:String)= {
+      require(StringUtils.hasText(name), "'name' must not be empty")
+      new SendingEndpointComposition(null, new ServiceActivator(name = name, target = function))
+    }
   }
-
-  def using(spelExpression:String) = new SendingEndpointComposition(null, new ServiceActivator(target = spelExpression))  {
-    def where(name:String)= new SendingEndpointComposition(null, new ServiceActivator(name = name, target = spelExpression))
-  }
+  
 }
 
 
@@ -46,11 +46,10 @@ object handle {
 object transform {
 
   def using(function:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def where(name:String)= new SendingEndpointComposition(null, new Transformer(name = name, target = function))
-  }
-
-  def using(spelExpression:String) = new SendingEndpointComposition(null, new Transformer(target = spelExpression)) {
-    def where(name:String)= new SendingEndpointComposition(null, new Transformer(name = name, target = spelExpression))
+    def where(name:String) = { 
+      require(StringUtils.hasText(name), "'name' must not be empty")
+      new SendingEndpointComposition(null, new Transformer(name = name, target = function))
+    }
   }
 }
 
@@ -60,13 +59,9 @@ object transform {
 object filter {
 
   def using(function:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
-    def where(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) =
+    def where(name:String  = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) = {
       new SendingEndpointComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
-  }
-
-  def using(spelExpression:String) = new SendingEndpointComposition(null, new MessageFilter(target = spelExpression))  {
-    def where(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) =
-      new SendingEndpointComposition(null, new MessageFilter(name = name, target = spelExpression, exceptionOnRejection = exceptionOnRejection))
+    }
   }
 }
 
@@ -77,18 +72,24 @@ object filter {
 object enrich {
   
   def apply(function:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = function)) {
-    def where(name:String = "$henr" + UUID.randomUUID().toString.substring(0, 8)) =
+    def where(name:String) = {
+      require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = function))
+    }
   }
   
   def headers(headersMap:(Tuple2[String, AnyRef])*) = new SendingEndpointComposition(null, new Enricher(target = headersMap)) {
-    def where(name:String = "$henr" + UUID.randomUUID().toString.substring(0, 8)) =
+    def where(name:String) = {
+      require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = headersMap))
+    }
   }
  
   def header(headerMap:Tuple2[String, AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = headerMap)) {
-    def where(name:String = "$henr" + UUID.randomUUID().toString.substring(0, 8)) =
+    def where(name:String) = {
+      require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = headerMap))
+    }
   }
 }
 
@@ -98,13 +99,8 @@ object enrich {
 object split {
 
   def using(function:Function1[_,Iterable[Any]]) = new SendingEndpointComposition(null, new MessageSplitter(target=function)) {
-    def where(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
+    def where(name:String = "$split_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
       new SendingEndpointComposition(null, new MessageSplitter(name = name, target = function, applySequence = applySequence))
-  }
-
-  def using(spelExpression:String) = new SendingEndpointComposition(null, new MessageSplitter(null, target = spelExpression))  {
-    def where(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
-      new SendingEndpointComposition(null, new MessageSplitter(name = name, target = spelExpression, applySequence = applySequence))
   }
 }
 
@@ -116,7 +112,7 @@ object aggregate {
    * 
    */
   def apply() = new SendingEndpointComposition(null, new MessageAggregator()) {
-    def where(name:String,
+    def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -131,7 +127,7 @@ object aggregate {
    * 
    */
   def on(correlationFunction:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new MessageAggregator())  {
-    def where(name:String,
+    def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -143,7 +139,7 @@ object aggregate {
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
 
     def until(releaseFunction:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageAggregator())  {
-      def where(name:String,
+      def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -156,7 +152,7 @@ object aggregate {
     }
 
     def until(releaseExpression:String) = new SendingEndpointComposition(null, new MessageAggregator())  {
-      def where(name:String ,
+      def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -172,7 +168,7 @@ object aggregate {
    * 
    */
   def on(correlationKey:AnyRef) = new SendingEndpointComposition(null, new MessageAggregator())  {
-    def where(name:String = null,
+    def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -184,7 +180,7 @@ object aggregate {
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
 
     def until(releaseFunction:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageAggregator())  {
-      def where(name:String = null,
+      def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -197,7 +193,7 @@ object aggregate {
     }
 
     def until(releaseExpression:String) = new SendingEndpointComposition(null, new MessageAggregator())  {
-      def where(name:String = null,
+      def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -213,7 +209,7 @@ object aggregate {
    *  
    */
   def until(releaseFunction:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageAggregator()) {
-    def where(name:String = null,
+    def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -225,7 +221,7 @@ object aggregate {
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
     
     def on(correlationKey:AnyRef) = new SendingEndpointComposition(null, new MessageAggregator())  {
-    	def where(name:String = null,
+    	def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -239,7 +235,7 @@ object aggregate {
   }
 
   def until(releaseExpression:String) = new SendingEndpointComposition(null, new MessageAggregator())  {
-    def where(name:String,
+    def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean,
               messageStore:MessageStore,
               sendPartialResultsOnExpiry:Boolean,
@@ -251,7 +247,7 @@ object aggregate {
                                                         expireGroupsUponCompletion = expireGroupsUponCompletion))
     
     def on(correlationKey:AnyRef) = new SendingEndpointComposition(null, new MessageAggregator())  {
-    	def where(name:String = null,
+    	def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
@@ -264,7 +260,7 @@ object aggregate {
     }
   }
 
-  def where(name:String = null,
+  def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
             keepReleasedMessages:Boolean = true,
             messageStore:MessageStore = new SimpleMessageStore,
             sendPartialResultsOnExpiry:Boolean = false,

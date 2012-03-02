@@ -26,6 +26,7 @@ import javax.jms.Session
 import javax.jms.TextMessage
 import org.springframework.integration.dsl._
 import org.springframework.integration.Message
+import scala.collection.immutable.WrappedString
 
 /**
  * @author Oleg Zhurakousky
@@ -33,67 +34,76 @@ import org.springframework.integration.Message
 class DSLUsageDemo {
 
   @Test
+  def simpleServiceWithWrappedStringAsFunction = {
+
+    val messageFlow =
+      handle.using("hello").where(name = "sa1") -->
+        handle.using { m: Message[_] => println(m) }.where(name = "myService")
+
+    messageFlow.send(2)
+    println("done")
+  }
+
+  @Test
   def demoSend = {
-    
+
     val messageFlow =
       transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
-      handle.using { m: Message[_] => println(m) }
+        handle.using { m: Message[_] => println(m) }
 
     messageFlow.send("hello")
     println("done")
   }
-  
+
   @Test
   def demoSendWithFilter = {
-    
+
     val messageFlow =
-      filter.using{payload:String => payload == "hello"} -->
-      transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
-      handle.using { m: Message[_] => println(m) }
+      filter.using { payload: String => payload == "hello" } -->
+        transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
+        handle.using { m: Message[_] => println(m) }
 
     messageFlow.send("hello")
     println("done")
   }
-  
+
   @Test
   def demoSendWithExplicitDirectChannel = {
     val messageFlow =
       Channel("direct") -->
-      transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
-      handle.using { m: Message[_] => println(m) }
+        transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
+        handle.using { m: Message[_] => println(m) }
 
     messageFlow.send("hello")
     println("done")
   }
-  
+
   @Test
   def demoSendWithExplicitPubSubChannelOneSubscriber = {
     val messageFlow =
       PubSubChannel("direct") -->
-      transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
-      handle.using { m: Message[_] => println(m) }
+        transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
+        handle.using { m: Message[_] => println(m) }
 
     messageFlow.send("hello")
     println("done")
   }
-  
+
   @Test
   def demoSendWithExplicitPubSubChannelMultipleSubscriber = {
     val messageFlow =
       PubSubChannel("direct") --> (
-	      transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
-	      handle.using { m: Message[_] => println("Subscriber-1 - " + m) }
-	      ,
-	      transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
-	      handle.using { m: Message[_] => println("Subscriber-2 - " + m) }
-      ) 
+        transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
+        handle.using { m: Message[_] => println("Subscriber-1 - " + m) },
+        transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
+        handle.using { m: Message[_] => println("Subscriber-2 - " + m) })
 
     messageFlow.send("hello")
     println("done")
   }
 
   @Test
-  def sdemoSendAndReceive = {
+  def demoSendAndReceive = {
     val messageFlow =
       transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
         handle.using { m: Message[_] => println(m); m }
@@ -105,17 +115,15 @@ class DSLUsageDemo {
   @Test
   def demoSendWithPubSubChannel = {
     val messageFlow =
-      handle.using { m: Message[String] => m.getPayload().toUpperCase() }.where(name="myTransformer") -->
+      handle.using { m: Message[String] => m.getPayload().toUpperCase() }.where(name = "myTransformer") -->
         PubSubChannel("pubSub") --> (
           transform.using { m: Message[_] => m.getPayload() + " - subscriber-1" } -->
-          handle.using { m: Message[_] => println(m) }
-          ,
+          handle.using { m: Message[_] => println(m) },
           transform.using { m: Message[_] => m.getPayload() + " - subscriber-2" } -->
-          handle.using { m: Message[_] => println(m) }
-        ) 
+          handle.using { m: Message[_] => println(m) })
 
     println(messageFlow)
-    println(DslUtils.toProductList(messageFlow))      
+    println(DslUtils.toProductList(messageFlow))
     messageFlow.send("hello")
     println("done")
   }
@@ -210,7 +218,7 @@ class DSLUsageDemo {
         p.age = employee.age
         p
       } -->
-      handle.using { m: Message[_] => println(m) }
+        handle.using { m: Message[_] => println(m) }
 
     enricher.send(new Person)
     println("done")
@@ -219,75 +227,69 @@ class DSLUsageDemo {
   case class Person(var name: String = null, var age: Int = 0)
 
   class Employee(val firstName: String, val lastName: String, val age: Int)
-  
+
   @Test
   def headerValueRouter = {
 
     val messageFlow =
-	    route.onValueOfHeader("someHeaderName") (
-	
-	      when("foo") then 
-	      	handle.using{m:Message[_] => println("Header is 'foo': " + m)}
-	      ,
-	      when("bar") then
-	        handle.using{m:Message[_] => println("Header is 'bar': " + m)}
-	    ) --> 
-        handle.using{m:Message[_] => println("Header is not set: " + m)}
-	    
-	messageFlow.send("FOO header", headers=Map("someHeaderName" -> "foo"))
-	
-	messageFlow.send("BAR header", headers=Map("someHeaderName" -> "bar"))
-	
-	messageFlow.send("Hello")
-	
-	println("done")
+      route.onValueOfHeader("someHeaderName")(
+
+        when("foo") then
+          handle.using { m: Message[_] => println("Header is 'foo': " + m) },
+        when("bar") then
+          handle.using { m: Message[_] => println("Header is 'bar': " + m) }) -->
+        handle.using { m: Message[_] => println("Header is not set: " + m) }
+
+    messageFlow.send("FOO header", headers = Map("someHeaderName" -> "foo"))
+
+    messageFlow.send("BAR header", headers = Map("someHeaderName" -> "bar"))
+
+    messageFlow.send("Hello")
+
+    println("done")
   }
-  
+
   @Test
   def payloadTypeRouter = {
 
     val messageFlow =
-	    route.onPayloadType(
-	
-	      when(classOf[String]) then 
-	      	handle.using{m:Message[_] => println("Payload is String: " + m)}
-	      ,
-	      when(classOf[Int]) then
-	        handle.using{m:Message[_] => println("Payload is Int: " + m)}
-	    ) --> 
-        handle.using{m:Message[_] => println("Payload is: " + m.getPayload())}
-	    
-	messageFlow.send("Hello")
-	
-	messageFlow.send(25)
-	
-	messageFlow.send(new Person)
-	
-	println("done")
+      route.onPayloadType(
+
+        when(classOf[String]) then
+          handle.using { m: Message[_] => println("Payload is String: " + m) },
+        when(classOf[Int]) then
+          handle.using { m: Message[_] => println("Payload is Int: " + m) }) -->
+        handle.using { m: Message[_] => println("Payload is: " + m.getPayload()) }
+
+    messageFlow.send("Hello")
+
+    messageFlow.send(25)
+
+    messageFlow.send(new Person)
+
+    println("done")
   }
-  
+
   @Test
   def customRouter = {
 
     val messageFlow =
-	    route.using{m:Message[String] => m.getPayload}(
-	
-	      when("Hello") then 
-	      	handle.using{m:Message[_] => println("Payload is Hello: " + m)}
-	      ,
-	      when("Bye") then
-	        handle.using{m:Message[_] => println("Payload is Bye: " + m)}
-	    ) --> 
+      route.using { m: Message[String] => m.getPayload }(
+
+        when("Hello") then
+          handle.using { m: Message[_] => println("Payload is Hello: " + m) },
+        when("Bye") then
+          handle.using { m: Message[_] => println("Payload is Bye: " + m) }) -->
         Channel("Hi") -->
-        handle.using{m:Message[_] => println("Payload is: " + m.getPayload())}
-	    
-	messageFlow.send("Hello")
-	
-	messageFlow.send("Bye")
-	
-	messageFlow.send("Hi")
-	
-	println("done")
+        handle.using { m: Message[_] => println("Payload is: " + m.getPayload()) }
+
+    messageFlow.send("Hello")
+
+    messageFlow.send("Bye")
+
+    messageFlow.send("Hi")
+
+    println("done")
   }
 
   //@Test
@@ -302,16 +304,16 @@ class DSLUsageDemo {
         }
       }
 
-    val httpFlow = 
-            enrich.header("company" -> {name:String => tickerService.sendAndReceive[String](name)}) -->
-    		http.GET[String] { m: Message[String] => "http://www.google.com/finance/info?q=" + m.getPayload()} -->
-    		handle.using{quotes:Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes)}
-    		
+    val httpFlow =
+      enrich.header("company" -> { name: String => tickerService.sendAndReceive[String](name) }) -->
+        http.GET[String] { m: Message[String] => "http://www.google.com/finance/info?q=" + m.getPayload() } -->
+        handle.using { quotes: Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes) }
+
     httpFlow.send("vmw")
-     
+
     println("done")
   }
-  
+
   //@Test
   def httpOutboundWithStringUrl = {
 
@@ -324,57 +326,59 @@ class DSLUsageDemo {
         }
       }
 
-    val httpFlow = 
-    		http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("Oracle")) -->
-    		handle.using{quotes:Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes)}
-    		
+    val httpFlow =
+      http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("Oracle")) -->
+        handle.using { quotes: Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes) }
+
     httpFlow.send("static")
-    
+
     println("done")
   }
-  
+
   //@Test
   def httpOutboundWithPOSTthenGET = {
 
-    val httpFlow = 
-    		http.POST[String]("http://posttestserver.com/post.php") -->
-            transform.using{response:String => println(response) // poor man transformer to extract URL from which the POST results are visible
-              response.substring(response.indexOf("View") + 11, response.indexOf("Post") - 1)} -->
-            http.GET[String]{url:String => url} -->
-    		handle.using{response:String => println(response)}
-    				
+    val httpFlow =
+      http.POST[String]("http://posttestserver.com/post.php") -->
+        transform.using { response: String =>
+          println(response) // poor man transformer to extract URL from which the POST results are visible
+          response.substring(response.indexOf("View") + 11, response.indexOf("Post") - 1)
+        } -->
+        http.GET[String] { url: String => url } -->
+        handle.using { response: String => println(response) }
+
     httpFlow.send("Spring Integration")
-    
+
     println("done")
   }
-  
+
   //@Test
-  def jmsInboundGateway  = {
+  def jmsInboundGateway = {
     val connectionFactory = JmsDslTestUtils.localConnectionFactory
-    
-    val flow = 
+
+    val flow =
       jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
-      handle.using{m:Message[_] => println("logging existing message and passing through " + m); m} -->
-      transform.using{value:String => value.toUpperCase()}
-    
-      println()
-      flow.start  
-    
+        handle.using { m: Message[_] => println("logging existing message and passing through " + m); m } -->
+        transform.using { value: String => value.toUpperCase() }
+
+    println()
+    flow.start
+
     val jmsTemplate = new JmsTemplate(connectionFactory);
     val request = new org.apache.activemq.command.ActiveMQQueue("myQueue")
     val reply = new org.apache.activemq.command.ActiveMQQueue("myReply")
     jmsTemplate.send(request, new MessageCreator {
-		def  createMessage(session:Session) = {
-			val message = session.createTextMessage();
-			message.setText("Hello from JMS");
-			message.setJMSReplyTo(reply);
-			message;
-		}
-	});
-    
+      def createMessage(session: Session) = {
+        val message = session.createTextMessage();
+        message.setText("Hello from JMS");
+        message.setJMSReplyTo(reply);
+        message;
+      }
+    });
+
     val replyMessage = jmsTemplate.receive(reply);
     println("Reply Message: " + replyMessage.asInstanceOf[TextMessage].getText())
-   
+
     flow.stop
     println("done")
   }

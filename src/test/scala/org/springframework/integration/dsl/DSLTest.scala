@@ -3,6 +3,7 @@ package org.springframework.integration.dsl
 import org.junit.Assert
 import org.junit.Test
 import org.springframework.integration.dsl.utils.DslUtils
+import scala.collection.immutable.WrappedString
 
 class DSLTest {
 
@@ -14,17 +15,17 @@ class DSLTest {
   @Test
   def validateCompositionTypesWithDsl = {
 
-    val messageFlowA =
+    val messageFlowA =   
       handle.using("messageFlowA-1") --> 
       Channel("messageFlowA-2") -->
-      transform.using("messageFlowA-3")
+      transform.using{s:String => s}.where(name="transformerA")
       
     println(DslUtils.toProductList(messageFlowA))
 
     val messageFlowB =
-      filter.using("messageFlowB-1") -->
+      filter.using{s:Boolean => s}.where(name="filterB") -->
         PubSubChannel("messageFlowB-2") -->
-        transform.using("messageFlowB-3")
+        transform.using{s:String => s}.where(name="transformerB")
         
     println(DslUtils.toProductList(messageFlowB))
 
@@ -40,11 +41,11 @@ class DSLTest {
 
     Assert.assertEquals(6, targetList.size)
 
-    Assert.assertEquals("messageFlowA-1", targetList(0).asInstanceOf[ServiceActivator].target)
+    Assert.assertEquals(new WrappedString("messageFlowA-1"), targetList(0).asInstanceOf[ServiceActivator].target)
     Assert.assertEquals("messageFlowA-2", targetList(1).asInstanceOf[Channel].name)
-    Assert.assertEquals("messageFlowA-3", targetList(2).asInstanceOf[Transformer].target)
-    Assert.assertEquals("messageFlowB-1", targetList(3).asInstanceOf[MessageFilter].target)
+    Assert.assertEquals("transformerA", targetList(2).asInstanceOf[Transformer].name)
+    Assert.assertEquals("filterB", targetList(3).asInstanceOf[MessageFilter].name)
     Assert.assertEquals("messageFlowB-2", targetList(4).asInstanceOf[PubSubChannel].name)
-    Assert.assertEquals("messageFlowB-3", targetList(5).asInstanceOf[Transformer].target)
+    Assert.assertEquals("transformerB", targetList(5).asInstanceOf[Transformer].name)
   }
 }

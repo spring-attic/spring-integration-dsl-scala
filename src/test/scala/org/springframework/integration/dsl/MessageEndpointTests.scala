@@ -39,16 +39,6 @@ class MessageEndpointTests {
 
     handle using{s:String => s} where(name = "myService")
 
-    // with SpEL
-    handle.using("'foo'")
-
-    handle using("'foo'")
-
-    handle.using("'foo'").where(name = "myService")
-
-    handle.using("'foo'") where(name = "myService")
-
-    handle using("'foo'") where(name = "myService")
 
     val serviceActivator = handle.using{s:String => s}.where(name = "aService")
 
@@ -81,18 +71,6 @@ class MessageEndpointTests {
 
     transform using{s:String => s} where(name = "myTransformer")
 
-    // with SpEL
-    // with SpEL
-    transform.using("'foo'")
-
-    transform using("'foo'")
-
-    transform.using("'foo'").where(name = "myTransformer")
-
-    transform.using("'foo'") where(name = "myTransformer")
-
-    transform using("'foo'") where(name = "myTransformer")
-
     val transformer = transform.using{s:String => s}.where(name = "aTransformer")
 
     Assert.assertNull(transformer.parentComposition)
@@ -123,17 +101,6 @@ class MessageEndpointTests {
     filter.using{s:String => 3 < 4} where(name = "myFilter")
 
     filter using{s:String => 3 < 4} where(name = "myFilter")
-
-    // with SpEL
-    filter.using("'foo'.equals('bar')")
-
-    filter using("'foo'.equals('bar')")
-
-    filter.using("'foo'.equals('bar')").where(name = "myFilter")
-
-    filter.using("'foo'.equals('bar')") where(name = "myFilter")
-
-    filter using("'foo'.equals('bar')") where(name = "myFilter")
 
     val aFilter = filter.using{s:String => 3 < 4}.where(name = "aFilter")
 
@@ -168,17 +135,6 @@ class MessageEndpointTests {
     split.using{s:String => List(1, 2, 3)} where(name = "mySplitter")
 
     split using{s:String => List(1, 2, 3)} where(name = "mySplitter", applySequence = false)
-
-    // with SpEL
-    split.using("1, 2, 3")
-
-    split using("1, 2, 3")
-
-    split.using("1, 2, 3").where(name = "mySplitter")
-
-    split.using("1, 2, 3") where(name = "mySplitter")
-
-    split using("1, 2, 3") where(name = "mySplitter")
 
     val splitter = split.using{s:String => List(1, 2, 3)}.where(name = "aSplitter")
 
