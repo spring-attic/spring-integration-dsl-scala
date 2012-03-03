@@ -28,7 +28,6 @@ class MessageEndpointTests {
   @Test
   def validServiceActivatorConfigurationSyntax{
 
-    // with Function
     handle.using{s:String => s}
 
     handle using {s:String => s}
@@ -57,7 +56,7 @@ class MessageEndpointTests {
 
   @Test
   def validTransformerConfigurationSyntax{
-    // with Function
+    
     transform.using{s:String => s}
 
     // the below is invalid (will throw compilation error) since transformer must return non-null
@@ -88,7 +87,7 @@ class MessageEndpointTests {
 
   @Test
   def validFilterConfigurationSyntax{
-    // with Function
+   
     filter.using{s:String => 3 < 4}
 
     // the below is invalid (will throw compilation error) since filter function must return boolean
@@ -119,11 +118,10 @@ class MessageEndpointTests {
 
   @Test
   def validSplitterConfigurationSyntax{
-    // with Function
+ 
     split.using{s:String => List(1, 2, 3)}
 
     split.using{s:String => List("1", "2", "3")}
-
 
 //    // the below is invalid (will throw compilation error) since splitter function must return List[_]
 //    //split.using{s:String => println(s)}
@@ -149,71 +147,5 @@ class MessageEndpointTests {
     Assert.assertNotNull(anotherSplitter.parentComposition)
     Assert.assertEquals("bSplitter", anotherSplitter.parentComposition.target.asInstanceOf[MessageSplitter].name)
     Assert.assertEquals("cSplitter", anotherSplitter.target.asInstanceOf[MessageSplitter].name)
-  }
-
-  @Test
-  def validAggregatorConfigurationSyntax{
-
-    aggregate()
-    
-    aggregate().where(name = "myAggregator")
-
-    aggregate() where(name = "myAggregator")
-
-    aggregate.where(name = "myAggregator")
-
-    aggregate  where(name = "myAggregator")
-
-    aggregate.on("foo")  // header
-
-    aggregate on("foo")
-
-    aggregate.on("foo").where(name = "myAggregator", keepReleasedMessages = true)
-
-    aggregate.on("foo") where(name = "myAggregator", keepReleasedMessages = true)
-
-    aggregate.on("foo").until{l:List[_] => l.size > 3}
-
-    aggregate on("foo") until{l:List[_] => l.size > 3}
-
-    aggregate.on{m:Message[_] => m.getHeaders.get("myCorrelationId")}.until{l:List[_] => l.size > 3}
-
-    aggregate on{m:Message[_] => m.getHeaders.get("myCorrelationId")} until{l:List[_] => l.size > 3}
-
-    aggregate.until{l:List[_] => l.size > 3}
-
-    aggregate  until{l:List[_] => l.size > 3}
-
-    // few more coding styles for complex cases
-    aggregate.
-      on{m:Message[_] => m.getHeaders.get("myCorrelationId")}.
-      until{l:List[_] => l.size > 3}.
-      where(name = "myAggregator", keepReleasedMessages = true)
-
-    aggregate on{
-      m:Message[_] => m.getHeaders.get("myCorrelationId")
-    } until {
-      l:List[_] => l.size > 3
-    } where(name = "myAggregator", keepReleasedMessages = true)
-
-    aggregate.
-      until{l:List[_] => l.size > 3}.
-      on{m:Message[_] => m.getHeaders.get("myCorrelationId")}.
-      where(name = "myAggregator", keepReleasedMessages = true)
-
-    aggregate until{
-      l:List[_] => l.size > 3
-    } on {
-      m:Message[_] => m.getHeaders.get("myCorrelationId")
-    } where(name = "myAggregator", keepReleasedMessages = true)
-
-    //the below is invalid (will throw compilation error) since releasingWhen function must return Boolean
-    // aggregate.releasingWhen{l:List[_] => l}
-
-    aggregate.until{l:List[_] => l.size > 3}
-    
-    aggregate.until{l:List[_] => l.size > 3}.where(name = "myAggregator", keepReleasedMessages = true)
-
-    aggregate until{l:List[_] => l.size > 3} where(name = "myAggregator", keepReleasedMessages = true)
   }
 }

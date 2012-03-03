@@ -23,90 +23,6 @@ import org.springframework.util.StringUtils
 /**
  * @author Oleg Zhurakousky
  */
-
-/**
- * SERVICE ACTIVATOR
- */
-object handle {
-  
-  def using(function:Function1[_,_]) = new SendingEndpointComposition(null, new ServiceActivator(target = function)) {
-    def where(name:String)= {
-      require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new ServiceActivator(name = name, target = function))
-    }
-  }
-  
-}
-
-
-
-/**
- * TRANSFORMER
- */
-object transform {
-
-  def using(function:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def where(name:String) = { 
-      require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new Transformer(name = name, target = function))
-    }
-  }
-}
-
-/**
- * FILTER
- */
-object filter {
-
-  def using(function:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
-    def where(name:String  = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) = {
-      new SendingEndpointComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
-    }
-  }
-}
-
-
-/**
- * ENRICHER (payload, header)
- */
-object enrich {
-  
-  def apply(function:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = function)) {
-    def where(name:String) = {
-      require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new Enricher(name = name, target = function))
-    }
-  }
-  
-  def headers(headersMap:(Tuple2[String, AnyRef])*) = new SendingEndpointComposition(null, new Enricher(target = headersMap)) {
-    def where(name:String) = {
-      require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new Enricher(name = name, target = headersMap))
-    }
-  }
- 
-  def header(headerMap:Tuple2[String, AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = headerMap)) {
-    def where(name:String) = {
-      require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new Enricher(name = name, target = headerMap))
-    }
-  }
-}
-
-/**
- * SPLITTER
- */
-object split {
-
-  def using(function:Function1[_,Iterable[Any]]) = new SendingEndpointComposition(null, new MessageSplitter(target=function)) {
-    def where(name:String = "$split_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
-      new SendingEndpointComposition(null, new MessageSplitter(name = name, target = function, applySequence = applySequence))
-  }
-}
-
-/**
-* AGGREGATOR
-*/
 object aggregate {
   /**
    * 
@@ -127,6 +43,7 @@ object aggregate {
    * 
    */
   def on(correlationFunction:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new MessageAggregator())  {
+    throw new UnsupportedOperationException("Currently this DSL element is not supported. Support will be added in version 1.0.0.M2")
     def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
@@ -150,24 +67,12 @@ object aggregate {
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                           expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
-
-    def until(releaseExpression:String) = new SendingEndpointComposition(null, new MessageAggregator())  {
-      def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-              keepReleasedMessages:Boolean = false,
-              messageStore:MessageStore = new SimpleMessageStore,
-              sendPartialResultsOnExpiry:Boolean = true,
-              expireGroupsUponCompletion:Boolean = false) =
-        new SendingEndpointComposition(null, new MessageAggregator(name = name,
-                                                          keepReleasedMessages = keepReleasedMessages,
-                                                          messageStore = messageStore,
-                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
-    }
   }
   /**
    * 
    */
   def on(correlationKey:AnyRef) = new SendingEndpointComposition(null, new MessageAggregator())  {
+    throw new UnsupportedOperationException("Currently this DSL element is not supported. Support will be added in version 1.0.0.M2")
     def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
@@ -191,55 +96,17 @@ object aggregate {
                                                           sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
                                                            expireGroupsUponCompletion = expireGroupsUponCompletion))
     }
-
-    def until(releaseExpression:String) = new SendingEndpointComposition(null, new MessageAggregator())  {
-      def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-              keepReleasedMessages:Boolean = false,
-              messageStore:MessageStore = new SimpleMessageStore,
-              sendPartialResultsOnExpiry:Boolean = true,
-              expireGroupsUponCompletion:Boolean = false) =
-        new SendingEndpointComposition(null, new MessageAggregator(name = name,
-                                                          keepReleasedMessages = keepReleasedMessages,
-                                                          messageStore = messageStore,
-                                                          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-                                                          expireGroupsUponCompletion = expireGroupsUponCompletion))
-    }
   }
   /**
    *  
    */
   def until(releaseFunction:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageAggregator()) {
+    throw new UnsupportedOperationException("Currently this DSL element is not supported. Support will be added in version 1.0.0.M2")
     def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
               keepReleasedMessages:Boolean = false,
               messageStore:MessageStore = new SimpleMessageStore,
               sendPartialResultsOnExpiry:Boolean = true,
               expireGroupsUponCompletion:Boolean = false) =
-      new SendingEndpointComposition(null, new MessageAggregator(name = name,
-                                                        keepReleasedMessages = keepReleasedMessages,
-                                                        messageStore = messageStore,
-                                                        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-                                                        expireGroupsUponCompletion = expireGroupsUponCompletion))
-    
-    def on(correlationKey:AnyRef) = new SendingEndpointComposition(null, new MessageAggregator())  {
-    	def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-              keepReleasedMessages:Boolean = false,
-              messageStore:MessageStore = new SimpleMessageStore,
-              sendPartialResultsOnExpiry:Boolean = true,
-              expireGroupsUponCompletion:Boolean = false) =
-              new SendingEndpointComposition(null, new MessageAggregator(name = name,
-                                                        keepReleasedMessages = keepReleasedMessages,
-                                                        messageStore = messageStore,
-                                                        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-                                                        expireGroupsUponCompletion = expireGroupsUponCompletion))
-    }
-  }
-
-  def until(releaseExpression:String) = new SendingEndpointComposition(null, new MessageAggregator())  {
-    def where(name:String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-              keepReleasedMessages:Boolean,
-              messageStore:MessageStore,
-              sendPartialResultsOnExpiry:Boolean,
-              expireGroupsUponCompletion:Boolean) =
       new SendingEndpointComposition(null, new MessageAggregator(name = name,
                                                         keepReleasedMessages = keepReleasedMessages,
                                                         messageStore = messageStore,
@@ -272,31 +139,10 @@ object aggregate {
                                                       expireGroupsUponCompletion = expireGroupsUponCompletion))
 }
 
-private[dsl] class ServiceActivator(name:String = "$sa_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
-            extends SimpleEndpoint(name, target)
-
-private[dsl] class MessagingBridge(name:String = "$br_" + UUID.randomUUID().toString.substring(0, 8))
-            extends SimpleEndpoint(name, null)
-
-private[dsl] class Enricher(name:String = "$enr_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
-            extends SimpleEndpoint(name, target)
-
-private[dsl] class Transformer(name:String = "$xfmr_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
-            extends SimpleEndpoint(name, target)
-
-private[dsl] class MessageFilter(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val exceptionOnRejection:Boolean = false)
-            extends SimpleEndpoint(name, target)
-
-private[dsl] class MessageSplitter(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val applySequence:Boolean = false)
-            extends SimpleEndpoint(name, target)
-
 private[dsl] class MessageAggregator(name:String = "$ag_" + UUID.randomUUID().toString.substring(0, 8),
                                           val keepReleasedMessages:Boolean = true,
                                           val messageStore:MessageStore = new SimpleMessageStore,
                                           val sendPartialResultsOnExpiry:Boolean = false,
                                           val expireGroupsUponCompletion:Boolean = false) extends IntegrationComponent(name)
 
-private[dsl] abstract class SimpleEndpoint(name:String, val target:Any = null) extends IntegrationComponent(name) {
-  override def toString = name
-}
 
