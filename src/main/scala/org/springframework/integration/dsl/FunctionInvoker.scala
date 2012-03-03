@@ -23,100 +23,116 @@ import org.springframework.util.ReflectionUtils
 /**
  * @author Oleg Zhurakousky
  */
-private final class FunctionInvoker(val f: Function[_, _], endpoint: IntegrationComponent) {
+private final class FunctionInvoker(val f: Function[_, _], val endpoint: IntegrationComponent) {
   private val logger = LogFactory.getLog(this.getClass());
+  private val APPLY_METHOD = "apply"
 
-  var methodName: String = ""
-
-  val messageMethod = ReflectionUtils.findMethod(f.getClass(), "apply", classOf[Message[_]])
-  val method = if (messageMethod != null) messageMethod else ReflectionUtils.findMethod(f.getClass(), "apply", classOf[Object])
-
-  require(method != null, "Failed to find apply(..) method on the Function: " + f)
-  
-  val returnType = method.getReturnType()
-  val inputParameter = method.getParameterTypes()(0)
-
-  if (logger.isDebugEnabled) logger.debug("Selecting method: " + method)
  
-  if (returnType.isAssignableFrom(Void.TYPE) && inputParameter.isAssignableFrom(classOf[Message[_]])) {
-    methodName = "sendMessage"
-  } else if (returnType.isAssignableFrom(Void.TYPE) && !classOf[Message[_]].isAssignableFrom(inputParameter)) {
-    methodName = "sendPayload"
-  } else if (classOf[Message[_]].isAssignableFrom(returnType) && classOf[Message[_]].isAssignableFrom(inputParameter)) {
-    methodName = "sendMessageAndReceiveMessage"
-  } else if (!classOf[Message[_]].isAssignableFrom(returnType) && classOf[Message[_]].isAssignableFrom(inputParameter)) {
-    methodName = "sendMessageAndReceivePayload"
-  } else if (classOf[Message[_]].isAssignableFrom(returnType) && !classOf[Message[_]].isAssignableFrom(inputParameter)) {
-    methodName = "sendPayloadAndReceiveMessage"
-  } else if (!classOf[Message[_]].isAssignableFrom(returnType) && !classOf[Message[_]].isAssignableFrom(inputParameter)) {
-    methodName = "sendPayloadAndReceivePayload"
+  val applyMethod = this.findPropperApplyMethod
+
+  require(applyMethod != null, "Failed to find " + APPLY_METHOD + "(..) method on the Function: " + f)
+  
+  val methodName = this.determineApplyWrapperName
+
+  /**
+   *
+   */
+  def sendPayload(payload: Object):Unit = {
+    this.invokeMethod[Object](payload)
   }
 
-  if (logger.isDebugEnabled) {
-    logger.debug("FunctionInvoker method name: " + methodName)
+  /**
+   *
+   */
+  def sendMessage(message: Message[_]):Unit = {
+    this.invokeMethod[Object](message)
   }
   
-  def sendPayload(m: Object): Unit = {
-    method.setAccessible(true)
-    method.invoke(f, m)
-  }
-  
-  def sendMessage(m: Message[_]): Unit = {
-    method.setAccessible(true)
-    method.invoke(f, m)
-  }
-  
-  def sendPayloadAndReceivePayload(m: Object): Object = {
-    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
-    method.setAccessible(true)
-    this.normalizeResult[Object](method.invoke(f, m))
-  }
-  
-  def sendPayloadAndReceiveMessage(m: Object): Message[_] = {
-    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
-    method.setAccessible(true)
-    this.normalizeResult[Message[_]](method.invoke(f, m).asInstanceOf[Message[_]])
-  }
-  
-  def sendMessageAndReceivePayload(m: Message[_]): Object = {
-    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
-    method.setAccessible(true)
-    this.normalizeResult[Object](method.invoke(f, m))
-  }
-  
-  def sendMessageAndReceiveMessage(m: Message[_]): Message[_] = {
-    var method = f.getClass.getDeclaredMethod("apply", classOf[Any])
-    method.setAccessible(true)
-
-    this.normalizeResult[Message[_]](method.invoke(f, m).asInstanceOf[Message[_]])
+  /**
+   * 
+   */
+  def sendPayloadAndReceive(payload: Object) = {
+    this.invokeMethod[Object](payload)
   }
 
+  /**
+   *
+   */
+  def sendMessageAndReceive(message: Message[_]) = {
+    this.invokeMethod[Object](message)
+  }
+  
+  /**
+   * 
+   */
+  private def findPropperApplyMethod:Method = {
+     val messageMethod = ReflectionUtils.findMethod(f.getClass(), APPLY_METHOD, classOf[Message[_]])
+     if (messageMethod != null) messageMethod else ReflectionUtils.findMethod(f.getClass(), APPLY_METHOD, classOf[Object])
+  }
+  
+  /*
+   * 
+   */
+  private def invokeMethod[T](value:Object): T = {
+    var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any])
+    method.setAccessible(true)
+    this.normalizeResult[T](method.invoke(f, value))
+  }
+
+  /*
+   * 
+   */
   private def normalizeResult[T](result: Any): T = {
-    endpoint match {
-      case splitter: MessageSplitter => {
-        result match {
-          case message: Message[_] => {
-            val payload = message.getPayload
-            if (payload.isInstanceOf[Iterable[_]]) {
-              MessageBuilder.withPayload(JavaConversions.asJavaCollection(payload.asInstanceOf[Iterable[_]])).
-                copyHeaders(message.getHeaders).build().asInstanceOf[T]
-            } else {
-              message.asInstanceOf[T]
+    val normalizedResponse =
+      endpoint match {
+        case splitter: MessageSplitter => {
+          result match {
+            case message: Message[_] => {
+              message.getPayload match {
+                case it: Iterable[_] =>
+                  MessageBuilder.withPayload(JavaConversions.asJavaCollection(it)).
+                    copyHeaders(message.getHeaders).build()
+                case _ => message
+              }
             }
-          }
-          case _ => {
-            if (result.isInstanceOf[Iterable[_]]) {
-              JavaConversions.asJavaCollection(result.asInstanceOf[Iterable[_]]).asInstanceOf[T]
-            } else {
-              result.asInstanceOf[T]
-            }
+            case it: Iterable[_] =>
+              JavaConversions.asJavaCollection(it)
+            case _ =>
+              result
           }
         }
+        case _ =>
+          result
       }
-      case _ => {
-        result.asInstanceOf[T]
-      }
-    }
+    normalizedResponse.asInstanceOf[T]
+  }
 
+  /*
+   * 
+   */
+  private def determineApplyWrapperName:String = {
+
+    val returnType = applyMethod.getReturnType()
+    val inputParameter = applyMethod.getParameterTypes()(0)
+
+    if (logger.isDebugEnabled) logger.debug("Selecting method: " + applyMethod)
+    
+    val methodName = 
+      if (Void.TYPE.isAssignableFrom(returnType)){
+        if (classOf[Message[_]].isAssignableFrom(inputParameter))
+          "sendMessage"
+        else 
+          "sendPayload"
+      }
+      else {
+        if (classOf[Message[_]].isAssignableFrom(inputParameter))
+          "sendMessageAndReceive"
+        else 
+          "sendPayloadAndReceive"
+      }
+   
+    if (logger.isDebugEnabled) logger.debug("FunctionInvoker method name: " + methodName)
+    
+    methodName
   }
 }
