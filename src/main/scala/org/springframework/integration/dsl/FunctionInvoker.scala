@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 package org.springframework.integration.dsl
-import org.springframework.integration.support.MessageBuilder
-import scala.collection.JavaConversions
 import java.lang.reflect.Method
-import org.springframework.integration.Message
+
+import scala.collection.mutable.ListBuffer
+import scala.collection.JavaConversions
+
 import org.apache.commons.logging.LogFactory
-import org.springframework.util.ReflectionUtils
+import org.springframework.integration.support.MessageBuilder
+import org.springframework.integration.Message
 /**
  * @author Oleg Zhurakousky
  */
@@ -27,32 +29,32 @@ private final class FunctionInvoker(val f: Function[_, _], val endpoint: Integra
   private val logger = LogFactory.getLog(this.getClass());
   private val APPLY_METHOD = "apply"
 
- 
   val applyMethod = this.findPropperApplyMethod
 
   require(applyMethod != null, "Failed to find " + APPLY_METHOD + "(..) method on the Function: " + f)
-  
+
   val methodName = this.determineApplyWrapperName
 
   /**
    *
    */
-  def sendPayload(payload: Object):Unit = {
+  def sendPayload(payload: Object): Unit = {
     this.invokeMethod[Object](payload)
   }
 
   /**
    *
    */
-  def sendMessage(message: Message[_]):Unit = {
+  def sendMessage(message: Message[_]): Unit = {
     this.invokeMethod[Object](message)
   }
-  
+
   /**
-   * 
+   *
    */
   def sendPayloadAndReceive(payload: Object) = {
-    this.invokeMethod[Object](payload)
+    val result = this.invokeMethod[Object](payload)
+    result
   }
 
   /**
@@ -61,19 +63,38 @@ private final class FunctionInvoker(val f: Function[_, _], val endpoint: Integra
   def sendMessageAndReceive(message: Message[_]) = {
     this.invokeMethod[Object](message)
   }
-  
+
   /**
-   * 
+   *
    */
-  private def findPropperApplyMethod:Method = {
-     val messageMethod = ReflectionUtils.findMethod(f.getClass(), APPLY_METHOD, classOf[Message[_]])
-     if (messageMethod != null) messageMethod else ReflectionUtils.findMethod(f.getClass(), APPLY_METHOD, classOf[Object])
+  private def findPropperApplyMethod: Method = {
+    // TODO Make it more Scala-esque (looks like java)
+    
+    val methodBuffer = new ListBuffer[Method]
+
+    val methods = f.getClass().getDeclaredMethods()
+    
+    for (method <- methods)
+      if (method.getName == APPLY_METHOD) methodBuffer += method
+
+    val applyMethods = methodBuffer.toList
+
+    val messageMethod =
+      if (applyMethods.size == 1) 
+        applyMethods(0)
+      else if (applyMethods(0).getReturnType().isAssignableFrom(classOf[Any]) &&
+        applyMethods(0).getParameterTypes()(0).isAssignableFrom(classOf[Any])) 
+        applyMethods(1)
+      else 
+        applyMethods(0)
+    
+    messageMethod
   }
-  
+
   /*
    * 
    */
-  private def invokeMethod[T](value:Object): T = {
+  private def invokeMethod[T](value: Object): T = {
     var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any])
     method.setAccessible(true)
     this.normalizeResult[T](method.invoke(f, value))
@@ -110,29 +131,28 @@ private final class FunctionInvoker(val f: Function[_, _], val endpoint: Integra
   /*
    * 
    */
-  private def determineApplyWrapperName:String = {
+  private def determineApplyWrapperName: String = {
 
     val returnType = applyMethod.getReturnType()
     val inputParameter = applyMethod.getParameterTypes()(0)
 
     if (logger.isDebugEnabled) logger.debug("Selecting method: " + applyMethod)
-    
-    val methodName = 
-      if (Void.TYPE.isAssignableFrom(returnType)){
+
+    val methodName =
+      if (Void.TYPE.isAssignableFrom(returnType)) {
         if (classOf[Message[_]].isAssignableFrom(inputParameter))
           "sendMessage"
-        else 
+        else
           "sendPayload"
-      }
-      else {
+      } else {
         if (classOf[Message[_]].isAssignableFrom(inputParameter))
           "sendMessageAndReceive"
-        else 
+        else
           "sendPayloadAndReceive"
       }
-   
+
     if (logger.isDebugEnabled) logger.debug("FunctionInvoker method name: " + methodName)
-    
+
     methodName
   }
 }

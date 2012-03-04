@@ -19,6 +19,7 @@ import org.junit.Test
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.springframework.integration.store.SimpleMessageStore
 import java.util.concurrent.Executors
+import org.springframework.integration.Message
 
 /**
  * @author Oleg Zhurakousky
@@ -26,40 +27,6 @@ import java.util.concurrent.Executors
 
 class MessageChannelTests {
  
-  @Test
-  def validChannelConfigurationSyntax{
-
-    // shoudl simply compile
-    
-    Channel("myChannel")
-     // Queue Channel
-    Channel("myChannel").withQueue
-
-    Channel("myChannel").withQueue()
-
-    Channel("myChannel") withQueue
-
-    Channel("myChannel") withQueue()
-
-    Channel("myChannel") withQueue(capacity = 2)
-
-    Channel("myChannel") withQueue(capacity = 2, messageStore = new SimpleMessageStore)
-
-    Channel("myChannel") withQueue(messageStore = new SimpleMessageStore)
-
-    Channel("myChannel") withQueue(messageStore = new SimpleMessageStore, capacity = 2)
-
-    //  Direct and Executable Channel
-    Channel("myChannel").withDispatcher(failover = false)
-
-    Channel("myChannel") withDispatcher(failover = false)
-
-    Channel("myChannel") withDispatcher(failover = false, loadBalancer = "round-robin", taskExecutor = new SimpleAsyncTaskExecutor)
-
-    Channel("myChannel") withDispatcher(taskExecutor = new SimpleAsyncTaskExecutor, failover = false)
-  
-  }
-  
   @Test
   def validateDirectAndExecutorChannelConfiguration {
     var directGeneratedName = Channel()
@@ -150,6 +117,15 @@ class MessageChannelTests {
     Assert.assertEquals("channelB", messageBridgeComposition.target.asInstanceOf[Channel].name)
     Assert.assertEquals("channelA", messageBridgeComposition.parentComposition.target.asInstanceOf[Channel].name)
     Assert.assertNull(messageBridgeComposition.parentComposition.parentComposition)
+  }
+  
+  
+  @Test
+  def validateMessagingBridge = {
+     val flowWithMessageBridge = 
+       Channel("A") --> Channel("B") --> handle.using{m:Message[_] => m}
+       
+     Assert.assertEquals("hello", flowWithMessageBridge.sendAndReceive[String]("hello"))
   }
 
 }

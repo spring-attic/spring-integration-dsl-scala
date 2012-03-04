@@ -140,12 +140,16 @@ private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegr
     val messageToSend: Message[_] =
       message match {
         case msg: Message[_] => {
-          if (!CollectionUtils.isEmpty(javaHeaders)) MessageBuilder.fromMessage(msg).copyHeadersIfAbsent(javaHeaders).build()
-          else msg
+          if (!CollectionUtils.isEmpty(javaHeaders)) 
+            MessageBuilder.fromMessage(msg).copyHeadersIfAbsent(javaHeaders).build()
+          else 
+            msg
         }
         case _ => {
-          if (!CollectionUtils.isEmpty(javaHeaders)) MessageBuilder.withPayload(message).copyHeaders(javaHeaders).build()
-          else MessageBuilder.withPayload(message).build()
+          if (!CollectionUtils.isEmpty(javaHeaders)) 
+            MessageBuilder.withPayload(message).copyHeaders(javaHeaders).build()
+          else 
+            MessageBuilder.withPayload(message).build()
         }
       }
     messageToSend

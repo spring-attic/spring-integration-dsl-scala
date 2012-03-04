@@ -38,20 +38,9 @@ class DSLUsageDemo {
 
     val messageFlow =
       handle.using("hello").where(name = "sa1") -->
-        handle.using { m: Message[_] => println(m) }.where(name = "myService")
+      handle.using { m: Message[_] => println(m) }.where(name = "myService")
 
     messageFlow.send(2)
-    println("done")
-  }
-
-  @Test
-  def demoSend = {
-
-    val messageFlow =
-      transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
-        handle.using { m: Message[_] => println(m) }
-
-    messageFlow.send("hello")
     println("done")
   }
 
@@ -339,7 +328,7 @@ class DSLUsageDemo {
   def httpOutboundWithPOSTthenGET = {
 
     val httpFlow =
-      http.POST[String]("http://posttestserver.com/post.php") -->
+        http.POST[String]("http://posttestserver.com/post.php") -->
         transform.using { response: String =>
           println(response) // poor man transformer to extract URL from which the POST results are visible
           response.substring(response.indexOf("View") + 11, response.indexOf("Post") - 1)
@@ -352,16 +341,15 @@ class DSLUsageDemo {
     println("done")
   }
 
-  //@Test
+  @Test
   def jmsInboundGateway = {
     val connectionFactory = JmsDslTestUtils.localConnectionFactory
 
     val flow =
       jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
-        handle.using { m: Message[_] => println("logging existing message and passing through " + m); m } -->
-        transform.using { value: String => value.toUpperCase() }
+      handle.using { m: Message[_] => println("logging existing message and passing through " + m); m } -->
+      transform.using { value: String => value.toUpperCase() }
 
-    println()
     flow.start
 
     val jmsTemplate = new JmsTemplate(connectionFactory);

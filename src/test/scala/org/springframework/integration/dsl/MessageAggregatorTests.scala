@@ -40,14 +40,15 @@ class MessageAggregatorTests {
     Assert.assertNotNull(aggr.messageStore)
   }
   
+  // commented syntax is dues to be implemented in 1.0.0.M2
   @Test
   def validateAggregatorConfiguration(){
 
-//    aggregate.where(name = "")
+    aggregate.where(name = "myAggregator")
 //    aggregate.andExpire.where{name=""}
 //    aggregate.andExpire.andSendPartialResults.where{name=""}
 //    aggregate.andKeepReleasedMessages.where(name = "")
-//    
+    
 //    aggregate.on{""}
 //    aggregate.on{""}.where(name = "")
 //    aggregate.on{""}.andExpire
@@ -56,7 +57,7 @@ class MessageAggregatorTests {
 //    aggregate.on{""}.andExpire.andSendPartialResults.where(name = "")
 //    aggregate.on{""}.andKeepReleasedMessages
 //    aggregate.on{""}.andKeepReleasedMessages.where(name = "")
-//    
+    
 //    aggregate.on{""}.until{""}
 //    aggregate.on{""}.until{""}.where(name = "")
 //    aggregate.on{""}.until{""}.andExpire
@@ -66,8 +67,8 @@ class MessageAggregatorTests {
 //    aggregate.on{""}.until{""}.andKeepReleasedMessages
 //    aggregate.on{""}.until{""}.andKeepReleasedMessages.where(name = "")
 //    
-//    aggregate.until{""}
-//    aggregate.until{""}.where(name = "")
+//    aggregate.until{s:String => s != "foo"}
+//    aggregate.until{s:String => s != "foo"}.where(name = "myAggregator")
 //    aggregate.until{""}.andExpire
 //    aggregate.until{""}.andExpire.where(name = "")
 //    aggregate.until{""}.andExpire.andSendPartialResults
