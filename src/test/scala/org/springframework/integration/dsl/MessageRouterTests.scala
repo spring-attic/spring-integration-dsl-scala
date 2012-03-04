@@ -21,9 +21,7 @@ import org.springframework.core.task.SimpleAsyncTaskExecutor
 
 /**
  * @author Oleg Zhurakousky
- * Date: 1/18/12
  */
-
 class MessageRouterTests {
 
   @Test

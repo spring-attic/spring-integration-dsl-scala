@@ -18,12 +18,9 @@ import java.util.UUID
 import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.util.StringUtils
 
-
 /**
  * @author Oleg Zhurakousky
- * Date: 1/18/12
  */
-
 object route {
 
   def onPayloadType(conditionCompositions:PayloadTypeCondition*) = new SendingEndpointComposition(null,  new Router()(conditionCompositions: _*)) { 

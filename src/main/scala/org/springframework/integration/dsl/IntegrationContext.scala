@@ -34,7 +34,7 @@ import org.springframework.integration.MessagingException
 /**
  * @author Oleg Zhurakousky
  */
-private[dsl] class SI(parentContext: ApplicationContext, composition: BaseIntegrationComposition) {
+private[dsl] class IntegrationContext(parentContext: ApplicationContext, composition: BaseIntegrationComposition) {
 
   private val logger = LogFactory.getLog(this.getClass());
 

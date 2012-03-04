@@ -23,11 +23,12 @@ import scala.collection.mutable.WrappedArray
 /**
  * @author Oleg Zhurakousky
  */
-private[dsl] case class BaseIntegrationComposition(private[integration] val parentComposition: BaseIntegrationComposition, private[integration] val target: IntegrationComponent) {
+private[dsl] case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIntegrationComposition, 
+                                                   private[dsl] val target: IntegrationComponent) {
 
   val logger = LogFactory.getLog(this.getClass());
 
-  private val threadLocal: ThreadLocal[SI] = new ThreadLocal[SI]
+  private val threadLocal: ThreadLocal[IntegrationContext] = new ThreadLocal[IntegrationContext]
 
   /**
    * Will produce a copy of this composition
@@ -77,15 +78,15 @@ private[dsl] case class BaseIntegrationComposition(private[integration] val pare
     }
   }
 
-  private[dsl] def getContext(): SI = {
+  private[dsl] def getContext(): IntegrationContext = {
 
     threadLocal.get() match {
-      case eipContext: SI => {
-        if (logger.isDebugEnabled) logger.debug("Retrieving existing EIP context")
+      case eipContext: IntegrationContext => {
+        if (logger.isDebugEnabled) logger.debug("Retrieving existing IntegrationContext")
         eipContext
       }
       case _ => {
-        val eipContext = new SI(null, this)
+        val eipContext = new IntegrationContext(null, this)
         threadLocal.set(eipContext)
         eipContext
       }
@@ -120,7 +121,7 @@ private[dsl] class SendingIntegrationComposition(parentComposition: BaseIntegrat
 private[dsl] class SendingEndpointComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends SendingIntegrationComposition(parentComposition, target) {
 
-  def -->[T <: BaseIntegrationComposition](a: T) = { //(implicit g: ComposableIntegrationComponent[T]) = {
+  def -->[T <: BaseIntegrationComposition](a: T) = {
     val g = new ComposableIntegrationComponent[T]
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)
     val composed = g.compose(this, a)
@@ -131,7 +132,7 @@ private[dsl] class SendingEndpointComposition(parentComposition: BaseIntegration
 class SendingChannelComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends SendingIntegrationComposition(parentComposition, target) {
 
-  def -->[T <: BaseIntegrationComposition](a: T*) = { //(implicit g: ComposableIntegrationComponent[T]) = {
+  def -->[T <: BaseIntegrationComposition](a: T*) = {
     val g = new ComposableIntegrationComponent[T]
     if (this.logger.isDebugEnabled())
       for (element <- a) this.logger.debug("Adding " + DslUtils.getStartingComposition(element).target + " to " + this.target)
@@ -160,7 +161,7 @@ class ListeningIntegrationComposition(parentComposition: BaseIntegrationComposit
 
   def stop() = this.getContext.stop
 
-  def -->[T <: BaseIntegrationComposition](a: T) = { //(implicit g: ComposableIntegrationComponent[T]) = {
+  def -->[T <: BaseIntegrationComposition](a: T) = { 
     val g = new ComposableIntegrationComponent[T]
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)
     val composed = g.compose(this, a)
