@@ -31,7 +31,7 @@ import scala.collection.immutable.WrappedString
 /**
  * @author Oleg Zhurakousky
  */
-class DSLUsageDemo {
+class DSLUsageDemoTests {
 
   @Test
   def simpleServiceWithWrappedStringAsFunction = {
@@ -281,7 +281,7 @@ class DSLUsageDemo {
     println("done")
   }
 
-  //@Test
+  @Test
   def httpOutboundWithFunctionUrl = {
 
     val tickerService =
@@ -303,7 +303,7 @@ class DSLUsageDemo {
     println("done")
   }
 
-  //@Test
+  @Test
   def httpOutboundWithStringUrl = {
 
     val tickerService =
@@ -319,12 +319,12 @@ class DSLUsageDemo {
       http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("Oracle")) -->
         handle.using { quotes: Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes) }
 
-    httpFlow.send("static")
+    httpFlow.send("don't care")
 
     println("done")
   }
 
-  //@Test
+  @Test
   def httpOutboundWithPOSTthenGET = {
 
     val httpFlow =

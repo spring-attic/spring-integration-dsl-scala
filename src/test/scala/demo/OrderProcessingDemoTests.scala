@@ -26,7 +26,7 @@ import java.util.concurrent.Executors
  * @author Oleg Zhurakousky
  *
  */
-class OrderProcessing {
+class OrderProcessingDemoTests {
   
   @Test
   def runDemo() = {

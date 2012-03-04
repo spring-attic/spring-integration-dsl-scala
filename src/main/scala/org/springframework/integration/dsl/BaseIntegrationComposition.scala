@@ -191,7 +191,6 @@ class PollableChannelIntegrationComposition(parentComposition: BaseIntegrationCo
     val merged = new BaseIntegrationComposition(this, p)
     g.composeFinal(this.asInstanceOf[SendingChannelComposition], merged, merged)
   }
-    
 }
 
 /**
@@ -238,7 +237,7 @@ private[dsl] class ComposableIntegrationComponent[T] {
  *
  */
 private[dsl] class ListOfCompositions[T](val compositions: List[BaseIntegrationComposition])
-  extends IntegrationComponent("ListOfCompositions")
+                                         extends IntegrationComponent("ListOfCompositions")
 /**
  *
  */
