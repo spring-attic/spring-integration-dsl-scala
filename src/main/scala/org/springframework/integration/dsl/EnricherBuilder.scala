@@ -86,7 +86,8 @@ private object EnricherBuilder {
     val clazz =
       try {
         Class.forName("org.springframework.integration.transformer.HeaderEnricher$MessageProcessingHeaderValueMessageProcessor")
-      } catch {
+      } 
+      catch {
         case e: ClassNotFoundException =>
           Class.forName("org.springframework.integration.transformer.HeaderEnricher$MethodInvokingHeaderValueMessageProcessor")
       }

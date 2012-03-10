@@ -25,17 +25,29 @@ import org.springframework.integration.dsl.ListOfCompositions
 object DslUtils {
 
   /**
-   * 
+   *
    */
   def toProductList[T <: BaseIntegrationComposition](integrationComposition: T): List[Any] = {
+    println(integrationComposition)
+    val productIterator =
+      for (product <- integrationComposition.productIterator if product != null) yield {
+        product match {
+          case composition: BaseIntegrationComposition => 
+            this.toProductList(composition)
+      
+          case lc: ListOfCompositions[BaseIntegrationComposition] =>
+            for (element <- lc.compositions) yield this.toProductList(element)
+           
+          case _ => 
+            List(product)
+        }
+      }
 
-    val listBuffer = new ListBuffer[Any]()
-    this.doToList(integrationComposition, listBuffer);
-    listBuffer.toList
+    productIterator.toList.flatten
   }
- /**
-  * Will return the starting BaseIntegrationComposition of this BaseIntegrationComposition
-  */
+  /**
+   * Will return the starting BaseIntegrationComposition of this BaseIntegrationComposition
+   */
   def getStartingComposition(integrationComposition: BaseIntegrationComposition): BaseIntegrationComposition = {
     if (integrationComposition.parentComposition != null) {
       getStartingComposition(integrationComposition.parentComposition)
@@ -43,44 +55,25 @@ object DslUtils {
       integrationComposition
     }
   }
-  
-  private[dsl] def injectParentComposition(rootComposition:BaseIntegrationComposition, parentComposition:BaseIntegrationComposition) = {
+
+  private[dsl] def injectParentComposition(rootComposition: BaseIntegrationComposition, parentComposition: BaseIntegrationComposition) = {
     val field = classOf[BaseIntegrationComposition].getDeclaredField("parentComposition")
     field.setAccessible(true)
     field.set(rootComposition, parentComposition)
   }
-  
-  private[dsl] def toJavaType(t:Class[_]):Class[_] = {
-    if (t.isAssignableFrom(classOf[scala.Int])) 
+
+  private[dsl] def toJavaType(t: Class[_]): Class[_] = {
+    if (t.isAssignableFrom(classOf[scala.Int]))
       classOf[java.lang.Integer]
-    else if (t.isAssignableFrom(classOf[scala.Long])) 
+    else if (t.isAssignableFrom(classOf[scala.Long]))
       classOf[java.lang.Long]
-    else if (t.isAssignableFrom(classOf[scala.Double])) 
+    else if (t.isAssignableFrom(classOf[scala.Double]))
       classOf[java.lang.Double]
-    else if (t.isAssignableFrom(classOf[scala.Short])) 
+    else if (t.isAssignableFrom(classOf[scala.Short]))
       classOf[java.lang.Short]
-    else if (t.isAssignableFrom(classOf[scala.Boolean])) 
+    else if (t.isAssignableFrom(classOf[scala.Boolean]))
       classOf[java.lang.Boolean]
-    else 
+    else
       t
   }
-
-  private def doToList(integrationComposition: BaseIntegrationComposition, lb: ListBuffer[Any]): Unit = {
-    for (p <- integrationComposition.productIterator) {
-	    p match {
-	      case c: BaseIntegrationComposition => this.doToList(c, lb)
-	
-	      case lc: ListOfCompositions[BaseIntegrationComposition] =>
-	        if (lc.compositions.size == 1) 
-	          lb += lc.compositions.elements.next.target
-	        else 
-	          for (element <- lc.compositions) lb += this.toProductList(element)
-	          
-	      case null =>     
-	        
-	      case _ => lb += p
-	    }
-    }
-  }
-
 }
