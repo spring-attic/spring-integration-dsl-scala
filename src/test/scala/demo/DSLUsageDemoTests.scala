@@ -281,7 +281,7 @@ class DSLUsageDemoTests {
     println("done")
   }
 
-  @Test
+  //@Test
   def httpOutboundWithFunctionUrl = {
 
     val tickerService =
@@ -303,7 +303,7 @@ class DSLUsageDemoTests {
     println("done")
   }
 
-  @Test
+  //@Test
   def httpOutboundWithStringUrl = {
 
     val tickerService =
@@ -324,7 +324,7 @@ class DSLUsageDemoTests {
     println("done")
   }
 
-  @Test
+  //@Test
   def httpOutboundWithPOSTthenGET = {
 
     val httpFlow =

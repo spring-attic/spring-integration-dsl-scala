@@ -125,7 +125,8 @@ private object ApplicationContextBuilder {
   /**
    *
    */
-  private def processListOfCompositions(listComp: ListOfCompositions[BaseIntegrationComposition], inputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext) {
+  private def processListOfCompositions(listComp: ListOfCompositions[BaseIntegrationComposition], inputChannel: AbstractChannel)
+                                       (implicit applicationContext: GenericApplicationContext) {
     for (comp <- listComp.compositions) {
       this.init(comp, inputChannel)
       val startingCompositionName: String = DslUtils.getStartingComposition(comp).target.name
@@ -137,7 +138,8 @@ private object ApplicationContextBuilder {
   /**
    *
    */
-  private def processInboundMessageSource(ims: InboundMessageSource, outputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext) {
+  private def processInboundMessageSource(ims: InboundMessageSource, outputChannel: AbstractChannel)
+                                         (implicit applicationContext: GenericApplicationContext) {
     ims match {
       case jmsIn: JmsInboundAdapter => {
         val handlerBuilder = JmsInboundAdapterBuilder.buildHandler(jmsIn, outputChannel.name, applicationContext)

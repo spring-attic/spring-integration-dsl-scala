@@ -135,15 +135,15 @@ class SendingChannelComposition(parentComposition: BaseIntegrationComposition, t
   def -->[T <: BaseIntegrationComposition](a: T*) = {
     val g = new ComposableIntegrationComponent[T]
     if (this.logger.isDebugEnabled())
-      for (element <- a) this.logger.debug("Adding " + DslUtils.getStartingComposition(element).target + " to " + this.target)
+      for (element <- a) 
+        this.logger.debug("Adding " + DslUtils.getStartingComposition(element).target + " to " + this.target)
 
     if (a.size == 1) {
       val composed = g.compose(this, a(0))
       g.composeFinal(this, a(0), composed)
-    } else {
-      val buffer = new ListBuffer[BaseIntegrationComposition]()
-      for (element <- a) buffer += element
-      val merged = new BaseIntegrationComposition(this, new ListOfCompositions(buffer.toList))
+    } 
+    else {
+      val merged = new BaseIntegrationComposition(this, new ListOfCompositions((for (element <- a) yield element))) 
       g.composeFinal(this, merged, merged)
     }
   }
@@ -236,7 +236,7 @@ private[dsl] class ComposableIntegrationComponent[T] {
 /**
  *
  */
-private[dsl] class ListOfCompositions[T](val compositions: List[BaseIntegrationComposition])
+private[dsl] class ListOfCompositions[T](val compositions: Iterable[BaseIntegrationComposition])
                                          extends IntegrationComponent("ListOfCompositions")
 /**
  *

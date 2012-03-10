@@ -51,31 +51,35 @@ object DslUtils {
   }
   
   private[dsl] def toJavaType(t:Class[_]):Class[_] = {
-    if (t.isAssignableFrom(classOf[scala.Int])) classOf[java.lang.Integer]
-    else if (t.isAssignableFrom(classOf[scala.Long])) classOf[java.lang.Long]
-    else if (t.isAssignableFrom(classOf[scala.Double])) classOf[java.lang.Double]
-    else if (t.isAssignableFrom(classOf[scala.Short])) classOf[java.lang.Short]
-    else if (t.isAssignableFrom(classOf[scala.Boolean])) classOf[java.lang.Boolean]
+    if (t.isAssignableFrom(classOf[scala.Int])) 
+      classOf[java.lang.Integer]
+    else if (t.isAssignableFrom(classOf[scala.Long])) 
+      classOf[java.lang.Long]
+    else if (t.isAssignableFrom(classOf[scala.Double])) 
+      classOf[java.lang.Double]
+    else if (t.isAssignableFrom(classOf[scala.Short])) 
+      classOf[java.lang.Short]
+    else if (t.isAssignableFrom(classOf[scala.Boolean])) 
+      classOf[java.lang.Boolean]
     else 
-    t
+      t
   }
 
   private def doToList(integrationComposition: BaseIntegrationComposition, lb: ListBuffer[Any]): Unit = {
     for (p <- integrationComposition.productIterator) {
-      if (p != null) {
-        p match {
-          case c: BaseIntegrationComposition => this.doToList(c, lb)
-
-          case lc: ListOfCompositions[BaseIntegrationComposition] =>
-            if (lc.compositions.size == 1) 
-              lb += lc.compositions(0).target
-            else 
-              for (element <- lc.compositions) lb += this.toProductList(element)
-              
-          case _ => lb += p
-        }
-      }
-
+	    p match {
+	      case c: BaseIntegrationComposition => this.doToList(c, lb)
+	
+	      case lc: ListOfCompositions[BaseIntegrationComposition] =>
+	        if (lc.compositions.size == 1) 
+	          lb += lc.compositions.elements.next.target
+	        else 
+	          for (element <- lc.compositions) lb += this.toProductList(element)
+	          
+	      case null =>     
+	        
+	      case _ => lb += p
+	    }
     }
   }
 
