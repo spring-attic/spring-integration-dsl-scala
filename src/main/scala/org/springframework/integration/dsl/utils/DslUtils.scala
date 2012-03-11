@@ -28,7 +28,6 @@ object DslUtils {
    *
    */
   def toProductList[T <: BaseIntegrationComposition](integrationComposition: T): List[Any] = {
-    println(integrationComposition)
     val productIterator =
       for (product <- integrationComposition.productIterator if product != null) yield {
         product match {
@@ -49,11 +48,10 @@ object DslUtils {
    * Will return the starting BaseIntegrationComposition of this BaseIntegrationComposition
    */
   def getStartingComposition(integrationComposition: BaseIntegrationComposition): BaseIntegrationComposition = {
-    if (integrationComposition.parentComposition != null) {
-      getStartingComposition(integrationComposition.parentComposition)
-    } else {
+    if (integrationComposition.parentComposition != null) 
+      this.getStartingComposition(integrationComposition.parentComposition)
+    else 
       integrationComposition
-    }
   }
 
   private[dsl] def injectParentComposition(rootComposition: BaseIntegrationComposition, parentComposition: BaseIntegrationComposition) = {
@@ -62,6 +60,7 @@ object DslUtils {
     field.set(rootComposition, parentComposition)
   }
 
+  //TODO - there must be something in Scala already to do that
   private[dsl] def toJavaType(t: Class[_]): Class[_] = {
     if (t.isAssignableFrom(classOf[scala.Int]))
       classOf[java.lang.Integer]
