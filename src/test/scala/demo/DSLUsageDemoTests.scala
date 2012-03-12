@@ -112,7 +112,7 @@ class DSLUsageDemoTests {
           handle.using { m: Message[_] => println(m) })
 
     println(messageFlow)
-    println(DslUtils.toProductList(messageFlow))
+    println(DslUtils.toProductSeq(messageFlow))
     messageFlow.send("hello")
     println("done")
   }

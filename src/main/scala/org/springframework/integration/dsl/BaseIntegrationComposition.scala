@@ -29,6 +29,41 @@ private[dsl] case class BaseIntegrationComposition(private[dsl] val parentCompos
   val logger = LogFactory.getLog(this.getClass());
 
   private val threadLocal: ThreadLocal[IntegrationContext] = new ThreadLocal[IntegrationContext]
+  
+  
+  def compose[T <: BaseIntegrationComposition](i: BaseIntegrationComposition, s: T): T = {
+    val mergedComposition =
+      if (s.parentComposition != null) {
+        val copyComposition = s.copy()
+        i.merge(copyComposition)
+        i.generateComposition(copyComposition.parentComposition, copyComposition)
+      } 
+      else
+        i.generateComposition(i, s)
+
+    mergedComposition.asInstanceOf[T]
+  }
+
+  def composeFinal(c: ListeningIntegrationComposition, e: BaseIntegrationComposition) =
+    new ListeningIntegrationComposition(c, e.target)
+
+  def composeFinal[T <: BaseIntegrationComposition](parent: SendingEndpointComposition, child: BaseIntegrationComposition, merged: T):T = {
+    val returnValue = child match {
+      case pch: PollableChannelIntegrationComposition =>
+        new PollableChannelIntegrationComposition(merged.parentComposition, merged.target)
+      case ch: ChannelIntegrationComposition =>
+        new ChannelIntegrationComposition(merged.parentComposition, merged.target)
+      case sch: SendingChannelComposition =>
+        new SendingChannelComposition(merged.parentComposition, merged.target)
+      case _ =>
+        new SendingEndpointComposition(merged.parentComposition, merged.target)
+    }
+    returnValue.asInstanceOf[T]
+  }
+
+  def composeFinal(parent: SendingChannelComposition, child: BaseIntegrationComposition, merged: BaseIntegrationComposition) = {
+    new SendingChannelComposition(merged.parentComposition, merged.target)
+  }
 
   /**
    * Will produce a copy of this composition
@@ -71,13 +106,20 @@ private[dsl] case class BaseIntegrationComposition(private[dsl] val parentCompos
    */
   private[dsl] def generateComposition[T <: BaseIntegrationComposition](parent: T, composition: T): BaseIntegrationComposition = {
     composition.target match {
-      case ch: Channel => new ChannelIntegrationComposition(parent, composition.target)
-      case queue: PollableChannel => new PollableChannelIntegrationComposition(parent, composition.target)
-      case pubsub: PubSubChannel => new ChannelIntegrationComposition(parent, composition.target)
-      case _ => new BaseIntegrationComposition(parent, composition.target)
+      case ch: Channel => 
+        new ChannelIntegrationComposition(parent, composition.target)
+      case queue: PollableChannel => 
+        new PollableChannelIntegrationComposition(parent, composition.target)
+      case pubsub: PubSubChannel => 
+        new ChannelIntegrationComposition(parent, composition.target)
+      case _ => 
+        new BaseIntegrationComposition(parent, composition.target)
     }
   }
 
+  /**
+   * 
+   */
   private[dsl] def getContext(): IntegrationContext = {
 
     threadLocal.get() match {
@@ -86,6 +128,7 @@ private[dsl] case class BaseIntegrationComposition(private[dsl] val parentCompos
         eipContext
       }
       case _ => {
+        if (logger.isDebugEnabled) logger.debug("Creating new IntegrationContext")
         val eipContext = new IntegrationContext(null, this)
         threadLocal.set(eipContext)
         eipContext
@@ -110,7 +153,8 @@ private[dsl] class SendingIntegrationComposition(parentComposition: BaseIntegrat
   /**
    *
    */
-  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: SendingEndpointComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
+  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: SendingEndpointComposition = null)
+                              (implicit m: scala.reflect.Manifest[T]): T = {
     val context = this.getContext()
     context.sendAndReceive[T](message, timeout, headers, errorFlow)
   }
@@ -122,10 +166,9 @@ private[dsl] class SendingEndpointComposition(parentComposition: BaseIntegration
   extends SendingIntegrationComposition(parentComposition, target) {
 
   def -->[T <: BaseIntegrationComposition](a: T) = {
-    val g = new ComposableIntegrationComponent[T]
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)
-    val composed = g.compose(this, a)
-    g.composeFinal(this, a, composed)
+    val composed = this.compose(this, a)
+    this.composeFinal(this, a, composed)
   }
 }
 
@@ -133,18 +176,17 @@ class SendingChannelComposition(parentComposition: BaseIntegrationComposition, t
   extends SendingIntegrationComposition(parentComposition, target) {
 
   def -->[T <: BaseIntegrationComposition](a: T*) = {
-    val g = new ComposableIntegrationComponent[T]
     if (this.logger.isDebugEnabled())
       for (element <- a) 
         this.logger.debug("Adding " + DslUtils.getStartingComposition(element).target + " to " + this.target)
 
     if (a.size == 1) {
-      val composed = g.compose(this, a(0))
-      g.composeFinal(this, a(0), composed)
+      val composed = this.compose(this, a(0))
+      this.composeFinal(this, a(0), composed)
     } 
     else {
       val merged = new BaseIntegrationComposition(this, new ListOfCompositions((for (element <- a) yield element))) 
-      g.composeFinal(this, merged, merged)
+      this.composeFinal(this, merged, merged)
     }
   }
 }
@@ -162,10 +204,9 @@ class ListeningIntegrationComposition(parentComposition: BaseIntegrationComposit
   def stop() = this.getContext.stop
 
   def -->[T <: BaseIntegrationComposition](a: T) = { 
-    val g = new ComposableIntegrationComponent[T]
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)
-    val composed = g.compose(this, a)
-    g.composeFinal(this, composed)
+    val composed = this.compose(this, a)
+    this.composeFinal(this, composed)
   }
 
 }
@@ -187,52 +228,12 @@ class PollableChannelIntegrationComposition(parentComposition: BaseIntegrationCo
   /**
    *
    */
-  def -->(p: Poller)(implicit g: ComposableIntegrationComponent[Poller]) = {
+  def -->(p: Poller) = {
     val merged = new BaseIntegrationComposition(this, p)
-    g.composeFinal(this.asInstanceOf[SendingChannelComposition], merged, merged)
+    this.composeFinal(this.asInstanceOf[SendingChannelComposition], merged, merged)
   }
 }
 
-/**
- *
- */
-private[dsl] class ComposableIntegrationComponent[T] {
-
-  def compose[T <: BaseIntegrationComposition](i: BaseIntegrationComposition, s: T): T = {
-    val mergedComposition =
-      if (s.parentComposition != null) {
-        val copyComposition = s.copy()
-        i.merge(copyComposition)
-        i.generateComposition(copyComposition.parentComposition, copyComposition)
-      } 
-      else
-        i.generateComposition(i, s)
-
-    mergedComposition.asInstanceOf[T]
-  }
-
-  def composeFinal(c: ListeningIntegrationComposition, e: BaseIntegrationComposition) =
-    new ListeningIntegrationComposition(c, e.target)
-
-  def composeFinal[T <: BaseIntegrationComposition](parent: SendingEndpointComposition, child: BaseIntegrationComposition, merged: T) = {
-    val returnValue = child match {
-      case pch: PollableChannelIntegrationComposition =>
-        new PollableChannelIntegrationComposition(merged.parentComposition, merged.target)
-      case ch: ChannelIntegrationComposition =>
-        new ChannelIntegrationComposition(merged.parentComposition, merged.target)
-      case sch: SendingChannelComposition =>
-        new SendingChannelComposition(merged.parentComposition, merged.target)
-      case _ =>
-        new SendingEndpointComposition(merged.parentComposition, merged.target)
-    }
-    returnValue.asInstanceOf[T]
-  }
-
-  def composeFinal(parent: SendingChannelComposition, child: BaseIntegrationComposition, merged: BaseIntegrationComposition) = {
-    new SendingChannelComposition(merged.parentComposition, merged.target)
-  }
-
-}
 /**
  *
  */

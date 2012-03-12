@@ -19,6 +19,7 @@ import scala.collection.mutable.WrappedArray
 import java.lang.Long
 import org.springframework.integration.dsl.BaseIntegrationComposition
 import org.springframework.integration.dsl.ListOfCompositions
+import scala.collection.mutable.ArrayBuffer
 /**
  * @author Oleg Zhurakousky
  */
@@ -27,16 +28,17 @@ object DslUtils {
   /**
    *
    */
-  def toProductList[T <: BaseIntegrationComposition](integrationComposition: T): List[Any] = {
+  def toProductSeq[T <: BaseIntegrationComposition](integrationComposition: T): List[Any] = {
     val productIterator =
       for (product <- integrationComposition.productIterator if product != null) yield {
         product match {
           case composition: BaseIntegrationComposition => 
-            this.toProductList(composition)
+            this.toProductSeq(composition)
       
-          case lc: ListOfCompositions[BaseIntegrationComposition] =>
-            for (element <- lc.compositions) yield this.toProductList(element)
-           
+          case lc: ListOfCompositions[BaseIntegrationComposition] => {
+            val result = Seq(for (element <- lc.compositions) yield this.toProductSeq(element))
+            result.toList
+          }
           case _ => 
             List(product)
         }

@@ -15,7 +15,8 @@
  */
 package org.springframework.integration.dsl
 
-import org.junit.Assert
+import org.junit._
+import org.junit.Assert._
 import org.junit.Test
 import org.springframework.integration.dsl.utils.DslUtils
 import scala.collection.immutable.WrappedString
@@ -33,7 +34,7 @@ class DSLBootstrapTests {
     val messageFlow =
       handle.using { m: Message[_] => println(m) }
     
-    Assert.assertTrue(messageFlow.send("hello"))
+    assertTrue(messageFlow.send("hello"))
   }
   
   @Test
@@ -42,7 +43,7 @@ class DSLBootstrapTests {
     val messageFlow =
       handle.using { m: Any => println(m) }
 
-    Assert.assertTrue(messageFlow.send("hello"))
+    assertTrue(messageFlow.send("hello"))
   }
   
   @Test
@@ -51,7 +52,7 @@ class DSLBootstrapTests {
     val messageFlow =
       handle.using { m: String => println(m) }
 
-    Assert.assertTrue(messageFlow.send("hello"))
+    assertTrue(messageFlow.send("hello"))
   }
   
   @Test
@@ -59,7 +60,7 @@ class DSLBootstrapTests {
     val messageFlow = 
       handle.using { m: Message[_] => m }
 
-    Assert.assertTrue(messageFlow.sendAndReceive("hello").isInstanceOf[Message[_]])
+    assertTrue(messageFlow.sendAndReceive("hello").isInstanceOf[Message[_]])
   }
   
   @Test
@@ -67,7 +68,7 @@ class DSLBootstrapTests {
     val messageFlow = 
       handle.using { m: Message[_] => m }
 
-    Assert.assertTrue(messageFlow.sendAndReceive[String]("hello").isInstanceOf[String])
+    assertTrue(messageFlow.sendAndReceive[String]("hello").isInstanceOf[String])
   }
   
   @Test
@@ -75,7 +76,7 @@ class DSLBootstrapTests {
     val messageFlow = 
       handle.using { m: Message[_] => m.getPayload }
 
-    Assert.assertTrue(messageFlow.sendAndReceive("hello").isInstanceOf[Message[_]])
+    assertTrue(messageFlow.sendAndReceive("hello").isInstanceOf[Message[_]])
   }
   
   @Test
@@ -83,7 +84,7 @@ class DSLBootstrapTests {
     val messageFlow = 
       handle.using { m: Message[_] => m.getPayload }
 
-    Assert.assertTrue(messageFlow.sendAndReceive[String]("hello").isInstanceOf[String])
+    assertTrue(messageFlow.sendAndReceive[String]("hello").isInstanceOf[String])
   }
   
   @Test
@@ -91,7 +92,7 @@ class DSLBootstrapTests {
     val messageFlow = 
       handle.using { m: String => new GenericMessage[String](m) }
 
-    Assert.assertTrue(messageFlow.sendAndReceive("hello").isInstanceOf[Message[_]])
+    assertTrue(messageFlow.sendAndReceive("hello").isInstanceOf[Message[_]])
   }
   
   @Test
@@ -99,7 +100,7 @@ class DSLBootstrapTests {
     val messageFlow = 
       handle.using { m: String => new GenericMessage[String](m) }
 
-    Assert.assertTrue(messageFlow.sendAndReceive[String]("hello").isInstanceOf[String])
+    assertTrue(messageFlow.sendAndReceive[String]("hello").isInstanceOf[String])
   }
   
   @Test
@@ -107,7 +108,7 @@ class DSLBootstrapTests {
     val messageFlow = 
       handle.using { m: String => m }
 
-    Assert.assertTrue(messageFlow.sendAndReceive[Message[_]]("hello").isInstanceOf[Message[_]])
+    assertTrue(messageFlow.sendAndReceive[Message[_]]("hello").isInstanceOf[Message[_]])
   }
   
   @Test
@@ -115,7 +116,7 @@ class DSLBootstrapTests {
     val messageFlow = 
       handle.using { m: String => m }
 
-    Assert.assertTrue(messageFlow.sendAndReceive[String]("hello").isInstanceOf[String])
+    assertTrue(messageFlow.sendAndReceive[String]("hello").isInstanceOf[String])
   }
   
   @Test
@@ -140,28 +141,57 @@ class DSLBootstrapTests {
         PubSubChannel("messageFlowB-2") -->
         transform.using{s:String => s}.where(name="transformerB")
         
-    Assert.assertNull(DslUtils.getStartingComposition(messageFlowB).parentComposition)
+    assertNull(DslUtils.getStartingComposition(messageFlowB).parentComposition)
    
     val messageFlowBParentBeforeMerge = messageFlowB.parentComposition
 
     val composedFlow = messageFlowA --> messageFlowB
     
     // assert that flow composition itself is not altered
-    Assert.assertNull(DslUtils.getStartingComposition(messageFlowB).parentComposition)
+    assertNull(DslUtils.getStartingComposition(messageFlowB).parentComposition)
 
     val messageFlowBParentAfterMerge = messageFlowB.parentComposition
 
-    Assert.assertEquals(messageFlowBParentBeforeMerge, messageFlowBParentAfterMerge)
+    assertEquals(messageFlowBParentBeforeMerge, messageFlowBParentAfterMerge)
 
-    val targetList = DslUtils.toProductList(composedFlow);
+    val targetList = DslUtils.toProductSeq(composedFlow);
 
-    Assert.assertEquals(6, targetList.size)
+    assertEquals(6, targetList.size)
 
-    Assert.assertEquals(new WrappedString("messageFlowA-1"), targetList(0).asInstanceOf[ServiceActivator].target)
-    Assert.assertEquals("messageFlowA-2", targetList(1).asInstanceOf[Channel].name)
-    Assert.assertEquals("transformerA", targetList(2).asInstanceOf[Transformer].name)
-    Assert.assertEquals("filterB", targetList(3).asInstanceOf[MessageFilter].name)
-    Assert.assertEquals("messageFlowB-2", targetList(4).asInstanceOf[PubSubChannel].name)
-    Assert.assertEquals("transformerB", targetList(5).asInstanceOf[Transformer].name)   
+    assertEquals(new WrappedString("messageFlowA-1"), targetList(0).asInstanceOf[ServiceActivator].target)
+    assertEquals("messageFlowA-2", targetList(1).asInstanceOf[Channel].name)
+    assertEquals("transformerA", targetList(2).asInstanceOf[Transformer].name)
+    assertEquals("filterB", targetList(3).asInstanceOf[MessageFilter].name)
+    assertEquals("messageFlowB-2", targetList(4).asInstanceOf[PubSubChannel].name)
+    assertEquals("transformerB", targetList(5).asInstanceOf[Transformer].name)   
+  }
+  
+  @Test
+  def validateFlowWithMultipleSubscribers = {
+
+    val messageFlowA =   
+      handle.using("service") --> 
+      PubSubChannel("pubSubChannel") --> (
+          {handle.using("A1") where(name = "A1")} --> 
+          {handle.using("A2") where(name = "A2")}
+          ,
+          {handle.using("B1") where(name = "B1")} --> 
+          {handle.using("B2") where(name = "B2")}
+      ) 
+      val targetList = DslUtils.toProductSeq(messageFlowA);
+      
+      assertTrue(targetList.size == 3)
+      assertEquals(new WrappedString("service"), targetList(0).asInstanceOf[ServiceActivator].target)
+      assertEquals("pubSubChannel", targetList(1).asInstanceOf[PubSubChannel].name)
+      val subscribers = targetList(2).asInstanceOf[Seq[_]]
+      
+      assertTrue(subscribers.size == 2)
+      assertTrue(subscribers(0).asInstanceOf[Seq[_]].size == 2)
+      assertEquals("A1", subscribers(0).asInstanceOf[Seq[_]](0).asInstanceOf[ServiceActivator].name)
+      assertEquals("A2", subscribers(0).asInstanceOf[Seq[_]](1).asInstanceOf[ServiceActivator].name)
+      assertTrue(subscribers(1).asInstanceOf[Seq[_]].size == 2)
+      assertEquals("B1", subscribers(1).asInstanceOf[Seq[_]](0).asInstanceOf[ServiceActivator].name)
+      assertEquals("B2", subscribers(1).asInstanceOf[Seq[_]](1).asInstanceOf[ServiceActivator].name)
+    
   }
 }

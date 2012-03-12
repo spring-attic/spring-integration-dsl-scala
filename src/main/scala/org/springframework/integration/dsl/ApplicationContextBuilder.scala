@@ -72,7 +72,7 @@ private object ApplicationContextBuilder {
     this.preProcess(applicationContext)
 
     if (this.logger.isDebugEnabled)
-      this.logger.debug("Initializing the following composition segment: " + DslUtils.toProductList(composition))
+      this.logger.debug("Initializing the following composition segment: " + DslUtils.toProductSeq(composition))
 
     this.init(composition)
 
