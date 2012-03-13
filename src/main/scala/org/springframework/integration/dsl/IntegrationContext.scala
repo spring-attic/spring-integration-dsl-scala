@@ -85,7 +85,8 @@ private[dsl] class IntegrationContext(parentContext: ApplicationContext, composi
   /**
    *
    */
-  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: SendingEndpointComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
+  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: SendingEndpointComposition = null)
+                              (implicit m: scala.reflect.Manifest[T]): T = {
     require(StringUtils.hasText(this.inputChannelName), "Can not determine Input Channel for this composition")
     val inputChannel = this.applicationContext.getBean[MessageChannel](this.inputChannelName, classOf[MessageChannel])
 

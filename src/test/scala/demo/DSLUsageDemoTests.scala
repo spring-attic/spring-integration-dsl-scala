@@ -86,7 +86,7 @@ class DSLUsageDemoTests {
         handle.using { m: Message[_] => println("Subscriber-1 - " + m) },
         transform.using { m: Message[String] => m.getPayload().toUpperCase() } -->
         handle.using { m: Message[_] => println("Subscriber-2 - " + m) })
-
+  
     messageFlow.send("hello")
     println("done")
   }

@@ -169,7 +169,7 @@ class DSLBootstrapTests {
   @Test
   def validateFlowWithMultipleSubscribers = {
 
-    val messageFlowA =   
+    val messageFlow =   
       handle.using("service") --> 
       PubSubChannel("pubSubChannel") --> (
           {handle.using("A1") where(name = "A1")} --> 
@@ -178,7 +178,7 @@ class DSLBootstrapTests {
           {handle.using("B1") where(name = "B1")} --> 
           {handle.using("B2") where(name = "B2")}
       ) 
-      val targetList = DslUtils.toProductSeq(messageFlowA);
+      val targetList = DslUtils.toProductSeq(messageFlow);
       
       assertTrue(targetList.size == 3)
       assertEquals(new WrappedString("service"), targetList(0).asInstanceOf[ServiceActivator].target)
@@ -192,6 +192,23 @@ class DSLBootstrapTests {
       assertTrue(subscribers(1).asInstanceOf[Seq[_]].size == 2)
       assertEquals("B1", subscribers(1).asInstanceOf[Seq[_]](0).asInstanceOf[ServiceActivator].name)
       assertEquals("B2", subscribers(1).asInstanceOf[Seq[_]](1).asInstanceOf[ServiceActivator].name)
-    
   }
+  
+   @Test
+  def validateFlowWithSingleMultipleSubscriberVsMultipleSubscribers = {	
+    val messageFlowLegal = 
+      PubSubChannel("direct") --> (
+        transform.using { m: Message[String] => m }
+      ) --> transform.using { m: Message[String] => m.getPayload().toUpperCase() }
+      
+    assertEquals("HELLO", messageFlowLegal.sendAndReceive[String]("hello"))
+    
+    // code below should not compile since PubSubChannel has multiple subscribers
+    // and therefore the Sequence of the subscribers can not apply a continuity operator.
+//    val messageFlowIllegal = 
+//      PubSubChannel("direct") --> (
+//        transform.using { m: Message[String] => m },
+//        transform.using { m: Message[String] => m }
+//      ) --> transform.using { m: Message[String] => m.getPayload().toUpperCase() }
+   }
 }
