@@ -6,17 +6,19 @@ organization := "org.springframework"
 
 scalaVersion := "2.9.1"
 
+resolvers += "Spring Staging Repository" at "https://repo.springsource.org/libs-staging-local"
+
 resolvers += "Spring Milestone Repository" at "http://repo.springsource.org/libs-milestone"
 
 resolvers += "Spring Snapshot Repository" at "https://repo.springsource.org/libs-snapshot"
 
 resolvers += "Spring Release Repository" at "https://repo.springsource.org/libs-release"
 
-libraryDependencies += "org.springframework.integration" % "spring-integration-core" % "2.1.0.RELEASE"
+libraryDependencies += "org.springframework.integration" % "spring-integration-core" % "2.1.1.RELEASE"
 
-libraryDependencies += "org.springframework.integration" % "spring-integration-http" % "2.1.0.RELEASE"
+libraryDependencies += "org.springframework.integration" % "spring-integration-http" % "2.1.1.RELEASE"
 
-libraryDependencies += "org.springframework.integration" % "spring-integration-jms" % "2.1.0.RELEASE"
+libraryDependencies += "org.springframework.integration" % "spring-integration-jms" % "2.1.1.RELEASE"
 
 libraryDependencies += "org.apache.geronimo.specs" % "geronimo-jms_1.1_spec" % "1.1"
 

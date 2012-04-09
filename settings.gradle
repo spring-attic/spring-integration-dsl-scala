@@ -1,1 +1,5 @@
 rootProject.name = 'spring-integration-scala'
+
+include 'spring-integration-scala-core'
+include 'spring-integration-scala-http'
+include 'spring-integration-scala-jms'
