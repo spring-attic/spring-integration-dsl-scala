@@ -26,7 +26,7 @@ import org.springframework.integration.message.GenericMessage
 /**
  * @author Oleg Zhurakousky
  */
-class DSLBootstrapTests {
+class DslBootstrapTests {
   
   @Test
   def sendAndProcessMessageNoReply = {

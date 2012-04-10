@@ -26,7 +26,7 @@ import scala.collection.immutable.WrappedString
 /**
  * @author Oleg Zhurakousky
  */
-class DSLUsageDemoTests {
+class DslUsageDemoTests {
 
   @Test
   def simpleServiceWithWrappedStringAsFunction = {
