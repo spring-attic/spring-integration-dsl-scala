@@ -87,8 +87,7 @@ private[dsl] class IntegrationContext(parentContext: ApplicationContext, composi
   /**
    *
    */
-  def sendAndReceive[T](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: SendingEndpointComposition = null)
-                              (implicit m: scala.reflect.Manifest[T]): T = {
+  def sendAndReceive[T: Manifest](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: SendingEndpointComposition = null): T = {
     require(StringUtils.hasText(this.inputChannelName), "Can not determine Input Channel for this composition")
     val inputChannel = this.applicationContext.getBean[MessageChannel](this.inputChannelName, classOf[MessageChannel])
 
@@ -109,11 +108,11 @@ private[dsl] class IntegrationContext(parentContext: ApplicationContext, composi
           throw new MessagingException(messageToSend, "Failed to send message")
 
         val replyMessage = replyChannel.receive(1000)
-        this.convertReply(replyMessage, m)
+        this.convertReply(replyMessage)
       } catch {
         case ex: Exception => {
           if (errorFlow != null) {
-            errorFlow.sendAndReceive[T](ex)
+            errorFlow.sendAndReceive(ex)
           } else throw ex
         }
       }
@@ -121,9 +120,9 @@ private[dsl] class IntegrationContext(parentContext: ApplicationContext, composi
     reply.asInstanceOf[T]
   }
 
-  private def convertReply(replyMessage: Message[_], m: scala.reflect.Manifest[_]): Any = {
+  private def convertReply[T: Manifest](replyMessage: Message[_]): Any = {
 
-    if (m.erasure.isAssignableFrom(classOf[Message[_]]))
+    if (manifest.erasure.isAssignableFrom(classOf[Message[_]]))
       replyMessage
     else {
       val reply = replyMessage.getPayload

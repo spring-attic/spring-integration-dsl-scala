@@ -19,6 +19,7 @@ import org.apache.commons.logging.LogFactory
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
+import org.springframework.context.ApplicationContext
 
 /**
  * @author Oleg Zhurakousky
@@ -117,7 +118,7 @@ private[dsl] case class BaseIntegrationComposition(private[dsl] val parentCompos
   /**
    *
    */
-  private[dsl] def getContext(): IntegrationContext = {
+  private[dsl] def getContext(parentContext:ApplicationContext): IntegrationContext = {
 
     threadLocal.get() match {
       case eipContext: IntegrationContext => {
@@ -126,7 +127,7 @@ private[dsl] case class BaseIntegrationComposition(private[dsl] val parentCompos
       }
       case _ => {
         if (logger.isDebugEnabled) logger.debug("Creating new IntegrationContext")
-        val eipContext = new IntegrationContext(null, this)
+        val eipContext = new IntegrationContext(parentContext, this)
         threadLocal.set(eipContext)
         eipContext
       }
@@ -142,17 +143,17 @@ private[dsl] class SendingIntegrationComposition(parentComposition: BaseIntegrat
   /**
    *
    */
-  def send(message: Any, timeout: Long = 0, headers: Map[String, Any] = null): Boolean = {
-    val context = this.getContext()
+  def send(message: Any, timeout: Long = 0, headers: Map[String, Any] = null, parentContext:ApplicationContext = null): Boolean = {
+    val context = this.getContext(parentContext)
     context.send(message, timeout, headers)
   }
 
   /**
    *
    */
-  def sendAndReceive[T <: Any](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: SendingEndpointComposition = null)(implicit m: scala.reflect.Manifest[T]): T = {
-    val context = this.getContext()
-    context.sendAndReceive[T](message, timeout, headers, errorFlow)
+  def sendAndReceive[T: Manifest](message: Any, timeout: Long = 0, headers: Map[String, Any] = null, errorFlow: SendingEndpointComposition = null, parentContext:ApplicationContext = null): T = {
+    val context = this.getContext(parentContext)
+    context.sendAndReceive(message, timeout, headers, errorFlow)
   }
 }
 /**
@@ -198,9 +199,9 @@ class ListeningIntegrationComposition(parentComposition: BaseIntegrationComposit
   /**
    *
    */
-  def start() = this.getContext.start
+  def start(parentContext:ApplicationContext = null) = this.getContext(parentContext).start
 
-  def stop() = this.getContext.stop
+  def stop(parentContext:ApplicationContext = null) = this.getContext(parentContext).stop
 
   def -->[T <: BaseIntegrationComposition](a: T) = {
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)

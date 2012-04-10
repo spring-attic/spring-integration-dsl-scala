@@ -21,7 +21,7 @@ class DslUsageDemoTests {
         handle.using { m: Message[_] => println("logging existing message and passing through " + m); m } -->
         transform.using { value: String => value.toUpperCase() }
 
-    flow.start
+    flow.start()
 
     val jmsTemplate = new JmsTemplate(connectionFactory);
     val request = new org.apache.activemq.command.ActiveMQQueue("myQueue")
@@ -38,7 +38,7 @@ class DslUsageDemoTests {
     val replyMessage = jmsTemplate.receive(reply);
     println("Reply Message: " + replyMessage.asInstanceOf[TextMessage].getText())
 
-    flow.stop
+    flow.stop()
     println("done")
   }
 }
