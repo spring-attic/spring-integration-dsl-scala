@@ -25,18 +25,27 @@ import java.util.UUID
  * @author Oleg Zhurakousky
  */
 object transform {
+  
+  trait RestrictiveFunction[A, B]
+  
+  type NotUnitType[T] = RestrictiveFunction[T, Unit]
+  
+  implicit def nsub[A, B]: RestrictiveFunction[A, B] = null
+  implicit def nsubAmbig1[A, B >: A]: RestrictiveFunction[A, B] = null
+  implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
 
-  def using(function:Function1[_,AnyRef]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
+  def using[T, R: NotUnitType](function:Function1[_,R]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
     def where(name:String) = { 
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Transformer(name = name, target = function))
     }
   }
   
-  def using(targetObject:Object) = new SendingEndpointComposition(null, new Transformer(target = targetObject)) {
+  def using[T, R: NotUnitType](function: (_,Map[String, _]) => R) = new SendingEndpointComposition(null, new Transformer(target = function)) {
     def where(name:String)= {
+      
       require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new Transformer(name = name, target = targetObject))
+      new SendingEndpointComposition(null, new Transformer(name = name, target = function))
     }
   }
 }

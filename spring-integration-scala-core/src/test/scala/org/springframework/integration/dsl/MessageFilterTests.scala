@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 package org.springframework.integration.dsl
-import org.junit.Test
-import org.springframework.context.support.ClassPathXmlApplicationContext
-import org.junit.Assert
+import org.junit.{ Assert, Test }
 /**
  * @author Oleg Zhurakousky
  */
-class ParentApplicationContextTests {
-    
-  @Test
-  def validateInitializationOfParentAc = {
-//    val context = new ClassPathXmlApplicationContext("parent-config.xml")
-//    
-//    val messageFlow = handle.using(context.getBean("simpleService"))
-//   
-//    Assert.assertEquals(context.getBean("simpleService"), messageFlow.getContext(context).applicationContext.getBean("simpleService"))
-  }
+class MessageFilterTests {
 
+  @Test
+  def validateMessageFilterWithPayloadAndHeaders {
+    val reply1 = filter.using { (_: String, headers: Map[String, _]) => headers.contains("foo") }.
+      sendAndReceive[String]("Hello Scala", headers = Map("foo" -> "foo"))
+    Assert.assertNotNull(reply1)
+    Assert.assertEquals(reply1, "Hello Scala")
+    
+    val reply2 = filter.using { (_: String, headers: Map[String, _]) => headers.contains("bar") }.
+      sendAndReceive[String]("Hello Scala", headers = Map("foo" -> "foo"), timeout=1000)
+    Assert.assertNull(reply2)
+  }
 }

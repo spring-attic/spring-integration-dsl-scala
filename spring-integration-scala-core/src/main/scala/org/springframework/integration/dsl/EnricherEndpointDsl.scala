@@ -32,9 +32,25 @@ import scala.collection.JavaConversions
  * @author Oleg Zhurakousky
  */
 object enrich {
+  
+  trait RestrictiveFunction[A, B]
+  
+  type NotUnitType[T] = RestrictiveFunction[T, Unit]
+  
+  implicit def nsub[A, B]: RestrictiveFunction[A, B] = null
+  implicit def nsubAmbig1[A, B >: A]: RestrictiveFunction[A, B] = null
+  implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
 
-  def apply(function: Function1[_, AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = function)) {
+  def apply[T, R: NotUnitType](function: Function1[_, R]) = new SendingEndpointComposition(null, new Enricher(target = function)) {
     def where(name: String) = {
+      require(StringUtils.hasText(name), "'name' must not be empty")
+      new SendingEndpointComposition(null, new Enricher(name = name, target = function))
+    }
+  }
+  
+  def apply[T, R: NotUnitType](function: (_,Map[String, _]) => R) = new SendingEndpointComposition(null, new Enricher(target = function)) {
+    def where(name:String)= {
+      
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = function))
     }
@@ -65,7 +81,7 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
         case tp: Tuple2[String, AnyRef] => {
           val headerValueMessageProcessor: HeaderValueMessageProcessor[_] =
             tp._2 match {
-              case fn: Function[_, _] => this.doWithFunction(fn, this)
+              case fn: Function[Any, _] => this.doWithFunction(fn, this)
 
               case expression: Expression => this.doWithExpression(expression, this)
 
@@ -78,7 +94,7 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
           for (element <- wa) {
             val headerValueMessageProcessor: HeaderValueMessageProcessor[_] =
               element._2 match {
-                case fn: Function[_, _] => this.doWithFunction(fn, this)
+                case fn: Function[Any, _] => this.doWithFunction(fn, this)
 
                 case expression: Expression => this.doWithExpression(expression, this)
 
@@ -88,13 +104,13 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
           }
           map
         }
-        case fn: Function1[_, AnyRef] => null
+        case _ => null
       }
 
     val handlerBuilder =
       if (headerValueMessageProcessorMap == null) {
         val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
-        val functionInvoker = new FunctionInvoker(this.target.asInstanceOf[Function[_, _]], this)
+        val functionInvoker = new FunctionInvoker(this.target, this)
         handlerBuilder.addPropertyValue("targetObject", functionInvoker);
         handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
         handlerBuilder
@@ -108,7 +124,7 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
     handlerBuilder
   }
 
-  private def doWithFunction(fn: Function1[_, _], enricher: Enricher): HeaderValueMessageProcessor[_] = {
+  private def doWithFunction(fn: Function1[Any, _], enricher: Enricher): HeaderValueMessageProcessor[_] = {
 
     // The following try/catch is necessary to maintain backward compatibility with 2.0 and 2.1.0. See INT-2399 for more details
     val clazz =

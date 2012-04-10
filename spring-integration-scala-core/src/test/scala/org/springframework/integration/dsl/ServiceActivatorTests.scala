@@ -19,24 +19,31 @@ import org.junit.{Assert, Test}
  * @author Oleg Zhurakousky
  */
 class ServiceActivatorTests {
-
+  
   @Test
-  def validateServiceActivatorWithJavaObjectAsTarget {
-
-    val messageFlow = handle.using(new SimpleService)
-    
-    val reply =  messageFlow.sendAndReceive[String]("Hello Java")
-    Assert.assertEquals(reply, "HELLO JAVA")
+  def validateServiceActivatorWithPayloadAndHeaders {
+   val reply = handle.using{(_:String, headers:Map[String, _]) => headers.contains("foo")}.
+                            sendAndReceive[Boolean]("Hello Java", headers = Map("foo" -> "foo"))
+   Assert.assertTrue(reply)
   }
+  
   
   @Test
   def validateServiceActivatorWithFunctionAsTargetInvokingJavaObject {
 
     val service = new SimpleService
     
-    val messageFlow = handle.using{payload:String => service.echo(payload)}
+    val reply1 = handle.using{payload:String => service.echo(payload)}.sendAndReceive[String]("Hello Java")
+    Assert.assertEquals(reply1, "HELLO JAVA")
+    val reply2 = handle.using{service.echo(_:String)}.sendAndReceive[String]("Hello Java")
+    Assert.assertEquals(reply2, "HELLO JAVA")
+  }
+  
+  @Test
+  def validateServiceActivatorWithPayloadAndHeadersFunction {
+
+    val service = new SimpleService
     
-    val reply =  messageFlow.sendAndReceive[String]("Hello Java")
-    Assert.assertEquals(reply, "HELLO JAVA")
+    val messageFlow = handle.using{println(_:Any)}
   }
 }

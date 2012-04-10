@@ -324,25 +324,10 @@ private object ApplicationContextBuilder {
    *
    */
   private def defineHandlerTarget(endpoint: SimpleEndpoint, handlerBuilder: BeanDefinitionBuilder) = {
-
-    endpoint.target match {
-      case function: Function[_, _] => {
-        val functionInvoker = new FunctionInvoker(function, endpoint)
-        handlerBuilder.addPropertyValue("targetObject", functionInvoker);
-        handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
-      }
-      case wrappedStringFunction: String => {
-        val functionInvoker = new FunctionInvoker(wrappedStringFunction, endpoint)
-        handlerBuilder.addPropertyValue("targetObject", functionInvoker);
-        handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
-      }
-      case targetJavaObject: Object => {
-        handlerBuilder.addPropertyValue("targetObject", targetJavaObject);
-      }
-      case _ => {
-        throw new IllegalArgumentException("Unsupported value for 'target' - " + endpoint.target)
-      }
-    }
+    
+    val functionInvoker = new FunctionInvoker(endpoint.target, endpoint)
+    handlerBuilder.addPropertyValue("targetObject", functionInvoker);
+    handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
   }
 
   private def preProcess(applicationContext: GenericApplicationContext) {

@@ -107,7 +107,8 @@ private[dsl] class IntegrationContext(parentContext: ApplicationContext, composi
         if (!sent)
           throw new MessagingException(messageToSend, "Failed to send message")
 
-        val replyMessage = replyChannel.receive(1000)
+        val replyMessage = replyChannel.receive(timeout)
+        
         this.convertReply(replyMessage)
       } catch {
         case ex: Exception => {
@@ -125,7 +126,7 @@ private[dsl] class IntegrationContext(parentContext: ApplicationContext, composi
     if (manifest.erasure.isAssignableFrom(classOf[Message[_]]))
       replyMessage
     else {
-      val reply = replyMessage.getPayload
+      val reply = if (replyMessage == null) null else replyMessage.getPayload
       reply match {
         case list: java.util.List[_] => list.toList
         case set: java.util.Set[_] => set.toSet

@@ -31,10 +31,11 @@ object filter {
     }
   }
   
-  def using(targetObject:Object) = new SendingEndpointComposition(null, new MessageFilter(target = targetObject)) {
-    def where(name:String) = {
+  def using(function: (_,Map[String, _]) => Boolean) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
+    def where(name:String)= {
+      
       require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new MessageFilter(name = name, target = targetObject))
+      new SendingEndpointComposition(null, new MessageFilter(name = name, target = function))
     }
   }
 }

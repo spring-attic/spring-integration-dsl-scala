@@ -18,6 +18,7 @@ import java.lang.reflect.Method
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions
+import scala.collection.JavaConversions._
 
 import org.apache.commons.logging.LogFactory
 import org.springframework.integration.support.MessageBuilder
@@ -25,7 +26,7 @@ import org.springframework.integration.Message
 /**
  * @author Oleg Zhurakousky
  */
-private final class FunctionInvoker(val f: Function[_, _], val endpoint: IntegrationComponent) {
+private final class FunctionInvoker(f: => Any, val endpoint: IntegrationComponent) {
   private val logger = LogFactory.getLog(this.getClass());
   private val APPLY_METHOD = "apply"
 
@@ -40,6 +41,13 @@ private final class FunctionInvoker(val f: Function[_, _], val endpoint: Integra
    */
   def sendPayload(payload: Object): Unit = {
     this.invokeMethod[Object](payload)
+  }
+  
+  /**
+   *
+   */
+  def sendPayloadAndHeaders(payload: Object, headers:java.util.Map[String, _]): Unit = {
+    this.invokeMethod[Object](payload, headers)
   }
 
   /**
@@ -56,7 +64,15 @@ private final class FunctionInvoker(val f: Function[_, _], val endpoint: Integra
     val result = this.invokeMethod[Object](payload)
     result
   }
-
+  
+  /**
+   * 
+   */
+  def sendPayloadAndHeadersAndReceive(payload: Object, headers:java.util.Map[String, _]) = {
+    val result = this.invokeMethod[Object](payload, headers)
+    result
+  }
+  
   /**
    *
    */
@@ -74,7 +90,7 @@ private final class FunctionInvoker(val f: Function[_, _], val endpoint: Integra
 
     val methods = f.getClass().getDeclaredMethods()
     
-    for (method <- methods)
+    for (method <- methods) // TODO change to yield
       if (method.getName == APPLY_METHOD) methodBuffer += method
 
     val applyMethods = methodBuffer.toList
@@ -98,6 +114,14 @@ private final class FunctionInvoker(val f: Function[_, _], val endpoint: Integra
     var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any])
     method.setAccessible(true)
     this.normalizeResult[T](method.invoke(f, value))
+  }
+  
+  private def invokeMethod[T](value: Object, headers: java.util.Map[String, _]): T = {
+    val declaredMethods = f.getClass().getDeclaredMethods()
+    declaredMethods.foreach(println _)
+    var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any], classOf[Any])
+    method.setAccessible(true)  
+    this.normalizeResult[T](method.invoke(f, value, headers.toMap))
   }
 
   /*
@@ -134,21 +158,27 @@ private final class FunctionInvoker(val f: Function[_, _], val endpoint: Integra
   private def determineApplyWrapperName: String = {
 
     val returnType = applyMethod.getReturnType()
-    val inputParameter = applyMethod.getParameterTypes()(0)
-
+    val parameterTypes = applyMethod.getParameterTypes()
+    val parameter0 = if (parameterTypes.size > 0) parameterTypes(0) else null
+    val parameter1 = if (parameterTypes.size == 2) parameterTypes(1) else null
+   
     if (logger.isDebugEnabled) logger.debug("Selecting method: " + applyMethod)
 
     val methodName =
       if (Void.TYPE.isAssignableFrom(returnType)) {
-        if (classOf[Message[_]].isAssignableFrom(inputParameter))
+        if (classOf[Message[_]].isAssignableFrom(parameter0) && parameter1 == null)
           "sendMessage"
-        else
+        else if (parameter0 != null && parameter1 == null)
           "sendPayload"
+        else 
+          "sendPayloadAndHeaders"
       } else {
-        if (classOf[Message[_]].isAssignableFrom(inputParameter))
+        if (classOf[Message[_]].isAssignableFrom(parameter0) && parameter1 == null)
           "sendMessageAndReceive"
-        else
+        else if (parameter0 != null && parameter1 == null)
           "sendPayloadAndReceive"
+        else
+          "sendPayloadAndHeadersAndReceive"
       }
 
     if (logger.isDebugEnabled) logger.debug("FunctionInvoker method name: " + methodName)

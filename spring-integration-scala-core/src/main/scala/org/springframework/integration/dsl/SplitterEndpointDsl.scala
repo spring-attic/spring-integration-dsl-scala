@@ -34,10 +34,11 @@ object split {
       new SendingEndpointComposition(null, new Splitter(name = name, target = function, applySequence = applySequence))
   }
   
-  def using(targetObject:Object) = new SendingEndpointComposition(null, new Splitter(target = targetObject)) {
+  def using(function: (_,Map[String, _]) => Iterable[Any]) = new SendingEndpointComposition(null, new Splitter(target = function)) {
     def where(name:String)= {
+      
       require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new Splitter(name = name, target = targetObject))
+      new SendingEndpointComposition(null, new Splitter(name = name, target = function))
     }
   }
 }

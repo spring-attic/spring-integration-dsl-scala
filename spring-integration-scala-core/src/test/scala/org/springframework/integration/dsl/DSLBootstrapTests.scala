@@ -158,7 +158,7 @@ class DslBootstrapTests {
 
     assertEquals(6, targetList.size)
 
-    assertEquals("messageFlowA-1", targetList(0).asInstanceOf[ServiceActivator].target)
+    assertEquals(new WrappedString("messageFlowA-1"), targetList(0).asInstanceOf[ServiceActivator].target)
     assertEquals("messageFlowA-2", targetList(1).asInstanceOf[Channel].name)
     assertEquals("transformerA", targetList(2).asInstanceOf[Transformer].name)
     assertEquals("filterB", targetList(3).asInstanceOf[MessageFilter].name)
@@ -181,7 +181,7 @@ class DslBootstrapTests {
       val targetList = DslUtils.toProductSeq(messageFlow);
       
       assertTrue(targetList.size == 3)
-      assertEquals("service", targetList(0).asInstanceOf[ServiceActivator].target)
+      assertEquals(new WrappedString("service"), targetList(0).asInstanceOf[ServiceActivator].target)
       assertEquals("pubSubChannel", targetList(1).asInstanceOf[PubSubChannel].name)
       val subscribers = targetList(2).asInstanceOf[Seq[_]]
       

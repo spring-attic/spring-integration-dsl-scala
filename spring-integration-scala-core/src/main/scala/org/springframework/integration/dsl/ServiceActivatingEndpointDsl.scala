@@ -27,17 +27,18 @@ import scala.collection.immutable.WrappedString
  */
 object handle {
   
-  def using(function:Function1[_,_]) = new SendingEndpointComposition(null, new ServiceActivator(target = function)) {
+  def using(function: _ => Any) = new SendingEndpointComposition(null, new ServiceActivator(target = function)) {
     def where(name:String)= {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new ServiceActivator(name = name, target = function))
     }
   }
   
-  def using(targetObject:Object) = new SendingEndpointComposition(null, new ServiceActivator(target = targetObject)) {
+  def using(function: (_,Map[String, _]) => Any) = new SendingEndpointComposition(null, new ServiceActivator(target = function)) {
     def where(name:String)= {
+      
       require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new ServiceActivator(name = name, target = targetObject))
+      new SendingEndpointComposition(null, new ServiceActivator(name = name, target = function))
     }
   }
 }
