@@ -32,6 +32,13 @@ object transform {
       new SendingEndpointComposition(null, new Transformer(name = name, target = function))
     }
   }
+  
+  def using(targetObject:Object) = new SendingEndpointComposition(null, new Transformer(target = targetObject)) {
+    def where(name:String)= {
+      require(StringUtils.hasText(name), "'name' must not be empty")
+      new SendingEndpointComposition(null, new Transformer(name = name, target = targetObject))
+    }
+  }
 }
 
 private[dsl] class Transformer(name:String = "$xfmr_" + UUID.randomUUID().toString.substring(0, 8), target:Any)

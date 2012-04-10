@@ -32,6 +32,13 @@ object handle {
       new SendingEndpointComposition(null, new ServiceActivator(name = name, target = function))
     }
   }
+  
+  def using(targetObject:Object) = new SendingEndpointComposition(null, new ServiceActivator(target = targetObject)) {
+    def where(name:String)= {
+      require(StringUtils.hasText(name), "'name' must not be empty")
+      new SendingEndpointComposition(null, new ServiceActivator(name = name, target = targetObject))
+    }
+  }
 }
 
 private[dsl] class ServiceActivator(name:String = "$sa_" + UUID.randomUUID().toString.substring(0, 8), target:Any)

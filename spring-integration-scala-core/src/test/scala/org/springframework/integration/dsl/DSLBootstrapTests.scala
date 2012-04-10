@@ -161,7 +161,7 @@ class DSLBootstrapTests {
     assertEquals(new WrappedString("messageFlowA-1"), targetList(0).asInstanceOf[ServiceActivator].target)
     assertEquals("messageFlowA-2", targetList(1).asInstanceOf[Channel].name)
     assertEquals("transformerA", targetList(2).asInstanceOf[Transformer].name)
-    assertEquals("filterB", targetList(3).asInstanceOf[MessageFilter].name)
+    assertEquals("filterB", targetList(3).asInstanceOf[Filter].name)
     assertEquals("messageFlowB-2", targetList(4).asInstanceOf[PubSubChannel].name)
     assertEquals("transformerB", targetList(5).asInstanceOf[Transformer].name)   
   }

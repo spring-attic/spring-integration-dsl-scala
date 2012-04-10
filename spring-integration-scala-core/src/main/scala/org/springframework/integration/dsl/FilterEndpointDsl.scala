@@ -15,9 +15,9 @@
  */
 package org.springframework.integration.dsl
 import java.util.UUID
-
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.config.FilterFactoryBean
+import org.springframework.util.StringUtils
 /**
  * This class provides DSL and related components to support "Message Filter" pattern
  * 
@@ -25,14 +25,21 @@ import org.springframework.integration.config.FilterFactoryBean
  */
 object filter {
 
-  def using(function:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
+  def using(function:Function1[_,Boolean]) = new SendingEndpointComposition(null, new Filter(target = function)) {
     def where(name:String  = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) = {
-      new SendingEndpointComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
+      new SendingEndpointComposition(null, new Filter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
+    }
+  }
+  
+  def using(targetObject:Object) = new SendingEndpointComposition(null, new Filter(target = targetObject)) {
+    def where(name:String) = {
+      require(StringUtils.hasText(name), "'name' must not be empty")
+      new SendingEndpointComposition(null, new Filter(name = name, target = targetObject))
     }
   }
 }
 
-private[dsl] class MessageFilter(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val exceptionOnRejection:Boolean = false)
+private[dsl] class Filter(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val exceptionOnRejection:Boolean = false)
             extends SimpleEndpoint(name, target) {
   
   override def build(targetDefFunction: Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit],

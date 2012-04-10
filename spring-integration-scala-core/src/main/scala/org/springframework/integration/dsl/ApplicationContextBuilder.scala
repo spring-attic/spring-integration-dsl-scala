@@ -331,6 +331,9 @@ private object ApplicationContextBuilder {
         handlerBuilder.addPropertyValue("targetObject", functionInvoker);
         handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
       }
+      case targetJavaObject: Object => {
+        handlerBuilder.addPropertyValue("targetObject", targetJavaObject);
+      }
       case _ => {
         throw new IllegalArgumentException("Unsupported value for 'target' - " + endpoint.target)
       }

@@ -33,6 +33,13 @@ object split {
     def where(name:String = "$split_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
       new SendingEndpointComposition(null, new Splitter(name = name, target = function, applySequence = applySequence))
   }
+  
+  def using(targetObject:Object) = new SendingEndpointComposition(null, new Splitter(target = targetObject)) {
+    def where(name:String)= {
+      require(StringUtils.hasText(name), "'name' must not be empty")
+      new SendingEndpointComposition(null, new Splitter(name = name, target = targetObject))
+    }
+  }
 }
 
 private[dsl] class Splitter(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val applySequence:Boolean = false)
