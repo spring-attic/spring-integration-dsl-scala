@@ -104,7 +104,7 @@ class MessageEndpointTests {
     val aFilter = filter.using{s:String => 3 < 4}.where(name = "aFilter")
 
     Assert.assertNull(aFilter.parentComposition)
-    Assert.assertEquals("aFilter", aFilter.target.asInstanceOf[Filter].name)
+    Assert.assertEquals("aFilter", aFilter.target.asInstanceOf[MessageFilter].name)
 
     val anotherFilter =
       aFilter -->
@@ -112,8 +112,8 @@ class MessageEndpointTests {
         filter.using{s:String => 3 < 4}.where(name = "cFilter")
 
     Assert.assertNotNull(anotherFilter.parentComposition)
-    Assert.assertEquals("bFilter", anotherFilter.parentComposition.target.asInstanceOf[Filter].name)
-    Assert.assertEquals("cFilter", anotherFilter.target.asInstanceOf[Filter].name)
+    Assert.assertEquals("bFilter", anotherFilter.parentComposition.target.asInstanceOf[MessageFilter].name)
+    Assert.assertEquals("cFilter", anotherFilter.target.asInstanceOf[MessageFilter].name)
   }
 
   @Test

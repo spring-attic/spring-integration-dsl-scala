@@ -18,6 +18,7 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.config.ServiceActivatorFactoryBean
 import org.springframework.util.StringUtils
 import java.util.UUID
+import scala.collection.immutable.WrappedString
 
 /**
  * This class provides DSL and related components to support "Service Activator" pattern

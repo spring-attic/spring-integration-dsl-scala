@@ -331,6 +331,11 @@ private object ApplicationContextBuilder {
         handlerBuilder.addPropertyValue("targetObject", functionInvoker);
         handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
       }
+      case wrappedStringFunction: String => {
+        val functionInvoker = new FunctionInvoker(wrappedStringFunction, endpoint)
+        handlerBuilder.addPropertyValue("targetObject", functionInvoker);
+        handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
+      }
       case targetJavaObject: Object => {
         handlerBuilder.addPropertyValue("targetObject", targetJavaObject);
       }
