@@ -124,9 +124,9 @@ class IntegrationDomTreeBuilder {
 
     this.init(integrationComposition)
 
-    //
-    this.printDocument
-    //
+    if (this.logger.isDebugEnabled()){
+      this.printDocument
+    }
 
     document
   }
@@ -190,14 +190,11 @@ class IntegrationDomTreeBuilder {
         case _ => throw new IllegalStateException("Unrecognized component " + composition)
       }
     } else if (composition.target.isInstanceOf[SimpleEndpoint]) {
-      if (this.integrationComponents.contains(composition.target.name)) {
-        null
-      } else {
+      if (!this.integrationComponents.contains(composition.target.name)) 
         new Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8))
-      }
-    } else {
-      null
-    }
+      else null
+    } else null
+ 
   }
 
   private def buildChannelElement(channelDefinition: AbstractChannel): Unit = {
