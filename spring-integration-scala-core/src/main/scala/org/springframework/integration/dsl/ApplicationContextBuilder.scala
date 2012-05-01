@@ -60,7 +60,7 @@ private object ApplicationContextBuilder {
     this.preProcess(applicationContext)
 
     if (this.logger.isDebugEnabled)
-      this.logger.debug("Initializing the following composition segment: " + DslUtils.toProductSeq(composition))
+      this.logger.debug("Initializing the following composition segment: " + DslUtils.toProductTraversble(composition))
 
     this.init(composition)
 
@@ -122,11 +122,13 @@ private object ApplicationContextBuilder {
   /**
    *
    */
-  private def processInboundMessageSource(ims: InboundMessageSource, outputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext) {
-    val builder = ims.build(applicationContext, outputChannel.name)
-    
-    val builderHolder = new BeanDefinitionHolder(builder.getBeanDefinition, ims.name)
-    BeanDefinitionReaderUtils.registerBeanDefinition(builderHolder, applicationContext)
+  private def processInboundMessageSource(ims: InboundMessageSource, outputChannel: AbstractChannel)
+  								(implicit applicationContext: GenericApplicationContext) {
+    //ims.build(document, applicationContext.getBeanFactory(), ims.name)
+//    val builder = ims.build(applicationContext, outputChannel.name)
+//    
+//    val builderHolder = new BeanDefinitionHolder(builder.getBeanDefinition, ims.name)
+//    BeanDefinitionReaderUtils.registerBeanDefinition(builderHolder, applicationContext)
   }
 
   /**
@@ -135,17 +137,17 @@ private object ApplicationContextBuilder {
    * this method defines a MessagingBridge
    */
   private def processChannel(composition: BaseIntegrationComposition, inputChannel: AbstractChannel, outputChannel: AbstractChannel)(implicit applicationContext: GenericApplicationContext) {
-    if (composition.parentComposition != null) {
-      composition.parentComposition.target match {
-        case parentChannel: Channel => {
-          if (logger.isTraceEnabled)
-            logger.trace("[" + inputChannel.name + " --> bridge --> " + composition.target.asInstanceOf[Channel].name + "]")
-
-          this.wireEndpoint(new MessagingBridge(), inputChannel, (if (outputChannel != null) outputChannel else null))
-        }
-        case _ =>
-      }
-    }
+//    if (composition.parentComposition != null) {
+//      composition.parentComposition.target match {
+//        case parentChannel: Channel => {
+//          if (logger.isTraceEnabled)
+//            logger.trace("[" + inputChannel.name + " --> bridge --> " + composition.target.asInstanceOf[Channel].name + "]")
+//
+//          this.wireEndpoint(new MessagingBridge(), inputChannel, (if (outputChannel != null) outputChannel else null))
+//        }
+//        case _ =>
+//      }
+//    }
   }
 
   /**
@@ -315,9 +317,10 @@ private object ApplicationContextBuilder {
    */
   private def getHandlerDefinitionBuilder(endpoint: SimpleEndpoint, outputChannel: AbstractChannel = null)(implicit applicationContext: GenericApplicationContext): BeanDefinitionBuilder = {
 
-    var handlerBuilder: BeanDefinitionBuilder = endpoint.build(this.defineHandlerTarget, this.init)
-
-    handlerBuilder
+//    var handlerBuilder: BeanDefinitionBuilder = endpoint.build(this.defineHandlerTarget, this.init)
+//
+//    handlerBuilder
+    null
   }
 
   /**

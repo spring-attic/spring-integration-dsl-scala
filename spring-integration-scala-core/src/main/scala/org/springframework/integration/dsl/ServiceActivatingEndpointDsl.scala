@@ -19,37 +19,79 @@ import org.springframework.integration.config.ServiceActivatorFactoryBean
 import org.springframework.util.StringUtils
 import java.util.UUID
 import scala.collection.immutable.WrappedString
+import org.w3c.dom.Element
+import org.w3c.dom.Document
 
 /**
  * This class provides DSL and related components to support "Service Activator" pattern
- * 
+ *
  * @author Oleg Zhurakousky
  */
+
 object handle {
-  
-  def using(function: _ => Any) = new SendingEndpointComposition(null, new ServiceActivator(target = function)) {
-    def where(name:String)= {
-      require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new ServiceActivator(name = name, target = function))
+
+  private trait InOut[I, O] {
+    def apply(function: _ => I): O
+    def apply(function: (_, Map[String, _]) => I): O
+  }
+
+  private trait InOutLow {
+    implicit def anySendingEndpointComposition[I] = new InOut[I, SendingEndpointComposition with WhereContinued] {
+      def apply(function: _ => I) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode ,target = function)) with WhereContinued{
+        def where(name: String) = doWhereWithContinuity(name, function)
+      }
+      def apply(function: (_, Map[String, _]) => I) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WhereContinued{
+        def where(name: String) = doWhereWithContinuity(name, function)
+      }
     }
   }
-  
-  def using(function: (_,Map[String, _]) => Any) = new SendingEndpointComposition(null, new ServiceActivator(target = function)) {
-    def where(name:String)= {
-      
-      require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new ServiceActivator(name = name, target = function))
+
+  private object InOut extends InOutLow {
+    implicit object UnitUnit extends InOut[Unit, SendingIntegrationComposition with Where] {
+      def apply(function: _ => Unit) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with Where{
+        def where(name: String) = doWhereWithoutContinuity(name, function)
+      }
+      def apply(function: (_, Map[String, _]) => Unit) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with Where{
+        def where(name: String) = doWhereWithoutContinuity(name, function)
+      }
     }
   }
+
+  private def doWhereWithContinuity(name: String, target:  => Any) = {
+    require(StringUtils.hasText(name), "'name' must not be empty")
+    new SendingEndpointComposition(null, new ServiceActivator(name = name, target = target))
+  }
+  private def doWhereWithoutContinuity(name: String, target:  => Any) = {
+    require(StringUtils.hasText(name), "'name' must not be empty")
+    new SendingIntegrationComposition(null, new ServiceActivator(name = name, target = target))
+  }
+  
+  trait Where {
+    def where(name: String):SendingIntegrationComposition
+  }
+  trait WhereContinued {
+    def where(name: String):SendingEndpointComposition
+  }
+
+  def apply[F, R](function: _ => F)(implicit ab: InOut[F, R]): R = ab.apply(function)
+
+  def apply[F, R](function: (_, Map[String, _]) => F)(implicit ab: InOut[F, R]): R = ab.apply(function)
+
 }
 
-private[dsl] class ServiceActivator(name:String = "$sa_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
-            extends SimpleEndpoint(name, target) {
+private[dsl] class ServiceActivator(name: String, target: Any)
+  						extends SimpleEndpoint(name, target) {
+  override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "SERVICE-ACTIVATOR")
   
-  override def build(targetDefFunction: Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit],
-                     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): BeanDefinitionBuilder = {
-     val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[ServiceActivatorFactoryBean])
-     targetDefFunction.apply(this, handlerBuilder)
-     handlerBuilder
+  override def build(document: Document = null,
+    targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element = {
+
+    val element = document.createElement("int:service-activator")
+    element.setAttribute("id", this.name)
+    val targetDefinnition = targetDefinitionFunction.apply(this.target)
+    element.setAttribute("ref", targetDefinnition._1);
+    element.setAttribute("method", targetDefinnition._2);
+    element
   }
 }

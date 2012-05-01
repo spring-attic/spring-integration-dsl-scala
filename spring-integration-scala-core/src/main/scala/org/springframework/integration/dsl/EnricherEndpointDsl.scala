@@ -24,33 +24,35 @@ import org.springframework.integration.transformer.HeaderEnricher
 import org.springframework.expression.Expression
 import scala.collection.mutable.WrappedArray
 import scala.collection.JavaConversions
+import org.w3c.dom.Element
+import org.w3c.dom.Document
 
 /**
- * This class provides DSL and related components to support "Content Enricher" 
- * pattern (both 'payload' and 'headers') 
- * 
+ * This class provides DSL and related components to support "Content Enricher"
+ * pattern (both 'payload' and 'headers')
+ *
  * @author Oleg Zhurakousky
  */
 object enrich {
-  
+
   trait RestrictiveFunction[A, B]
-  
+
   type NotUnitType[T] = RestrictiveFunction[T, Unit]
-  
+
   implicit def nsub[A, B]: RestrictiveFunction[A, B] = null
   implicit def nsubAmbig1[A, B >: A]: RestrictiveFunction[A, B] = null
   implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
 
-  def apply[T, R: NotUnitType](function: Function1[_, R]) = new SendingEndpointComposition(null, new Enricher(target = function)) {
+  def apply[R: NotUnitType](function: Function1[_, R]) = new SendingEndpointComposition(null, new Enricher(target = function)) {
     def where(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = function))
     }
   }
-  
-  def apply[T, R: NotUnitType](function: (_,Map[String, _]) => R) = new SendingEndpointComposition(null, new Enricher(target = function)) {
-    def where(name:String)= {
-      
+
+  def apply[T, R: NotUnitType](function: (_, Map[String, _]) => R) = new SendingEndpointComposition(null, new Enricher(target = function)) {
+    def where(name: String) = {
+
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = function))
     }
@@ -73,88 +75,71 @@ object enrich {
 
 private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.substring(0, 8), target: Any)
   extends SimpleEndpoint(name, target) {
-  
-  override def build(targetDefFunction: Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit],
-                     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): BeanDefinitionBuilder = {
-    val headerValueMessageProcessorMap: Map[String, HeaderValueMessageProcessor[_]] =
+
+  override def build(document: Document,
+    targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): Element = {
+
+    val headerValueTargetDefinitions: Map[String, _] =
       this.target match {
-        case tp: Tuple2[String, AnyRef] => {
-          val headerValueMessageProcessor: HeaderValueMessageProcessor[_] =
+        case tp: Tuple2[String, _] => {
+          val targetDefinition =
             tp._2 match {
-              case fn: Function[Any, _] => this.doWithFunction(fn, this)
+              case fn: Function[_, _] => targetDefinitionFunction.apply(fn)
 
-              case expression: Expression => this.doWithExpression(expression, this)
-
-              case _ => this.doWithAny(tp._2, this)
+              case s:Some[Function[_, _]] => "@" + targetDefinitionFunction.apply(s)._1
+              
+              case _ => tp._2
             }
-          Map[String, HeaderValueMessageProcessor[_]](tp._1 -> headerValueMessageProcessor)
+          Map(tp._1 -> targetDefinition)
         }
-        case wa: WrappedArray[Tuple2[String, AnyRef]] => {
-          var map = Map[String, HeaderValueMessageProcessor[_]]()
-          for (element <- wa) {
-            val headerValueMessageProcessor: HeaderValueMessageProcessor[_] =
-              element._2 match {
-                case fn: Function[Any, _] => this.doWithFunction(fn, this)
+        case wa: WrappedArray[Tuple2[String, _]] => {
+          val result =
+            for (element <- wa) yield {
+              val targetDefinition =
+                element._2 match {
+                  case fn: Function[_, _] => targetDefinitionFunction.apply(fn)
+                  
+                  case s:Some[Function[_, _]] => "@" + targetDefinitionFunction.apply(s)._1
 
-                case expression: Expression => this.doWithExpression(expression, this)
-
-                case _ => this.doWithAny(element._2, this)
-              }
-            map += (element._1 -> headerValueMessageProcessor)
-          }
-          map
+                  case _ => element._2
+                }
+              (element._1 -> targetDefinition)
+            }
+          Map(result: _*)
         }
         case _ => null
       }
 
-    val handlerBuilder =
-      if (headerValueMessageProcessorMap == null) {
-        val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
-        val functionInvoker = new FunctionInvoker(this.target, this)
-        handlerBuilder.addPropertyValue("targetObject", functionInvoker);
-        handlerBuilder.addPropertyValue("targetMethodName", functionInvoker.methodName);
-        handlerBuilder
-      } else {
-        val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[MessageTransformingHandler])
-        val transformerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderEnricher])
-        transformerBuilder.addConstructorArgValue(JavaConversions.mapAsJavaMap(headerValueMessageProcessorMap))
-        handlerBuilder.addConstructorArgValue(transformerBuilder.getBeanDefinition())
-        handlerBuilder
+    headerValueTargetDefinitions match {
+      case null => {
+        val transformerElement = document.createElement("int:transformer")
+        transformerElement.setAttribute("id", this.name)
+        val targetDefinnition = targetDefinitionFunction.apply(this.target)
+        transformerElement.setAttribute("ref", targetDefinnition._1);
+        transformerElement.setAttribute("method", targetDefinnition._2);
+        transformerElement
       }
-    handlerBuilder
-  }
+      case _ => {
+        val headerEnricherElement = document.createElement("int:header-enricher")
+        headerEnricherElement.setAttribute("id", this.name)
 
-  private def doWithFunction(fn: Function1[Any, _], enricher: Enricher): HeaderValueMessageProcessor[_] = {
+        headerValueTargetDefinitions.foreach { s: Tuple2[String, Any] =>
+          val headerElement = document.createElement("int:header")
+          headerElement.setAttribute("name", s._1)
+          s._2 match {
+            case fn: Tuple2[String, String] => {
+              headerElement.setAttribute("ref", fn._1)
+              headerElement.setAttribute("method", fn._2)
+            }
+            case _ =>
+              headerElement.setAttribute("value", s._2.toString())
 
-    // The following try/catch is necessary to maintain backward compatibility with 2.0 and 2.1.0. See INT-2399 for more details
-    val clazz =
-      try {
-        Class.forName("org.springframework.integration.transformer.HeaderEnricher$MessageProcessingHeaderValueMessageProcessor")
-      } catch {
-        case e: ClassNotFoundException =>
-          Class.forName("org.springframework.integration.transformer.HeaderEnricher$MethodInvokingHeaderValueMessageProcessor")
+          }
+          headerEnricherElement.appendChild(headerElement)
+        }
+        headerEnricherElement
       }
-
-    val functionInvoker = new FunctionInvoker(fn, enricher)
-    val const = clazz.getDeclaredConstructor(classOf[Any], classOf[String])
-    const.setAccessible(true)
-    val p = const.newInstance(functionInvoker, functionInvoker.methodName)
-    p.asInstanceOf[HeaderValueMessageProcessor[_]]
-  }
-
-  private def doWithExpression(expression: Expression, enricher: Enricher): HeaderValueMessageProcessor[_] = {
-    val clazz = Class.forName("org.springframework.integration.transformer.HeaderEnricher$ExpressionEvaluatingHeaderValueMessageProcessor")
-    val const = clazz.getDeclaredConstructor(classOf[Expression], classOf[Class[_]])
-    const.setAccessible(true)
-    val p = const.newInstance(expression, null)
-    p.asInstanceOf[HeaderValueMessageProcessor[_]]
-  }
-
-  private def doWithAny(value: Object, enricher: Enricher): HeaderValueMessageProcessor[_] = {
-    val clazz = Class.forName("org.springframework.integration.transformer.HeaderEnricher$StaticHeaderValueMessageProcessor")
-    val const = clazz.getDeclaredConstructor(classOf[Any])
-    const.setAccessible(true)
-    val p = const.newInstance(value)
-    p.asInstanceOf[HeaderValueMessageProcessor[_]]
+    }
   }
 }

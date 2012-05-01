@@ -26,7 +26,7 @@ class TransformerTests {
 
     val service = new SimpleTransformer
 
-    val messageFlow = transform.using { payload: String => service.transform(payload) }
+    val messageFlow = transform { payload: String => service.transform(payload) }
 
     val reply = messageFlow.sendAndReceive[String]("Hello Java")
     Assert.assertEquals(reply, "HELLO JAVA")
@@ -34,19 +34,19 @@ class TransformerTests {
 
   @Test
   def validateTransformerWithNonUnitReturnTypes {
-    val reply1 = transform.using { s: String => 23 }.sendAndReceive[Int]("hello")
+    val reply1 = transform { s: String => 23 }.sendAndReceive[Int]("hello")
     Assert.assertTrue(reply1.isInstanceOf[Int]) // AnyVal
-    val reply2 = transform.using { s: String => "Hello" }.sendAndReceive[String]("hello")
+    val reply2 = transform { s: String => "Hello" }.sendAndReceive[String]("hello")
     Assert.assertTrue(reply2.isInstanceOf[String]) // Any
-    val reply3 = transform.using { s: String => new Object }.sendAndReceive[Object]("hello")
+    val reply3 = transform { s: String => new Object }.sendAndReceive[Object]("hello")
     Assert.assertTrue(reply3.isInstanceOf[Object]) // Any
     
-    //transform.using { s: String => println }.sendAndReceive[Object]("hello") // should not compile
+    //transform { s: String => println }.sendAndReceive[Object]("hello") // should not compile
   }
 
   @Test
   def validateTransformerWithPayloadAndHeaders {
-    val reply = transform.using { (_: String, headers: Map[String, _]) => headers.contains("foo") }.
+    val reply = transform { (_: String, headers: Map[String, _]) => headers.contains("foo") }.
       sendAndReceive[Boolean]("Hello Java", headers = Map("foo" -> "foo"))
     Assert.assertTrue(reply)
   }

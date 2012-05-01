@@ -26,7 +26,7 @@ import org.springframework.integration.Message
 /**
  * @author Oleg Zhurakousky
  */
-private final class FunctionInvoker(f: => Any, val endpoint: IntegrationComponent) {
+private final class FunctionInvoker(f: => Any) {
   private val logger = LogFactory.getLog(this.getClass());
   private val APPLY_METHOD = "apply"
 
@@ -118,7 +118,6 @@ private final class FunctionInvoker(f: => Any, val endpoint: IntegrationComponen
   
   private def invokeMethod[T](value: Object, headers: java.util.Map[String, _]): T = {
     val declaredMethods = f.getClass().getDeclaredMethods()
-    declaredMethods.foreach(println _)
     var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any], classOf[Any])
     method.setAccessible(true)  
     this.normalizeResult[T](method.invoke(f, value, headers.toMap))
@@ -129,8 +128,8 @@ private final class FunctionInvoker(f: => Any, val endpoint: IntegrationComponen
    */
   private def normalizeResult[T](result: Any): T = {
     val normalizedResponse =
-      endpoint match {
-        case splitter: Splitter => {
+//      endpoint match {
+//        case splitter: Splitter => {
           result match {
             case message: Message[_] => {
               message.getPayload match {
@@ -145,10 +144,10 @@ private final class FunctionInvoker(f: => Any, val endpoint: IntegrationComponen
             case _ =>
               result
           }
-        }
-        case _ =>
-          result
-      }
+//        }
+//        case _ =>
+//          result
+//      }
     normalizedResponse.asInstanceOf[T]
   }
 

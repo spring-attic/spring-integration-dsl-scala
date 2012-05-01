@@ -58,7 +58,7 @@ class PollerTests {
 
     val pollerWithFixedRate = poll.usingFixedRate(4).withMaxMessagesPerPoll(90).withExecutor(executor)
     Assert.assertEquals(4, pollerWithFixedRate.target.asInstanceOf[Poller].fixedRate)
-    Assert.assertEquals(Integer.MIN_VALUE, pollerWithFixedRate.target.asInstanceOf[Poller].fixedDelay)
+    Assert.assertEquals(-1, pollerWithFixedRate.target.asInstanceOf[Poller].fixedDelay)
     Assert.assertEquals(90, pollerWithFixedRate.target.asInstanceOf[Poller].maxMessagesPerPoll)
     Assert.assertEquals(executor, pollerWithFixedRate.target.asInstanceOf[Poller].taskExecutor)
 

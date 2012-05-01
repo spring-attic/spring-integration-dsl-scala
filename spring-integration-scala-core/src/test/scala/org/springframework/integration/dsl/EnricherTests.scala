@@ -23,7 +23,7 @@ class EnricherTests {
   
   case class Person(var name: String = null, var age: Int = 0)
 
-  class Employee(val firstName: String, val lastName: String, val age: Int)
+  case class Employee(val firstName: String, val lastName: String, val age: Int)
 
   @Test
   def validateEnricherWithFunctionAsTargetInvokingJavaObject {

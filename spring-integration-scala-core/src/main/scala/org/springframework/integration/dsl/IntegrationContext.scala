@@ -16,12 +16,10 @@
 package org.springframework.integration.dsl
 
 import java.lang.IllegalStateException
-
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.asScalaSet
 import scala.collection.JavaConversions.mapAsScalaMap
 import scala.collection.JavaConversions
-
 import org.apache.commons.logging.LogFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.integration.channel.QueueChannel
@@ -32,6 +30,7 @@ import org.springframework.integration.MessageChannel
 import org.springframework.integration.MessagingException
 import org.springframework.util.CollectionUtils
 import org.springframework.util.StringUtils
+import org.springframework.integration.dsl.utils.IntegrationDomTreeBuilder
 
 /**
  * @author Oleg Zhurakousky
@@ -65,7 +64,9 @@ private[dsl] class IntegrationContext(parentContext: ApplicationContext, composi
     }
   }
 
-  val applicationContext = ApplicationContextBuilder.build(parentContext, normalizedComposition)
+//  val applicationContext = ApplicationContextBuilder.build(parentContext, normalizedComposition)
+  
+  val applicationContext = IntegrationDomTreeBuilder.buildApplicationContext(normalizedComposition)
 
   def start() = this.applicationContext.start()
 

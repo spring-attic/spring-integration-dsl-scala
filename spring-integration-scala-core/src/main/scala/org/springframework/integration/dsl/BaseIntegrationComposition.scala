@@ -20,6 +20,10 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.beans.factory.support.BeanDefinitionRegistry
 import org.springframework.context.ApplicationContext
+import org.w3c.dom.Element
+import org.w3c.dom.Document
+import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.beans.factory.config.ConfigurableBeanFactory
 
 /**
  * @author Oleg Zhurakousky
@@ -227,12 +231,12 @@ class ChannelIntegrationComposition(parentComposition: BaseIntegrationCompositio
  *
  */
 class PollableChannelIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
-  extends ChannelIntegrationComposition(parentComposition, target) {
+  extends SendingIntegrationComposition(parentComposition, target) {
   /**
    *
    */
-  def -->(p: Poller) =
-    new SendingEndpointComposition(this, p)
+  def -->(p: PollerComposition) =
+    new SendingEndpointComposition(this, p.target)
 }
 
 /**
@@ -243,17 +247,24 @@ private[dsl] class ListOfCompositions[T](val compositions: Iterable[BaseIntegrat
 /**
  *
  */
-private[dsl] abstract class IntegrationComponent(val name: String = null) 
+private[dsl] abstract class IntegrationComponent(val name: String = null) {
+  override def toString = name
+  def toMapOfProperties:Map[String, _] = Map("name" -> name)
+}
 
 private[dsl] abstract class SimpleEndpoint(name:String, val target:Any = null) extends IntegrationComponent(name) {
-  override def toString = name
   
-  def build(targetDefFunction: Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit] = null,
-            compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): BeanDefinitionBuilder
+  override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("target" -> target)
+  
+  def build(root: Document = null,
+            targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+            compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element
 }
+
+private[dsl] abstract trait OutboundAdapterEndpoint
 
 private[dsl] abstract class InboundMessageSource(name:String, val target:Any = null) extends IntegrationComponent(name) {
   override def toString = name
-  
-  def build(beanDefinitionRegistry: BeanDefinitionRegistry, requestChannelName: String): BeanDefinitionBuilder
+
+  def build(document: Document = null, beanInstancesToRegister:scala.collection.mutable.Map[String, Any], requestChannelName: String): Element
 }

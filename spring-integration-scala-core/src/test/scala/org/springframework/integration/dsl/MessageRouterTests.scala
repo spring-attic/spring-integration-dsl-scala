@@ -80,14 +80,14 @@ class MessageRouterTests {
   @Test
   def validateSpELRouterConfig(){
     
-    route.using("'someChannelName'")_ // if no condition
+    route("'someChannelName'")_ // if no condition
 
-    route.using("'someChannelName'")(
+    route("'someChannelName'")(
       when(1) then Channel("1"),
       when(2) then Channel("2")
     ) where(name = "myRouter")
     
-    (route using("'someChannelName'"))(
+    (route ("'someChannelName'"))(
       when(1) then Channel("1"),
       when(2) then Channel("2")
     ) where(name = "myRouter")
@@ -101,7 +101,7 @@ class MessageRouterTests {
   @Test
   def validateFunctionRouterConfig(){
     
-    route.using{m:Message[String] => m.getHeaders.get("routeToChannel").asInstanceOf[String]}(
+    route{m:Message[String] => m.getHeaders.get("routeToChannel").asInstanceOf[String]}(
       when(1) then Channel("1"),
       when(2) then Channel("2")
     ) where(name = "myRouter")

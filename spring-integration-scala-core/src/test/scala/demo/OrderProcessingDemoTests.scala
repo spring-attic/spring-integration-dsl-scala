@@ -38,21 +38,21 @@ class OrderProcessingDemoTests {
 
     val invalidOrder = PurchaseOrder(List())
     
-    val errorFlow = handle.using{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
+    val errorFlow = handle{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
     
     val aggregationFlow = aggregate()
 
     val bikeFlow = 
-      handle.using{m:Message[_] => println("Processing bikes order: " + m); m} --> 
+      handle{m:Message[_] => println("Processing bikes order: " + m); m} --> 
       aggregationFlow
    
     val orderProcessingFlow =
-      filter.using{p:PurchaseOrder => !p.items.isEmpty}.where(exceptionOnRejection = true) -->
-      split.using{p:PurchaseOrder => p.items} -->
+      filter{p:PurchaseOrder => !p.items.isEmpty}.where(exceptionOnRejection = true) -->
+      split{p:PurchaseOrder => p.items} -->
       Channel.withDispatcher(taskExecutor = Executors.newCachedThreadPool) -->    
-      route.using{pi:PurchaseOrderItem => pi.itemType}(
+      route{pi:PurchaseOrderItem => pi.itemType}(
         when("books") then 
-            handle.using{m:Message[_] => println("Processing books order: " + m); m} --> 
+            handle{m:Message[_] => println("Processing books order: " + m); m} --> 
         	aggregationFlow, 
         when("bikes") then 
             bikeFlow    	 

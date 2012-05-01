@@ -29,51 +29,52 @@ object poll {
    * Will define poller which takes a reference to an instance of
    * org.springframework.scheduling.Trigger
    */
-  def usingTrigger(trigger:Trigger) = new Poller()  {
-    def withExecutor(taskExecutor:Executor = new SyncTaskExecutor) = new PollerComposition(null, new Poller(taskExecutor = taskExecutor))
+  def usingTrigger(trigger: Trigger) = new Poller() {
+    def withExecutor(taskExecutor: Executor = new SyncTaskExecutor) = new PollerComposition(null, new Poller(taskExecutor = taskExecutor))
   }
 
   /**
    *
    */
-  def usingFixedRate(fixedRate:Int) = new PollerComposition(null, new Poller(fixedRate = fixedRate))  {
+  def usingFixedRate(fixedRate: Int) = new PollerComposition(null, new Poller(fixedRate = fixedRate)) {
 
-    def withExecutor(taskExecutor:Executor) = new Poller(fixedRate = fixedRate)  {
-      def withMaxMessagesPerPoll(maxMessagesPerPoll:Int) =
+    def withExecutor(taskExecutor: Executor) = new Poller(fixedRate = fixedRate) {
+      def withMaxMessagesPerPoll(maxMessagesPerPoll: Int) =
         new PollerComposition(null, new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll))
     }
 
-    def withMaxMessagesPerPoll(maxMessagesPerPoll:Int) =
-      new PollerComposition(null, new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll))  {
+    def withMaxMessagesPerPoll(maxMessagesPerPoll: Int) =
+      new PollerComposition(null, new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll)) {
 
-      def withExecutor(taskExecutor:Executor = new SyncTaskExecutor) =
-        new PollerComposition(null, new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor))
-    }
+        def withExecutor(taskExecutor: Executor = new SyncTaskExecutor) =
+          new PollerComposition(null, new Poller(fixedRate = fixedRate, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor))
+      }
   }
 
   /**
    *
    */
-  def usingFixedDelay(fixedDelay:Int) = new PollerComposition(null, new Poller(fixedDelay = fixedDelay))  {
+  def usingFixedDelay(fixedDelay: Int) = new PollerComposition(null, new Poller(fixedDelay = fixedDelay)) {
 
-    def withExecutor(taskExecutor:Executor) = new Poller(fixedDelay = fixedDelay)  {
-      def withMaxMessagesPerPoll(maxMessagesPerPoll:Int) =
+    def withExecutor(taskExecutor: Executor) = new PollerComposition(null, new Poller(fixedDelay = fixedDelay, taskExecutor = taskExecutor) {
+      def withMaxMessagesPerPoll(maxMessagesPerPoll: Int) =
         new PollerComposition(null, new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll))
-    }
+    })
 
-    def withMaxMessagesPerPoll(maxMessagesPerPoll:Int) =
+    def withMaxMessagesPerPoll(maxMessagesPerPoll: Int) = 
       new PollerComposition(null, new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll)) {
 
-      def withExecutor(taskExecutor:Executor = new SyncTaskExecutor) =
-        new PollerComposition(null, new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor))
+        def withExecutor(taskExecutor: Executor = new SyncTaskExecutor) =
+          new PollerComposition(null, new Poller(fixedDelay = fixedDelay, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor))
       }
   }
 }
 /**
- * 
+ *
  */
-private[dsl] case class Poller(override val name:String = "$poll_" + UUID.randomUUID().toString.substring(0, 8), val fixedRate:Int = Integer.MIN_VALUE,
-                               val fixedDelay:Int = Integer.MIN_VALUE,
-                               val maxMessagesPerPoll:Int = Integer.MIN_VALUE,
-                               val taskExecutor:Executor = new SyncTaskExecutor,
-                               val trigger:Trigger = null) extends IntegrationComponent(name)
+private[dsl] case class Poller(override val name: String = "$poll_" + UUID.randomUUID().toString.substring(0, 8),
+  val fixedRate: Int = 1000,
+  val fixedDelay: Int = -1,
+  val maxMessagesPerPoll: Int = 0,
+  val taskExecutor: Executor = null,
+  val trigger: Trigger = null) extends IntegrationComponent(name)

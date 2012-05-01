@@ -123,7 +123,7 @@ class MessageChannelTests {
   @Test
   def validateMessagingBridge = {
      val flowWithMessageBridge = 
-       Channel("A") --> Channel("B") --> handle.using{m:Message[_] => m}
+       Channel("A") --> Channel("B") --> handle{m:Message[_] => m}
        
      Assert.assertEquals("hello", flowWithMessageBridge.sendAndReceive[String]("hello"))
   }

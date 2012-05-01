@@ -44,7 +44,35 @@ class MessageAggregatorTests {
   @Test
   def validateAggregatorConfiguration(){
 
+    aggregate()
     aggregate.where(name = "myAggregator")
+    
+//    aggregate.on{s:Any => new Object}
+//    aggregate.on{s:Any => new Object}.andExpire
+//    aggregate.on{s:Any => new Object}.where(name="aggr")
+//    aggregate.on{s:Any => new Object}.andExpire.where(name="aggr")
+//    aggregate.on{s:Any => new Object}.until{s:Any => 2<1}.where(name="aggr")
+//    aggregate.on{s:Any => new Object}.until{s:Any => 2<1}.andExpire.where(name="aggr")
+//    
+//    aggregate.until{s:Any => 2<1}
+//    aggregate.until{s:Any => 2<1}.andExpire
+//    aggregate.until{s:Any => 2<1}.where(name="aggr")
+//    aggregate.until{s:Any => 2<1}.andExpire.where(name="aggr")   
+//    
+//    aggregate.using{s:Any => new Object}
+//    aggregate.using{s:Any => new Object}.where(name="aggr")
+//    
+//    aggregate.using{s:Any => new Object}.on{s:Any => new Object}.where(name="aggr")
+//    aggregate.using{s:Any => new Object}.on{s:Any => new Object}.andExpire.where(name="aggr")
+//    aggregate.using{s:Any => new Object}.on{s:Any => new Object}.until{s:Any => 2<1}.andExpire.where(name="aggr")
+//   
+//    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}
+//    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}.andExpire
+//    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}.where(name="aggr")
+//    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}.andExpire.where(name="aggr")
+    
+    
+    
 //    aggregate.andExpire.where{name=""}
 //    aggregate.andExpire.andSendPartialResults.where{name=""}
 //    aggregate.andKeepReleasedMessages.where(name = "")

@@ -22,7 +22,7 @@ class ServiceActivatorTests {
   
   @Test
   def validateServiceActivatorWithPayloadAndHeaders {
-   val reply = handle.using{(_:String, headers:Map[String, _]) => headers.contains("foo")}.
+   val reply = handle{(_:String, headers:Map[String, _]) => headers.contains("foo")}.
                             sendAndReceive[Boolean]("Hello Java", headers = Map("foo" -> "foo"))
    Assert.assertTrue(reply)
   }
@@ -33,9 +33,9 @@ class ServiceActivatorTests {
 
     val service = new SimpleService
     
-    val reply1 = handle.using{payload:String => service.echo(payload)}.sendAndReceive[String]("Hello Java")
+    val reply1 = handle{payload:String => service.echo(payload)}.sendAndReceive[String]("Hello Java")
     Assert.assertEquals(reply1, "HELLO JAVA")
-    val reply2 = handle.using{service.echo(_:String)}.sendAndReceive[String]("Hello Java")
+    val reply2 = handle{service.echo(_:String)}.sendAndReceive[String]("Hello Java")
     Assert.assertEquals(reply2, "HELLO JAVA")
   }
   
@@ -44,6 +44,6 @@ class ServiceActivatorTests {
 
     val service = new SimpleService
     
-    val messageFlow = handle.using{println(_:Any)}
+    val messageFlow = handle{println(_:Any)}
   }
 }

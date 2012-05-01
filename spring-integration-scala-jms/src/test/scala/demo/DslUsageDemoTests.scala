@@ -1,14 +1,15 @@
 package demo
-import org.springframework.jms.core.JmsTemplate
-import javax.jms.TextMessage
-import org.springframework.integration.dsl.jms
 import org.junit.Test
-import org.springframework.jms.core.MessageCreator
-import org.springframework.integration.dsl.handle
-import javax.jms.Session
-import org.springframework.integration.Message
-import org.springframework.integration.dsl.transform
 import org.springframework.integration.dsl.utils.JmsDslTestUtils
+import org.springframework.integration.dsl.handle
+import org.springframework.integration.dsl.jms
+import org.springframework.integration.dsl.transform
+import org.springframework.integration.Message
+import org.springframework.jms.core.JmsTemplate
+import org.springframework.jms.core.MessageCreator
+
+import javax.jms.Session
+import javax.jms.TextMessage
 
 class DslUsageDemoTests {
 
@@ -18,8 +19,8 @@ class DslUsageDemoTests {
 
     val flow =
       jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
-        handle.using { m: Message[_] => println("logging existing message and passing through " + m); m } -->
-        transform.using { value: String => value.toUpperCase() }
+        handle { m: Message[_] => println("logging existing message and passing through " + m); m } -->
+        transform { value: String => value.toUpperCase() }
 
     flow.start()
 

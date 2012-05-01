@@ -26,6 +26,7 @@ subprojects { subproject ->
 junitVersion = '4.8.2'
     log4jVersion = '1.2.12'
 mockitoVersion = '1.9.0'
+springGemfireVersion = '1.1.0.RELEASE'
 
   install {
       repositories.mavenInstaller {
@@ -79,6 +80,18 @@ project('spring-integration-scala-jms') {
          exclude group: 'org.springframework', module: 'spring-context'
     }
   }
+}
+
+project('spring-integration-scala-gemfire') {
+    description = 'Spring Integration Scala GemFire'
+    test {
+        forkEvery = 1
+        systemProperties['gemfire.disableShutdownHook'] = 'true'
+    }
+    dependencies {
+        compile project(":spring-integration-scala-core")
+        compile ('org.springframework.integration:spring-integration-gemfire:2.1.1.RELEASE')
+    }
 }
 
 project('spring-integration-scala-http') {

@@ -23,10 +23,12 @@ import org.springframework.integration.router.HeaderValueRouter
 import org.springframework.integration.config.RouterFactoryBean
 import java.util.HashMap
 import org.apache.commons.logging.LogFactory
+import org.w3c.dom.Element
+import org.w3c.dom.Document
 
 /**
  * This class provides DSL and related components to support "Message Router" pattern
- * 
+ *
  * @author Oleg Zhurakousky
  */
 object route {
@@ -44,12 +46,12 @@ object route {
     }
   }
 
-  def using(target: String)(conditions: ValueCondition*) =
+  def apply(target: String)(conditions: ValueCondition*) =
     new SendingEndpointComposition(null, new Router(target = target)(conditions: _*)) {
       def where(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
     }
 
-  def using(target: Function1[_, String])(conditions: ValueCondition*) =
+  def apply(target: Function1[_, String])(conditions: ValueCondition*) =
     new SendingEndpointComposition(null, new Router(target = target)(conditions: _*)) {
       def where(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
     }
@@ -69,50 +71,59 @@ object when {
 
 private[dsl] class Router(name: String = "$rtr_" + UUID.randomUUID().toString.substring(0, 8), target: Any = null, val headerName: String = null)(val conditions: Condition*)
   extends SimpleEndpoint(name, target) {
-  
-  private val logger = LogFactory.getLog(this.getClass());
-  
-  override def build(targetDefFunction: Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit],
-                     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): BeanDefinitionBuilder = {
-    
-    val conditions = this.conditions
-    
-    require(conditions != null && conditions.size > 0, "Router without conditions is not supported")
 
-    val handlerBuilder: BeanDefinitionBuilder = {
-      conditions(0) match {
+  private val logger = LogFactory.getLog(this.getClass());
+
+  override def build(document: Document = null,
+    targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element = {
+
+    require(this.conditions != null && this.conditions.size > 0, "Router without conditions is not supported")
+
+    val routerElement: Element =
+      this.conditions(0) match {
         case hv: ValueCondition =>
           if (this.headerName != null) {
-            val builder = BeanDefinitionBuilder.rootBeanDefinition(classOf[HeaderValueRouter])
-            builder.addConstructorArgValue(this.headerName)
-            builder
-          } else
-            BeanDefinitionBuilder.rootBeanDefinition(classOf[RouterFactoryBean])
-
-        case pt: PayloadTypeCondition =>
-          BeanDefinitionBuilder.rootBeanDefinition(classOf[PayloadTypeRouter])
-
+            val hvrElement = document.createElement("int:header-value-router")
+            hvrElement.setAttribute("header-name", this.headerName)
+            hvrElement
+          } else {
+            document.createElement("int:router")
+          }
+        case ptr: PayloadTypeCondition =>
+          document.createElement("int:payload-type-router")
         case _ => throw new IllegalStateException("Unrecognized Router type: " + conditions(0))
       }
-    }
 
     if (logger.isDebugEnabled)
-      logger.debug("Creating Router of type: " + handlerBuilder.getBeanDefinition.getBeanClass.getSimpleName)
+      logger.debug("Creating Router of type: " + routerElement)
 
-    if (this.target != null)
-      targetDefFunction(this, handlerBuilder)
-
-    val channelMappings = new HashMap[Any, Any]()
-
-    for (condition <- conditions) {
+    val targetDefinnition:Tuple2[String, String] = if (this.target != null) targetDefinitionFunction(this.target) else null
+    
+    targetDefinnition match {
+      case t:Tuple2[String, String] => {
+        routerElement.setAttribute("ref", targetDefinnition._1);
+        routerElement.setAttribute("method", targetDefinnition._2);
+      }
+      case _ =>
+    }
+    
+    for (condition <- conditions) yield {
       val composition = condition.integrationComposition.copy()
       val normailizedCompositon = composition.normalizeComposition()
       val channel = DslUtils.getStartingComposition(normailizedCompositon).target.asInstanceOf[AbstractChannel]
-      channelMappings.put(condition.value, channel.name)
       compositionInitFunction(normailizedCompositon, null)
+      val mapping = document.createElement("int:mapping")
+      val keyAttributeName =
+        condition match {
+          case _: PayloadTypeCondition => "type"
+          case _ => "value"
+        }
+      mapping.setAttribute(keyAttributeName, condition.value.toString())
+      mapping.setAttribute("channel", channel.name)
+      routerElement.appendChild(mapping)
     }
-    handlerBuilder.addPropertyValue("channelMappings", channelMappings)
-    handlerBuilder
+    routerElement
   }
 }
 

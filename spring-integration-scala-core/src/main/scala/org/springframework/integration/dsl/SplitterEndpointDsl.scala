@@ -15,40 +15,48 @@
  */
 package org.springframework.integration.dsl
 
-import org.springframework.integration.store.{SimpleMessageStore, MessageStore}
+import org.springframework.integration.store.{ SimpleMessageStore, MessageStore }
 import java.util.UUID
 import org.springframework.util.StringUtils
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.config.SplitterFactoryBean
-
+import org.w3c.dom.Element
+import org.w3c.dom.Document
 
 /**
  * This class provides DSL and related components to support "Message Splitter" pattern
- * 
+ *
  * @author Oleg Zhurakousky
  */
 object split {
 
-  def using(function:Function1[_,Iterable[Any]]) = new SendingEndpointComposition(null, new Splitter(target = function)) {
-    def where(name:String = "$split_" + UUID.randomUUID().toString.substring(0, 8), applySequence:Boolean = true) = 
+  def apply(function: Function1[_, Traversable[Any]]) = new SendingEndpointComposition(null, new Splitter(target = function)) {
+    def where(name: String = "$split_" + UUID.randomUUID().toString.substring(0, 8), applySequence: Boolean = true) =
       new SendingEndpointComposition(null, new Splitter(name = name, target = function, applySequence = applySequence))
   }
-  
-  def using(function: (_,Map[String, _]) => Iterable[Any]) = new SendingEndpointComposition(null, new Splitter(target = function)) {
-    def where(name:String)= {
-      
+
+  def apply(function: (_, Map[String, _]) => Iterable[Any]) = new SendingEndpointComposition(null, new Splitter(target = function)) {
+    def where(name: String) = {
+
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Splitter(name = name, target = function))
     }
   }
 }
 
-private[dsl] class Splitter(name:String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val applySequence:Boolean = false)
-            extends SimpleEndpoint(name, target) {
-  override def build(targetDefFunction: Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit],
-                     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): BeanDefinitionBuilder = {
-     val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[SplitterFactoryBean])
-     targetDefFunction.apply(this, handlerBuilder)
-     handlerBuilder
+private[dsl] class Splitter(name: String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), target: Any, val applySequence: Boolean = false)
+  													extends SimpleEndpoint(name, target) {
+  
+  override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "SPLITTER", "applySequence" -> applySequence)
+  
+  override def build(document: Document = null,
+    targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element = {
+    val element = document.createElement("int:splitter")
+    element.setAttribute("id", this.name)
+    val targetDefinnition = targetDefinitionFunction.apply(this.target)
+    element.setAttribute("ref", targetDefinnition._1);
+    element.setAttribute("method", targetDefinnition._2);
+    element
   }
 }

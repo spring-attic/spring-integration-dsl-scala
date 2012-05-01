@@ -18,45 +18,54 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.config.TransformerFactoryBean
 import org.springframework.util.StringUtils
 import java.util.UUID
+import org.w3c.dom.Element
+import org.w3c.dom.Document
 
 /**
  * This class provides DSL and related components to support "Message Transformer" pattern
- * 
+ *
  * @author Oleg Zhurakousky
  */
 object transform {
-  
+
   trait RestrictiveFunction[A, B]
-  
+
   type NotUnitType[T] = RestrictiveFunction[T, Unit]
-  
+
   implicit def nsub[A, B]: RestrictiveFunction[A, B] = null
   implicit def nsubAmbig1[A, B >: A]: RestrictiveFunction[A, B] = null
   implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
 
-  def using[T, R: NotUnitType](function:Function1[_,R]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def where(name:String) = { 
+  def apply[T, R: NotUnitType](function: Function1[_, R]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
+    def where(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Transformer(name = name, target = function))
     }
   }
-  
-  def using[T, R: NotUnitType](function: (_,Map[String, _]) => R) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def where(name:String)= {
-      
+
+  def apply[T, R: NotUnitType](function: (_, Map[String, _]) => R) = new SendingEndpointComposition(null, new Transformer(target = function)) {
+    def where(name: String) = {
+
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Transformer(name = name, target = function))
     }
   }
 }
 
-private[dsl] class Transformer(name:String = "$xfmr_" + UUID.randomUUID().toString.substring(0, 8), target:Any)
-            extends SimpleEndpoint(name, target) {
+private[dsl] class Transformer(name: String = "$xfmr_" + UUID.randomUUID().toString.substring(0, 8), target: Any)
+  									extends SimpleEndpoint(name, target) {
   
-  override def build(targetDefFunction: Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit],
-                     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): BeanDefinitionBuilder = {
-    val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[TransformerFactoryBean])
-    targetDefFunction.apply(this, handlerBuilder)
-    handlerBuilder
+  override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "TRANSFORMER")
+
+  override def build(document: Document = null,
+    targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element = {
+
+    val element = document.createElement("int:transformer")
+    element.setAttribute("id", this.name)
+    val targetDefinnition = targetDefinitionFunction.apply(this.target)
+    element.setAttribute("ref", targetDefinnition._1);
+    element.setAttribute("method", targetDefinnition._2);
+    element
   }
 }

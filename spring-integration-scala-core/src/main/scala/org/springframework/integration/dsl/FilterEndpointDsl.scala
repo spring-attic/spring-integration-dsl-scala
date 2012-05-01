@@ -18,38 +18,47 @@ import java.util.UUID
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.config.FilterFactoryBean
 import org.springframework.util.StringUtils
+import org.w3c.dom.Element
+import org.w3c.dom.Document
 /**
  * This class provides DSL and related components to support "Message Filter" pattern
- * 
+ *
  * @author Oleg Zhurakousky
  */
 object filter {
 
-  def using(function:Function1[_,Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
-    def where(name:String  = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection:Boolean = false) = {
+  def apply(function: Function1[_, Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
+    def where(name: String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection: Boolean = false) = {
       new SendingEndpointComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
     }
   }
-  
-  def using(function: (_,Map[String, _]) => Boolean) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
-    def where(name:String)= {
-      
+
+  def apply(function: (_, Map[String, _]) => Boolean) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
+    def where(name: String) = {
+
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new MessageFilter(name = name, target = function))
     }
   }
 }
 
-private[dsl] class MessageFilter(name:String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), target:Any, val exceptionOnRejection:Boolean = false)
-            extends SimpleEndpoint(name, target) {
+private[dsl] class MessageFilter(name: String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), target: Any, val exceptionOnRejection: Boolean = false)
+  extends SimpleEndpoint(name, target) {
   
-  override def build(targetDefFunction: Function2[SimpleEndpoint, BeanDefinitionBuilder, Unit],
-                     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): BeanDefinitionBuilder = {
-    val handlerBuilder = BeanDefinitionBuilder.rootBeanDefinition(classOf[FilterFactoryBean])
+  override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "FILTER")
+
+  override def build(document: Document = null,
+    targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element = {
+
+    val element = document.createElement("int:filter")
+    element.setAttribute("id", this.name)
     if (this.exceptionOnRejection) {
-       handlerBuilder.addPropertyValue("throwExceptionOnRejection", this.exceptionOnRejection)
+      element.setAttribute("throw-exception-on-rejection", this.exceptionOnRejection.toString())
     }
-    targetDefFunction.apply(this, handlerBuilder)
-    handlerBuilder
+    val targetDefinnition = targetDefinitionFunction.apply(this.target)
+    element.setAttribute("ref", targetDefinnition._1);
+    element.setAttribute("method", targetDefinnition._2);
+    element
   }
 }

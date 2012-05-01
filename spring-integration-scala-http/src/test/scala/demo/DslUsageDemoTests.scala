@@ -28,7 +28,7 @@ class DSLUsageDemoTests {
   def httpOutboundWithFunctionUrl = {
 
     val tickerService =
-      transform.using { s: String =>
+      transform { s: String =>
         s.toLowerCase() match {
           case "vmw" => "VMWare"
           case "orcl" => "Oracle"
@@ -38,8 +38,10 @@ class DSLUsageDemoTests {
 
     val httpFlow =
       enrich.header("company" -> { name: String => tickerService.sendAndReceive[String](name) }) -->
-        http.GET[String] { m: Message[String] => "http://www.google.com/finance/info?q=" + m.getPayload() } -->
-        handle.using { quotes: Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes) }
+      http.GET[String] { ticker: String => "http://www.google.com/finance/info?q=" + ticker } -->
+      handle { (payload: String, headers: Map[String, _]) => 
+          println("QUOTES for " + headers.get("company") + " : " + payload) 
+      }
 
     httpFlow.send("vmw")
 
@@ -50,7 +52,7 @@ class DSLUsageDemoTests {
   def httpOutboundWithStringUrl = {
 
     val tickerService =
-      transform.using { s: String =>
+      transform { s: String =>
         s.toLowerCase() match {
           case "vmware" => "vmw"
           case "oracle" => "orcl"
@@ -60,7 +62,7 @@ class DSLUsageDemoTests {
 
     val httpFlow =
       http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("Oracle")) -->
-        handle.using { quotes: Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes) }
+        handle { quotes: Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes) }
 
     httpFlow.send("don't care")
 
@@ -72,12 +74,12 @@ class DSLUsageDemoTests {
 
     val httpFlow =
         http.POST[String]("http://posttestserver.com/post.php") -->
-        transform.using { response: String =>
+        transform { response: String =>
           println(response) // poor man transformer to extract URL from which the POST results are visible
           response.substring(response.indexOf("View") + 11, response.indexOf("Post") - 1)
         } -->
         http.GET[String] { url: String => url } -->
-        handle.using { response: String => println(response) }
+        handle { response: String => println(response) }
 
     httpFlow.send("Spring Integration")
 

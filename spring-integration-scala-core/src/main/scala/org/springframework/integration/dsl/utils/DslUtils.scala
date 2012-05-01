@@ -14,12 +14,19 @@
  * limitations under the License.
  */
 package org.springframework.integration.dsl.utils
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.WrappedArray
+import java.lang.Boolean
+import java.lang.Double
+import java.lang.Integer
 import java.lang.Long
-import org.springframework.integration.dsl.BaseIntegrationComposition
-import org.springframework.integration.dsl.ListOfCompositions
+import java.lang.Short
 import scala.collection.mutable.ArrayBuffer
+import org.springframework.integration.dsl.ListOfCompositions
+import org.springframework.integration.dsl.BaseIntegrationComposition
+import org.springframework.integration.dsl.IntegrationComponent
+import org.springframework.integration.dsl.IntegrationComponent
+import org.springframework.integration.dsl.IntegrationComponent
+import org.springframework.integration.dsl.IntegrationComponent
+
 /**
  * @author Oleg Zhurakousky
  */
@@ -28,31 +35,30 @@ object DslUtils {
   /**
    *
    */
-  def toProductSeq[T <: BaseIntegrationComposition](integrationComposition: T): List[Any] = {
-    val productIterator =
+  def toProductTraversble[T <: BaseIntegrationComposition](integrationComposition: T): Traversable[Any] = {
+
+    val products =
       for (product <- integrationComposition.productIterator if product != null) yield {
         product match {
-          case composition: BaseIntegrationComposition => 
-            this.toProductSeq(composition)
-      
-          case lc: ListOfCompositions[BaseIntegrationComposition] => {
-            val result = Seq(for (element <- lc.compositions) yield this.toProductSeq(element))
-            result.toList
-          }
-          case _ => 
-            List(product)
+          case composition: BaseIntegrationComposition =>
+            this.toProductTraversble(composition)
+          case lc: ListOfCompositions[BaseIntegrationComposition] =>
+            List(for (element <- lc.compositions) yield this.toProductTraversble(element))
+          case _ =>
+            List(product.asInstanceOf[IntegrationComponent].toMapOfProperties)
         }
       }
 
-    productIterator.toList.flatten
+    products.toList.flatten
   }
+
   /**
    * Will return the starting BaseIntegrationComposition of this BaseIntegrationComposition
    */
   def getStartingComposition(integrationComposition: BaseIntegrationComposition): BaseIntegrationComposition = {
-    if (integrationComposition.parentComposition != null) 
+    if (integrationComposition.parentComposition != null)
       this.getStartingComposition(integrationComposition.parentComposition)
-    else 
+    else
       integrationComposition
   }
 

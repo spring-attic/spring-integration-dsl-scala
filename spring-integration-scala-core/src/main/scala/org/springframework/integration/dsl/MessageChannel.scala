@@ -125,7 +125,7 @@ private[dsl] class Channel(name: String = "$ch_" + UUID.randomUUID().toString.su
  *
  */
 private[dsl] class PollableChannel(name: String = "$queue_ch_" + UUID.randomUUID().toString.substring(0, 8),
-  val capacity: Int = Integer.MIN_VALUE,
+  val capacity: Int = Int.MaxValue,
   val messageStore: MessageStore = null) extends AbstractChannel(name)
 /**
  *

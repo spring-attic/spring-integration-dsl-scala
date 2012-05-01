@@ -22,12 +22,12 @@ class MessageFilterTests {
 
   @Test
   def validateMessageFilterWithPayloadAndHeaders {
-    val reply1 = filter.using { (_: String, headers: Map[String, _]) => headers.contains("foo") }.
+    val reply1 = filter { (_: String, headers: Map[String, _]) => headers.contains("foo") }.
       sendAndReceive[String]("Hello Scala", headers = Map("foo" -> "foo"))
     Assert.assertNotNull(reply1)
     Assert.assertEquals(reply1, "Hello Scala")
     
-    val reply2 = filter.using { (_: String, headers: Map[String, _]) => headers.contains("bar") }.
+    val reply2 = filter { (_: String, headers: Map[String, _]) => headers.contains("bar") }.
       sendAndReceive[String]("Hello Scala", headers = Map("foo" -> "foo"), timeout=1000)
     Assert.assertNull(reply2)
   }
