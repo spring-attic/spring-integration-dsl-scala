@@ -169,7 +169,8 @@ private[dsl] class SendingEndpointComposition(parentComposition: BaseIntegration
   def -->[T <: BaseIntegrationComposition](a: T) = {
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)
     
-    this.compose(this, a)
+    val reply = this.compose(this, a)
+    reply
   }
 }
 
@@ -258,7 +259,9 @@ private[dsl] abstract class SimpleEndpoint(name:String, val target:Any = null) e
   
   def build(root: Document = null,
             targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-            compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element
+            compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit],
+            inputChannel:AbstractChannel,
+            outputChannel:AbstractChannel): Element
 }
 
 private[dsl] abstract trait OutboundAdapterEndpoint
@@ -266,5 +269,7 @@ private[dsl] abstract trait OutboundAdapterEndpoint
 private[dsl] abstract class InboundMessageSource(name:String, val target:Any = null) extends IntegrationComponent(name) {
   override def toString = name
 
-  def build(document: Document = null, beanInstancesToRegister:scala.collection.mutable.Map[String, Any], requestChannelName: String): Element
+  def build(document: Document = null, 
+            beanInstancesToRegister:scala.collection.mutable.Map[String, Any], 
+            requestChannelName: String): Element 
 }

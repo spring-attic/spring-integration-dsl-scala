@@ -53,7 +53,7 @@ class OrderProcessingDemoTests {
       route{pi:PurchaseOrderItem => pi.itemType}(
         when("books") then 
             handle{m:Message[_] => println("Processing books order: " + m); m} --> 
-        	aggregationFlow, 
+        	    aggregationFlow, 
         when("bikes") then 
             bikeFlow    	 
       ) 

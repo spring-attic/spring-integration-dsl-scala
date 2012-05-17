@@ -42,11 +42,11 @@ private final class FunctionInvoker(f: => Any) {
   def sendPayload(payload: Object): Unit = {
     this.invokeMethod[Object](payload)
   }
-  
+
   /**
    *
    */
-  def sendPayloadAndHeaders(payload: Object, headers:java.util.Map[String, _]): Unit = {
+  def sendPayloadAndHeaders(payload: Object, headers: java.util.Map[String, _]): Unit = {
     this.invokeMethod[Object](payload, headers)
   }
 
@@ -64,15 +64,15 @@ private final class FunctionInvoker(f: => Any) {
     val result = this.invokeMethod[Object](payload)
     result
   }
-  
+
   /**
-   * 
+   *
    */
-  def sendPayloadAndHeadersAndReceive(payload: Object, headers:java.util.Map[String, _]) = {
+  def sendPayloadAndHeadersAndReceive(payload: Object, headers: java.util.Map[String, _]) = {
     val result = this.invokeMethod[Object](payload, headers)
     result
   }
-  
+
   /**
    *
    */
@@ -85,25 +85,25 @@ private final class FunctionInvoker(f: => Any) {
    */
   private def findPropperApplyMethod: Method = {
     // TODO Make it more Scala-esque (looks like java)
-    
+
     val methodBuffer = new ListBuffer[Method]
 
     val methods = f.getClass().getDeclaredMethods()
-    
+
     for (method <- methods) // TODO change to yield
       if (method.getName == APPLY_METHOD) methodBuffer += method
 
     val applyMethods = methodBuffer.toList
 
     val messageMethod =
-      if (applyMethods.size == 1) 
+      if (applyMethods.size == 1)
         applyMethods(0)
       else if (applyMethods(0).getReturnType().isAssignableFrom(classOf[Any]) &&
-        applyMethods(0).getParameterTypes()(0).isAssignableFrom(classOf[Any])) 
+        applyMethods(0).getParameterTypes()(0).isAssignableFrom(classOf[Any]))
         applyMethods(1)
-      else 
+      else
         applyMethods(0)
-    
+
     messageMethod
   }
 
@@ -115,11 +115,11 @@ private final class FunctionInvoker(f: => Any) {
     method.setAccessible(true)
     this.normalizeResult[T](method.invoke(f, value))
   }
-  
+
   private def invokeMethod[T](value: Object, headers: java.util.Map[String, _]): T = {
     val declaredMethods = f.getClass().getDeclaredMethods()
     var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any], classOf[Any])
-    method.setAccessible(true)  
+    method.setAccessible(true)
     this.normalizeResult[T](method.invoke(f, value, headers.toMap))
   }
 
@@ -128,26 +128,27 @@ private final class FunctionInvoker(f: => Any) {
    */
   private def normalizeResult[T](result: Any): T = {
     val normalizedResponse =
-//      endpoint match {
-//        case splitter: Splitter => {
-          result match {
-            case message: Message[_] => {
-              message.getPayload match {
-                case it: Iterable[_] =>
-                  MessageBuilder.withPayload(JavaConversions.asJavaCollection(it)).
-                    copyHeaders(message.getHeaders).build()
-                case _ => message
-              }
-            }
+      result match {
+        case message: Message[_] => {
+          message.getPayload match {
+            case m: Map[_, _] =>
+              val javaMap = JavaConversions.asJavaMap(m)
+              val javaMapMessage =
+              MessageBuilder.withPayload(javaMap).copyHeaders(message.getHeaders).build()
+                println
+              javaMapMessage
             case it: Iterable[_] =>
-              JavaConversions.asJavaCollection(it)
-            case _ =>
-              result
+              MessageBuilder.withPayload(JavaConversions.asJavaCollection(it)).
+                copyHeaders(message.getHeaders).build()
+
+            case _ => message
           }
-//        }
-//        case _ =>
-//          result
-//      }
+        }
+        case it: Iterable[_] =>
+          JavaConversions.asJavaCollection(it)
+        case _ =>
+          result
+      }
     normalizedResponse.asInstanceOf[T]
   }
 
@@ -160,7 +161,7 @@ private final class FunctionInvoker(f: => Any) {
     val parameterTypes = applyMethod.getParameterTypes()
     val parameter0 = if (parameterTypes.size > 0) parameterTypes(0) else null
     val parameter1 = if (parameterTypes.size == 2) parameterTypes(1) else null
-   
+
     if (logger.isDebugEnabled) logger.debug("Selecting method: " + applyMethod)
 
     val methodName =
@@ -169,7 +170,7 @@ private final class FunctionInvoker(f: => Any) {
           "sendMessage"
         else if (parameter0 != null && parameter1 == null)
           "sendPayload"
-        else 
+        else
           "sendPayloadAndHeaders"
       } else {
         if (classOf[Message[_]].isAssignableFrom(parameter0) && parameter1 == null)

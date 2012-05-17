@@ -27,13 +27,17 @@ import scala.collection.immutable.WrappedString
  * @author Oleg Zhurakousky
  */
 class DslUsageDemoTests {
-
+  
   @Test
   def simpleServiceWithWrappedStringAsFunction = {
-
+    
+    def foo(m: Message[_]) = {
+      println(m)
+    } 
+    
     val messageFlow =
-      handle{"hello"}.where(name = "sa1") -->
-      handle{ m: Message[_] => println(m) }.where(name = "myService")
+      handle{"hello"} -->
+      handle{m:Message[_] => foo(m) } 
 
     messageFlow.send(2)
     println("done")
@@ -221,8 +225,9 @@ class DslUsageDemoTests {
         when("foo") then
           handle { m: Message[_] => println("Header is 'foo': " + m) },
         when("bar") then
-          handle { m: Message[_] => println("Header is 'bar': " + m) }) -->
-          handle { m: Message[_] => println("Header is not set: " + m) }
+          handle { m: Message[_] => println("Header is 'bar': " + m) }
+      ) -->
+      handle { m: Message[_] => println("Header is not set: " + m) }
 
     messageFlow.send("FOO header", headers = Map("someHeaderName" -> "foo"))
 

@@ -51,12 +51,21 @@ private[dsl] class Splitter(name: String = "$splt_" + UUID.randomUUID().toString
   
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element = {
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null, 
+    inputChannel:AbstractChannel,
+    outputChannel:AbstractChannel): Element = {
+    
+    require(inputChannel != null, "'inputChannel' must be provided")
+    
     val element = document.createElement("int:splitter")
     element.setAttribute("id", this.name)
     val targetDefinnition = targetDefinitionFunction.apply(this.target)
     element.setAttribute("ref", targetDefinnition._1);
     element.setAttribute("method", targetDefinnition._2);
+    element.setAttribute("input-channel", inputChannel.name);
+    if (outputChannel != null){
+      element.setAttribute("output-channel", outputChannel.name);
+    }
     element
   }
 }

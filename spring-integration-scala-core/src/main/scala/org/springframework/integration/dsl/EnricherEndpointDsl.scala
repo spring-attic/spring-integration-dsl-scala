@@ -78,7 +78,11 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
 
   override def build(document: Document,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): Element = {
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit], 
+    inputChannel:AbstractChannel,
+    outputChannel:AbstractChannel): Element = {
+    
+    require(inputChannel != null, "'inputChannel' must be provided")
 
     val headerValueTargetDefinitions: Map[String, _] =
       this.target match {
@@ -111,7 +115,7 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
         case _ => null
       }
 
-    headerValueTargetDefinitions match {
+    val element = headerValueTargetDefinitions match {
       case null => {
         val transformerElement = document.createElement("int:transformer")
         transformerElement.setAttribute("id", this.name)
@@ -141,5 +145,10 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
         headerEnricherElement
       }
     }
+    element.setAttribute("input-channel", inputChannel.name);
+    if (outputChannel != null){
+      element.setAttribute("output-channel", outputChannel.name);
+    }
+    element
   }
 }

@@ -142,10 +142,18 @@ private[dsl] class Aggregator(name: String = "$ag_" + UUID.randomUUID().toString
 
   override def build(document: Document,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): Element = {
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit], 
+    inputChannel:AbstractChannel,
+    outputChannel:AbstractChannel): Element = {
+    
+    require(inputChannel != null, "'inputChannel' must be provided")
     
     val element = document.createElement("int:aggregator")
     element.setAttribute("id", this.name)
+    element.setAttribute("input-channel", inputChannel.name);
+    if (outputChannel != null){
+      element.setAttribute("output-channel", outputChannel.name);
+    }
     element
   }
 }

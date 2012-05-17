@@ -132,14 +132,18 @@ private[dsl] class HttpOutboundGateway(name: String = "$http_out_" + UUID.random
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element = {
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,
+    inputChannel:AbstractChannel,
+    outputChannel:AbstractChannel): Element = {
+    
+    require(inputChannel != null, "'inputChannel' must be provided")
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
     beansElement.setAttribute("xmlns:int-http", "http://www.springframework.org/schema/integration/http")
     val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
-    beansElement.setAttribute("xsi:schemaLocation", "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd " +
-      "http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration-2.1.xsd " +
-      "http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http-2.1.xsd")
+    
+    beansElement.setAttribute("xsi:schemaLocation", schemaLocation +
+      " http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd")
 
     val element = document.createElement("int-http:outbound-gateway")
     element.setAttribute("id", this.name)
@@ -165,6 +169,10 @@ private[dsl] class HttpOutboundGateway(name: String = "$http_out_" + UUID.random
       case url: String => {
         element.setAttribute("url", this.target.toString())
       }
+    }
+    element.setAttribute("request-channel", inputChannel.name)
+    if (outputChannel != null){
+       element.setAttribute("reply-channel", outputChannel.name)
     }
     element
   }

@@ -76,7 +76,11 @@ private[dsl] class Router(name: String = "$rtr_" + UUID.randomUUID().toString.su
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null): Element = {
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null, 
+    inputChannel:AbstractChannel,
+    outputChannel:AbstractChannel): Element = {
+    
+    require(inputChannel != null, "'inputChannel' must be provided")
 
     require(this.conditions != null && this.conditions.size > 0, "Router without conditions is not supported")
 
@@ -122,6 +126,10 @@ private[dsl] class Router(name: String = "$rtr_" + UUID.randomUUID().toString.su
       mapping.setAttribute(keyAttributeName, condition.value.toString())
       mapping.setAttribute("channel", channel.name)
       routerElement.appendChild(mapping)
+    }
+    routerElement.setAttribute("input-channel", inputChannel.name);
+    if (outputChannel != null){
+      routerElement.setAttribute("default-output-channel", outputChannel.name);
     }
     routerElement
   }

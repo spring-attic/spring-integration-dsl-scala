@@ -75,7 +75,7 @@ class IntegrationDomTreeBuilder {
   root.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
   root.setAttribute("xmlns:int", "http://www.springframework.org/schema/integration")
   root.setAttribute("xsi:schemaLocation", "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd " +
-    "http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration-2.1.xsd")
+    "http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd")
 
   root.appendChild(document.createComment("Generated file. Don't modify"))
   document.appendChild(root);
@@ -185,7 +185,7 @@ class IntegrationDomTreeBuilder {
             else
               null
 
-          channel
+          channel  
 
         case _ => throw new IllegalStateException("Unrecognized component " + composition)
       }
@@ -312,30 +312,11 @@ class IntegrationDomTreeBuilder {
 
     if (logger.isDebugEnabled) logger.debug("Creating " + endpoint)
 
-    val element = endpoint.build(document, this.defineAndRegisterHandlerTarget, this.init)
+    val element = endpoint.build(document, this.defineAndRegisterTarget, this.init, inputChannel, outputChannel)
     root.appendChild(element)
-
-    if (inputChannel != null) {
-      if (element.getTagName().startsWith("int:")) { // core components
-        element.setAttribute("input-channel", inputChannel.name)
-      } else {
-        element.setAttribute("request-channel", inputChannel.name) // gateways adapters
-      }
-    }
 
     if (poller != null)
       this.configurePoller(endpoint, poller, element)
-
-    if (outputChannel != null) {
-      if (element.getTagName().startsWith("int:")) { // core components
-        endpoint match {
-          case _: Router => element.setAttribute("default-output-channel", outputChannel.name)
-          case _ => element.setAttribute("output-channel", outputChannel.name)
-        }
-      } else {
-        element.setAttribute("reply-channel", outputChannel.name) // gateways adapters
-      }
-    }
 
     this.integrationComponents += (endpoint.name -> endpoint)
   }
@@ -378,14 +359,14 @@ class IntegrationDomTreeBuilder {
   /**
    *
    */
-  private def defineAndRegisterHandlerTarget(target: Any): Tuple2[String, String] = {
+  private def defineAndRegisterTarget(target: Any): Tuple2[String, String] = {
     val targetBeanName = "bean_" + target.hashCode
 
     val targetDefinition = target match {
       case Some(rootTarget) => {
         val s = rootTarget
         this.supportingBeans += (targetBeanName -> rootTarget)
-        (targetBeanName, targetBeanName)
+        (targetBeanName, null)
       }
       case _ => {
         val functionInvoker = new FunctionInvoker(target)

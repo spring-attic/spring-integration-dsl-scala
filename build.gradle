@@ -11,6 +11,7 @@ allprojects {
     maven { url 'http://repo.springsource.org/libs-milestone' }
     maven { url 'https://repo.springsource.org/libs-snapshot'}
     maven { url 'https://repo.springsource.org/libs-release'}
+    maven { url 'https://repo.springsource.org/libs-milestone'}
   }
 }
 
@@ -23,10 +24,11 @@ subprojects { subproject ->
   sourceCompatibility=1.5
   targetCompatibility=1.5
 
-junitVersion = '4.8.2'
-    log4jVersion = '1.2.12'
-mockitoVersion = '1.9.0'
-springGemfireVersion = '1.1.0.RELEASE'
+  junitVersion = '4.8.2'
+  log4jVersion = '1.2.12'
+  mockitoVersion = '1.9.0'
+  springintegrationVersion = '2.2.0.M1'
+  springGemfireVersion = '1.1.0.RELEASE'
 
   install {
       repositories.mavenInstaller {
@@ -63,7 +65,7 @@ project('spring-integration-scala-core') {
   description = 'Spring Integration Scala Core'
   dependencies {
     // dependent libraries
-    compile 'org.springframework.integration:spring-integration-core:2.1.1.RELEASE'
+    compile "org.springframework.integration:spring-integration-core:$springintegrationVersion"
     compile("org.codehaus.jackson:jackson-mapper-asl:1.9.2") { optional = true }
   }
 }
@@ -72,7 +74,7 @@ project('spring-integration-scala-jms') {
   description = 'Spring Integration Scala JMS'
   dependencies {
     compile project(":spring-integration-scala-core")
-    compile ('org.springframework.integration:spring-integration-jms:2.1.1.RELEASE')
+    compile ('org.springframework.integration:spring-integration-jms:$springintegrationVersion')
     compile ("org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1") 
   
     // libraries only needed for test
@@ -90,7 +92,7 @@ project('spring-integration-scala-gemfire') {
     }
     dependencies {
         compile project(":spring-integration-scala-core")
-        compile ('org.springframework.integration:spring-integration-gemfire:2.1.1.RELEASE')
+        compile ('org.springframework.integration:spring-integration-gemfire:$springintegrationVersion')
     }
 }
 
@@ -98,7 +100,7 @@ project('spring-integration-scala-http') {
   description = 'Spring Integration Scala HTTP'
   dependencies {
     compile project(":spring-integration-scala-core")
-    compile ('org.springframework.integration:spring-integration-http:2.1.1.RELEASE')
+    compile ('org.springframework.integration:spring-integration-http:$springintegrationVersion')
   }
 }
 
