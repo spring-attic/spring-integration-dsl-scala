@@ -1,3 +1,18 @@
+/*
+ * Copyright 2002-2012 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package demo
 import org.junit.Test
 import org.springframework.integration.dsl.utils.JmsDslTestUtils
@@ -7,15 +22,45 @@ import org.springframework.integration.dsl.transform
 import org.springframework.integration.Message
 import org.springframework.jms.core.JmsTemplate
 import org.springframework.jms.core.MessageCreator
-
 import javax.jms.Session
 import javax.jms.TextMessage
-
+import java.io.File
+import org.junit.Before
+import javax.jms.ConnectionFactory
+import org.springframework.jms.connection.CachingConnectionFactory
+import org.junit.After
+/**
+ * @author Oleg Zhurakousky
+ */
 class DslUsageDemoTests {
+
+  var connectionFactory:CachingConnectionFactory = _
+
+  @Before
+  def before = {
+    val activeMqTempDir = new File("activemq-data")
+    deleteDir(activeMqTempDir)
+
+    def deleteDir(directory: File): Unit = {
+      if (directory.exists()) {
+        val children = directory.list();
+
+        if (children != null) {
+          for (child <- children) deleteDir(new File(directory, child))
+        }
+      }
+      directory.delete();
+    }
+    connectionFactory = JmsDslTestUtils.localConnectionFactory
+  }
+  @After
+  def after = {
+    connectionFactory.destroy()
+  }
 
   @Test
   def jmsInboundGateway = {
-    val connectionFactory = JmsDslTestUtils.localConnectionFactory
+
 
     val flow =
       jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
@@ -42,4 +87,37 @@ class DslUsageDemoTests {
     flow.stop()
     println("done")
   }
+
+  @Test
+  def jmsOutboundGatewayWithReply = {
+
+    val sendingMessageFlow =
+      transform { p: String => p.toUpperCase() } -->
+        jms.send(requestDestinationName = "myQueue", connectionFactory = connectionFactory)
+
+    val receivingMessageFlow =
+      jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
+        handle { p: String => println("received " + p); "REPLY: " + p }
+
+    receivingMessageFlow.start()
+    val reply = sendingMessageFlow.sendAndReceive[String]("Hello JMS!")
+    println("Received reply: " + reply)
+  }
+
+  //   @Test
+  //  def jmsOutboundGatewayWithoutReply = {
+  //    val connectionFactory = JmsDslTestUtils.localConnectionFactory
+  //
+  //    val sendingMessageFlow =
+  //      transform{p:String => p.toUpperCase()} -->
+  //      jms.send(requestDestinationName = "myQueue", connectionFactory = connectionFactory)
+  //
+  //    val receivingMessageFlow =
+  //      jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
+  //      handle{p:String => println("received " + p)}
+  //
+  //    receivingMessageFlow.start()
+  //    sendingMessageFlow.send("Hello JMS!")
+  //    println("Done")
+  //  }
 }
