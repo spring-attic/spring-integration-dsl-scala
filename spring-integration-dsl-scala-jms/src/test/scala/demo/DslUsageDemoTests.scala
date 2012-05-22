@@ -34,33 +34,10 @@ import org.junit.After
  */
 class DslUsageDemoTests {
 
-  var connectionFactory:CachingConnectionFactory = _
-
-  @Before
-  def before = {
-    val activeMqTempDir = new File("activemq-data")
-    deleteDir(activeMqTempDir)
-
-    def deleteDir(directory: File): Unit = {
-      if (directory.exists()) {
-        val children = directory.list();
-
-        if (children != null) {
-          for (child <- children) deleteDir(new File(directory, child))
-        }
-      }
-      directory.delete();
-    }
-    connectionFactory = JmsDslTestUtils.localConnectionFactory
-  }
-  @After
-  def after = {
-    connectionFactory.destroy()
-  }
+  var connectionFactory: CachingConnectionFactory = _
 
   @Test
   def jmsInboundGateway = {
-
 
     val flow =
       jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
@@ -93,7 +70,7 @@ class DslUsageDemoTests {
 
     val sendingMessageFlow =
       transform { p: String => p.toUpperCase() } -->
-        jms.send(requestDestinationName = "myQueue", connectionFactory = connectionFactory)
+        jms.sendAndReceive(requestDestinationName = "myQueue", connectionFactory = connectionFactory)
 
     val receivingMessageFlow =
       jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
@@ -104,20 +81,41 @@ class DslUsageDemoTests {
     println("Received reply: " + reply)
   }
 
-  //   @Test
-  //  def jmsOutboundGatewayWithoutReply = {
-  //    val connectionFactory = JmsDslTestUtils.localConnectionFactory
-  //
-  //    val sendingMessageFlow =
-  //      transform{p:String => p.toUpperCase()} -->
-  //      jms.send(requestDestinationName = "myQueue", connectionFactory = connectionFactory)
-  //
-  //    val receivingMessageFlow =
-  //      jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
-  //      handle{p:String => println("received " + p)}
-  //
-  //    receivingMessageFlow.start()
-  //    sendingMessageFlow.send("Hello JMS!")
-  //    println("Done")
-  //  }
+  @Test
+  def jmsOutboundGatewayWithoutReply = {
+
+    val sendingMessageFlow =
+      transform { p: String => p.toUpperCase() } -->
+      	jms.send(requestDestinationName = "myQueue", connectionFactory = connectionFactory)
+
+    val receivingMessageFlow =
+      jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
+      	handle { p: String => println("received " + p) }
+
+    receivingMessageFlow.start()
+    sendingMessageFlow.send("Hello JMS!")
+    println("Done")
+  }
+
+  @Before
+  def before = {
+    val activeMqTempDir = new File("activemq-data")
+    deleteDir(activeMqTempDir)
+
+    def deleteDir(directory: File): Unit = {
+      if (directory.exists) {
+        val children = directory.list();
+
+        if (children != null) {
+          for (child <- children) deleteDir(new File(directory, child))
+        }
+      }
+      directory.delete();
+    }
+    connectionFactory = JmsDslTestUtils.localConnectionFactory
+  }
+  @After
+  def after = {
+    connectionFactory.destroy()
+  }
 }

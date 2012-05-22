@@ -28,8 +28,11 @@ private[dsl] object JmsDsl {
 object jms {
 
   def listen(requestDestinationName: String, connectionFactory: ConnectionFactory) =
-    new ListeningIntegrationComposition(null, new JmsInboundGateway(target = requestDestinationName, connectionFactory = connectionFactory))
+    new ListeningIntegrationComposition(null, new JmsInboundGatewayConfig(target = requestDestinationName, connectionFactory = connectionFactory))
 
-  def send(requestDestinationName: String, connectionFactory: ConnectionFactory) =
-    new SendingEndpointComposition(null, new JmsOutboundGateway(target = requestDestinationName, connectionFactory = connectionFactory))
+  def sendAndReceive(requestDestinationName: String, connectionFactory: ConnectionFactory) =
+    new SendingEndpointComposition(null, new JmsOutboundGatewayConfig(target = requestDestinationName, oneway = false, connectionFactory = connectionFactory))
+
+   def send(requestDestinationName: String, connectionFactory: ConnectionFactory) =
+    new SendingEndpointComposition(null, new JmsOutboundGatewayConfig(target = requestDestinationName, oneway = true, connectionFactory = connectionFactory))
 }

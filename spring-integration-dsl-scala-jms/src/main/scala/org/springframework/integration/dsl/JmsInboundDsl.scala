@@ -30,7 +30,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory
 /**
  * @author Oleg Zhurakousky
  */
-private[dsl] class JmsInboundGateway(name: String = "$jms_in_" + UUID.randomUUID().toString.substring(0, 8),
+private[dsl] class JmsInboundGatewayConfig(name: String = "$jms_in_" + UUID.randomUUID().toString.substring(0, 8),
   target: String,
   val connectionFactory: ConnectionFactory) extends InboundMessageSource(name, target) {
 

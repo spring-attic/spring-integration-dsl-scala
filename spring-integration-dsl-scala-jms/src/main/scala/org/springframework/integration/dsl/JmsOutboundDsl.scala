@@ -21,15 +21,16 @@ import org.w3c.dom.Document
 /**
  * @author Oleg Zhurakousky
  */
-private[dsl] class JmsOutboundGateway(name: String = "$jms_out_" + UUID.randomUUID().toString.substring(0, 8),
+private[dsl] class JmsOutboundGatewayConfig(name: String = "$jms_out_" + UUID.randomUUID().toString.substring(0, 8),
   target: String,
+  oneway: Boolean,
   val connectionFactory: ConnectionFactory) extends SimpleEndpoint(name, target) with OutboundAdapterEndpoint {
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,
-    inputChannel:AbstractChannel,
-    outputChannel:AbstractChannel): Element = {
+    inputChannel: AbstractChannel,
+    outputChannel: AbstractChannel): Element = {
 
     require(inputChannel != null, "'inputChannel' must be provided")
 
@@ -40,14 +41,26 @@ private[dsl] class JmsOutboundGateway(name: String = "$jms_out_" + UUID.randomUU
     val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
     beansElement.setAttribute("xsi:schemaLocation", JmsDsl.jmsSchema);
 
-    val element = document.createElement("int-jms:outbound-gateway")
-    element.setAttribute("id", this.name)
-    element.setAttribute("request-destination-name", this.target)
-    element.setAttribute("request-channel", inputChannel.name)
-    if (outputChannel != null){
-      element.setAttribute("reply-channel", outputChannel.name)
-    }
+    val element: Element =
+      if (oneway) {
+        val outboundAdapterElement = document.createElement("int-jms:outbound-channel-adapter")
 
+        outboundAdapterElement.setAttribute("destination-name", this.target)
+        outboundAdapterElement.setAttribute("channel", inputChannel.name)
+
+        outboundAdapterElement
+      } else {
+
+        val outboundGatewayElement = document.createElement("int-jms:outbound-gateway")
+
+        outboundGatewayElement.setAttribute("request-destination-name", this.target)
+        outboundGatewayElement.setAttribute("request-channel", inputChannel.name)
+        if (outputChannel != null) {
+          outboundGatewayElement.setAttribute("reply-channel", outputChannel.name)
+        }
+        outboundGatewayElement
+      }
+    element.setAttribute("id", this.name)
     element.setAttribute("connection-factory", connectionFactoryName)
     element
   }
