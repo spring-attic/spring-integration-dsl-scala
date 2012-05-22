@@ -52,4 +52,28 @@ class DSLUsageDemoTests {
     println("done")
   }
 
+  @Test
+  def fileOutboundAdapter = {
+
+    val messageFlow =
+      transform{p:String => p.toUpperCase()} -->
+      file.write("/Users/ozhurakousky/temp")
+
+    messageFlow.send("Hello File")
+
+    println("done")
+  }
+
+  @Test
+  def fileOutboundAdapterWithFileName = {
+
+    val messageFlow =
+      transform{p:String => p.toUpperCase()} -->
+      file.write("/Users/ozhurakousky/temp").asFile{s:String => s.substring(0, 3) + "-file.txt"}
+
+    messageFlow.send("Hello File")
+
+    println("done")
+  }
+
 }
