@@ -18,6 +18,7 @@ package demo
 import org.junit.Test
 import org.springframework.integration.dsl._
 import org.springframework.integration.Message
+import org.junit.Ignore
 
 /**
  * @author Oleg Zhurakousky
@@ -25,6 +26,7 @@ import org.springframework.integration.Message
 class DSLUsageDemoTests {
 
   @Test
+  @Ignore
   def httpOutboundWithFunctionUrl = {
 
     val tickerService =
@@ -39,8 +41,8 @@ class DSLUsageDemoTests {
     val httpFlow =
       enrich.header("company" -> { name: String => tickerService.sendAndReceive[String](name) }) -->
       http.GET[String] { ticker: String => "http://www.google.com/finance/info?q=" + ticker } -->
-      handle { (payload: String, headers: Map[String, _]) => 
-          println("QUOTES for " + headers.get("company") + " : " + payload) 
+      handle { (payload: String, headers: Map[String, _]) =>
+          println("QUOTES for " + headers.get("company") + " : " + payload)
       }
 
     httpFlow.send("vmw")

@@ -78,7 +78,8 @@ class DSLUsageDemoTests {
     val cacheFactoryBean = new CacheFactoryBean
     cacheFactoryBean.afterPropertiesSet
     val cache = cacheFactoryBean.getObject.asInstanceOf[Cache]
-    val region = cache.createRegionFactory[String, String]().create("$")
+    val region = if (cache.getRegion("$") == null) 
+    	cache.createRegionFactory[String, String]().create("$") else  cache.getRegion("$")
     new GemfireRegion(region, cache)
   } 
 }

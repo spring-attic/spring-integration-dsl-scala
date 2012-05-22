@@ -145,6 +145,7 @@ private[dsl] class HttpOutboundGateway(name: String = "$http_out_" + UUID.random
     beansElement.setAttribute("xsi:schemaLocation", schemaLocation +
       " http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd")
 
+    
     val element = document.createElement("int-http:outbound-gateway")
     element.setAttribute("id", this.name)
     
@@ -153,17 +154,19 @@ private[dsl] class HttpOutboundGateway(name: String = "$http_out_" + UUID.random
 
     this.target match {
       case fn: Function[_, _] => {
+        val targetDefinition = targetDefinitionFunction.apply(this.target)
+        
         element.setAttribute("url", "{url}")
-        val targetDefinnition = targetDefinitionFunction.apply(this.target)
+        
         val uriVarElement = document.createElement("int-http:uri-variable")
         uriVarElement.setAttribute("name", "url")
         val expressionParam =
-          if (targetDefinnition._2.startsWith("sendMessage")) "#this"
-          else if (targetDefinnition._2.startsWith("sendPayloadAndHeaders")) "payload, headers"
-          else if (targetDefinnition._2.startsWith("sendPayload")) "payload"
+          if (targetDefinition._2.startsWith("sendMessage")) "#this"
+          else if (targetDefinition._2.startsWith("sendPayloadAndHeaders")) "payload, headers"
+          else if (targetDefinition._2.startsWith("sendPayload")) "payload"
 
-        uriVarElement.setAttribute("expression", "@" + targetDefinnition._1 + "." +
-          targetDefinnition._2 + "(" + expressionParam + ")")
+        uriVarElement.setAttribute("expression", "@" + targetDefinition._1 + "." +
+          targetDefinition._2 + "(" + expressionParam + ")")
         element.appendChild(uriVarElement)
       }
       case url: String => {

@@ -5,6 +5,8 @@ apply plugin: 'base'
 allprojects {
   group = 'org.springframework.integration'
 
+ logging.captureStandardOutput LogLevel.DEBUG
+ 
   repositories {
     mavenCentral()
     maven { url 'https://repo.springsource.org/libs-staging-local'}
@@ -27,7 +29,7 @@ subprojects { subproject ->
   junitVersion = '4.8.2'
   log4jVersion = '1.2.12'
   mockitoVersion = '1.9.0'
-  springintegrationVersion = '2.2.0.M1'
+  springintegrationVersion = '2.2.0.BUILD-SNAPSHOT'
   springGemfireVersion = '1.1.0.RELEASE'
 
   install {
@@ -74,7 +76,7 @@ project('spring-integration-scala-jms') {
   description = 'Spring Integration Scala JMS'
   dependencies {
     compile project(":spring-integration-scala-core")
-    compile ('org.springframework.integration:spring-integration-jms:$springintegrationVersion')
+    compile "org.springframework.integration:spring-integration-jms:$springintegrationVersion"
     compile ("org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1") 
   
     // libraries only needed for test
@@ -92,7 +94,7 @@ project('spring-integration-scala-gemfire') {
     }
     dependencies {
         compile project(":spring-integration-scala-core")
-        compile ('org.springframework.integration:spring-integration-gemfire:$springintegrationVersion')
+        compile "org.springframework.integration:spring-integration-gemfire:$springintegrationVersion"
     }
 }
 
@@ -100,7 +102,7 @@ project('spring-integration-scala-http') {
   description = 'Spring Integration Scala HTTP'
   dependencies {
     compile project(":spring-integration-scala-core")
-    compile ('org.springframework.integration:spring-integration-http:$springintegrationVersion')
+    compile "org.springframework.integration:spring-integration-http:$springintegrationVersion"
   }
 }
 

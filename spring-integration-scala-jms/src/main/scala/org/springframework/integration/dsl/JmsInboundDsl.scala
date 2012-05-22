@@ -15,11 +15,11 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory
 object jms {
 
   def listen(requestDestinationName: String, connectionFactory: ConnectionFactory) =
-    new ListeningIntegrationComposition(null, new JmsInboundAdapter(target = requestDestinationName, connectionFactory = connectionFactory))
+    new ListeningIntegrationComposition(null, new JmsInboundGateway(target = requestDestinationName, connectionFactory = connectionFactory))
 
 }
 
-private[dsl] class JmsInboundAdapter(name: String = "$jms_in_" + UUID.randomUUID().toString.substring(0, 8),
+private[dsl] class JmsInboundGateway(name: String = "$jms_in_" + UUID.randomUUID().toString.substring(0, 8),
   target: String,
   val connectionFactory: ConnectionFactory) extends InboundMessageSource(name, target) {
 
@@ -28,8 +28,8 @@ private[dsl] class JmsInboundAdapter(name: String = "$jms_in_" + UUID.randomUUID
     beansElement.setAttribute("xmlns:int-jms", "http://www.springframework.org/schema/integration/jms")
     val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
     beansElement.setAttribute("xsi:schemaLocation", "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd " +
-    "http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration-2.1.xsd " +
-    "http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms-2.1.xsd")
+    "http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd " +
+    "http://www.springframework.org/schema/integration/jms http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd")
 
     val element = document.createElement("int-jms:inbound-gateway")
     element.setAttribute("id", this.name)
