@@ -1,6 +1,6 @@
-rootProject.name = 'spring-integration-scala'
+rootProject.name = 'spring-integration-dsl-scala'
 
-include 'spring-integration-scala-core'
-include 'spring-integration-scala-http'
-include 'spring-integration-scala-jms'
-include 'spring-integration-scala-gemfire'
+include 'spring-integration-dsl-scala-core'
+include 'spring-integration-dsl-scala-http'
+include 'spring-integration-dsl-scala-jms'
+include 'spring-integration-dsl-scala-gemfire'

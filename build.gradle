@@ -50,11 +50,11 @@ subprojects { subproject ->
   dependencies {
 
 	// Libraries needed for scala api
-    compile 'org.scala-lang:scala-library:2.9.1'
+    compile 'org.scala-lang:scala-library:2.9.2'
 
 	// Libraries needed to run the scala tools
-    scalaTools 'org.scala-lang:scala-compiler:2.9.1'
-    scalaTools 'org.scala-lang:scala-library:2.9.1'
+    scalaTools 'org.scala-lang:scala-compiler:2.9.2'
+    scalaTools 'org.scala-lang:scala-library:2.9.2'
 
     testCompile "junit:junit-dep:$junitVersion"
     testCompile "log4j:log4j:$log4jVersion"
@@ -63,7 +63,7 @@ subprojects { subproject ->
   }
 }
 
-project('spring-integration-scala-core') {
+project('spring-integration-dsl-scala-core') {
   description = 'Spring Integration Scala Core'
   dependencies {
     // dependent libraries
@@ -72,10 +72,10 @@ project('spring-integration-scala-core') {
   }
 }
 
-project('spring-integration-scala-jms') {
+project('spring-integration-dsl-scala-jms') {
   description = 'Spring Integration Scala JMS'
   dependencies {
-    compile project(":spring-integration-scala-core")
+    compile project(":spring-integration-dsl-scala-core")
     compile "org.springframework.integration:spring-integration-jms:$springintegrationVersion"
     compile ("org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1") 
   
@@ -86,22 +86,22 @@ project('spring-integration-scala-jms') {
   }
 }
 
-project('spring-integration-scala-gemfire') {
+project('spring-integration-dsl-scala-gemfire') {
     description = 'Spring Integration Scala GemFire'
     test {
         forkEvery = 1
         systemProperties['gemfire.disableShutdownHook'] = 'true'
     }
     dependencies {
-        compile project(":spring-integration-scala-core")
+        compile project(":spring-integration-dsl-scala-core")
         compile "org.springframework.integration:spring-integration-gemfire:$springintegrationVersion"
     }
 }
 
-project('spring-integration-scala-http') {
+project('spring-integration-dsl-scala-http') {
   description = 'Spring Integration Scala HTTP'
   dependencies {
-    compile project(":spring-integration-scala-core")
+    compile project(":spring-integration-dsl-scala-core")
     compile "org.springframework.integration:spring-integration-http:$springintegrationVersion"
   }
 }
