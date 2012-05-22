@@ -34,8 +34,10 @@ private[dsl] class JmsInboundGatewayConfig(name: String = "$jms_in_" + UUID.rand
   target: String,
   val connectionFactory: ConnectionFactory) extends InboundMessageSource(name, target) {
 
-  override def build(document: Document = null, beanInstancesToRegister:scala.collection.mutable.Map[String, Any],
-      requestChannelName: String): Element = {
+  def build(document: Document = null,
+            targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+            pollerDefinitionFunction: Function3[IntegrationComponent, Poller, Element, Unit],
+            requestChannelName: String): Element = {
 
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
@@ -47,10 +49,8 @@ private[dsl] class JmsInboundGatewayConfig(name: String = "$jms_in_" + UUID.rand
     element.setAttribute("id", this.name)
     element.setAttribute("request-destination-name", this.target)
     element.setAttribute("request-channel", requestChannelName)
-    val connectionFactoryName = "jms_cf_" + this.connectionFactory.hashCode()
-    if (!beanInstancesToRegister.contains(connectionFactoryName)) {
-      beanInstancesToRegister += (connectionFactoryName -> this.connectionFactory)
-    }
+
+    val connectionFactoryName = targetDefinitionFunction(Some(this.connectionFactory))._1
 
     element.setAttribute("connection-factory", connectionFactoryName)
     element.setAttribute("auto-startup", "false")

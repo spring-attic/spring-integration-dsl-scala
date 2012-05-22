@@ -106,6 +106,14 @@ project('spring-integration-dsl-scala-http') {
   }
 }
 
+project('spring-integration-dsl-scala-file') {
+  description = 'Spring Integration Scala File'
+  dependencies {
+    compile project(":spring-integration-dsl-scala-core")
+    compile "org.springframework.integration:spring-integration-file:$springintegrationVersion"
+  }
+}
+
 task wrapper(type: Wrapper) {
     description = 'Generates gradlew[.bat] scripts'
     gradleVersion = '1.0-milestone-8'

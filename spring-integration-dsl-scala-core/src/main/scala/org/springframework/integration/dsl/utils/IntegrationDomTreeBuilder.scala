@@ -47,6 +47,7 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.integration.dsl.Router
 import org.springframework.integration.dsl.OutboundAdapterEndpoint
 import org.springframework.beans.factory.BeanFactoryAware
+import org.springframework.integration.dsl.AbstractChannel
 /**
  * @author Oleg Zhurakousky
  */
@@ -177,8 +178,12 @@ class IntegrationDomTreeBuilder {
           ch
 
         case poller: Poller =>
-          composition.parentComposition.parentComposition.target.asInstanceOf[AbstractChannel]
-
+          if (composition.parentComposition.parentComposition != null){
+            composition.parentComposition.parentComposition.target.asInstanceOf[AbstractChannel]
+          }
+          else {
+            null
+          }
         case endpoint: IntegrationComponent =>
           val channel: AbstractChannel =
             if (!this.integrationComponents.contains(composition.target.name))
@@ -199,6 +204,8 @@ class IntegrationDomTreeBuilder {
   }
 
   private def buildChannelElement(channelDefinition: AbstractChannel): Unit = {
+    println("building channel " + channelDefinition.name)
+//    println
     if (!this.integrationComponents.contains(channelDefinition.name)) {
       channelDefinition match {
         case ch: Channel =>
@@ -284,7 +291,7 @@ class IntegrationDomTreeBuilder {
    *
    */
   private def processInboundMessageSource(ims: InboundMessageSource, outputChannel: AbstractChannel) {
-    val element = ims.build(document, this.supportingBeans, outputChannel.name)
+    val element = ims.build(document, this.defineAndRegisterTarget, this.configurePoller,  outputChannel.name)
     this.root.appendChild(element)
   }
 
@@ -325,7 +332,7 @@ class IntegrationDomTreeBuilder {
   /**
    *
    */
-  private def configurePoller(endpoint: IntegrationComponent, pollerConfig: Poller, consumerElement: Element) = {
+  private def configurePoller(endpoint: IntegrationComponent, pollerConfig: Poller, consumerElement: Element):Unit = {
     if (logger.isDebugEnabled) logger debug "Creating Polling consumer using " + pollerConfig
 
     val pollerElement = document.createElement("int:poller")

@@ -97,7 +97,8 @@ private[dsl] case class BaseIntegrationComposition(private[dsl] val parentCompos
     val newComposition = this.copy()
     val startingComposition = DslUtils.getStartingComposition(newComposition)
     if (!startingComposition.isInstanceOf[ChannelIntegrationComposition] &&
-        !startingComposition.target.isInstanceOf[InboundMessageSource]) {
+        !startingComposition.target.isInstanceOf[InboundMessageSource] &&
+        !startingComposition.target.isInstanceOf[Poller]) {
       DslUtils.injectParentComposition(startingComposition, Channel("$ch_" + UUID.randomUUID().toString.substring(0, 8)))
     }
     new BaseIntegrationComposition(newComposition.parentComposition, newComposition.target)
@@ -168,7 +169,7 @@ private[dsl] class SendingEndpointComposition(parentComposition: BaseIntegration
 
   def -->[T <: BaseIntegrationComposition](a: T) = {
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)
-    
+
     val reply = this.compose(this, a)
     reply
   }
@@ -219,8 +220,8 @@ class ListeningIntegrationComposition(parentComposition: BaseIntegrationComposit
 /**
  *
  */
-class PollerComposition(parentComposition: BaseIntegrationComposition, target: Poller)
-  extends SendingChannelComposition(parentComposition, target)
+class PollerComposition(parentComposition: BaseIntegrationComposition, override val target: Poller)
+  extends ListeningIntegrationComposition(parentComposition, target)
 
 /**
  *
@@ -244,7 +245,7 @@ class PollableChannelIntegrationComposition(parentComposition: BaseIntegrationCo
  *
  */
 private[dsl] class ListOfCompositions[T](val compositions: Iterable[BaseIntegrationComposition])
-             extends IntegrationComponent("ListOfCompositions") 
+             extends IntegrationComponent("ListOfCompositions")
 /**
  *
  */
@@ -254,9 +255,9 @@ private[dsl] abstract class IntegrationComponent(val name: String = null) {
 }
 
 private[dsl] abstract class SimpleEndpoint(name:String, val target:Any = null) extends IntegrationComponent(name) {
-  
+
   override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("target" -> target)
-  
+
   def build(root: Document = null,
             targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
             compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit],
@@ -269,7 +270,8 @@ private[dsl] abstract trait OutboundAdapterEndpoint
 private[dsl] abstract class InboundMessageSource(name:String, val target:Any = null) extends IntegrationComponent(name) {
   override def toString = name
 
-  def build(document: Document = null, 
-            beanInstancesToRegister:scala.collection.mutable.Map[String, Any], 
-            requestChannelName: String): Element 
+  def build(document: Document = null,
+            targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+            pollerDefinitionFunction: Function3[IntegrationComponent, Poller, Element, Unit],
+            requestChannelName: String): Element
 }
