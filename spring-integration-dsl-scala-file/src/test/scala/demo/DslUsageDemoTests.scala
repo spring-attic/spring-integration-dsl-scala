@@ -57,7 +57,7 @@ class DSLUsageDemoTests {
 
     val messageFlow =
       transform{p:String => p.toUpperCase()} -->
-      file.write("/build")
+      file.write("")
 
     messageFlow.send("Hello File")
 
@@ -69,7 +69,7 @@ class DSLUsageDemoTests {
 
     val messageFlow =
       transform{p:String => p.toUpperCase()} -->
-      file.write("/build").asFile{s:String => s.substring(0, 3) + "-file.txt"}
+      file.write("").asFile{s:String => s.substring(0, 3) + "-file.txt"}
 
     messageFlow.send("Hello File")
 
