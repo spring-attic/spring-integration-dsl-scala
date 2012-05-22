@@ -27,17 +27,17 @@ import scala.collection.immutable.WrappedString
  * @author Oleg Zhurakousky
  */
 class DslUsageDemoTests {
-  
+
   @Test
   def simpleServiceWithWrappedStringAsFunction = {
-    
+
     def foo(m: Message[_]) = {
       println(m)
-    } 
-    
+    }
+
     val messageFlow =
       handle{"hello"} -->
-      handle{m:Message[_] => foo(m) } 
+      handle{m:Message[_] => foo(m) }
 
     messageFlow.send(2)
     println("done")
@@ -85,7 +85,7 @@ class DslUsageDemoTests {
         handle { m: Message[_] => println("Subscriber-1 - " + m) },
         transform { m: Message[String] => m.getPayload().toUpperCase() } -->
         handle { m: Message[_] => println("Subscriber-2 - " + m) })
-  
+
     messageFlow.send("hello")
     println("done")
   }
@@ -132,7 +132,7 @@ class DslUsageDemoTests {
   def demoSendWithPolingBridge = {
     val messageFlow =
       Channel("A") -->
-        Channel("B").withQueue --> poll.usingFixedRate(1) -->
+        Channel("B").withQueue --> poll.atFixedRate(1) -->
         handle { m: Message[_] => println("From Hello channel - " + m) }
 
     messageFlow.send("hello")

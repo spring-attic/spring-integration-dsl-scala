@@ -34,35 +34,35 @@ class PollerTests {
     poll.usingTrigger(new PeriodicTrigger(4)) withExecutor(new SyncTaskExecutor)
 
     // fixed delay
-    poll.usingFixedDelay(5).withExecutor(new SyncTaskExecutor)
+    poll.withFixedDelay(5).withExecutor(new SyncTaskExecutor)
 
-    poll.usingFixedDelay(5) withExecutor(new SyncTaskExecutor)
+    poll.withFixedDelay(5) withExecutor(new SyncTaskExecutor)
 
-    poll.usingFixedDelay(5).withMaxMessagesPerPoll(3).withExecutor(new SyncTaskExecutor)
+    poll.withFixedDelay(5).withMaxMessagesPerPoll(3).withExecutor(new SyncTaskExecutor)
 
-    poll.usingFixedDelay(5) withMaxMessagesPerPoll(3) withExecutor(new SyncTaskExecutor)
+    poll.withFixedDelay(5) withMaxMessagesPerPoll(3) withExecutor(new SyncTaskExecutor)
 
     // fixed rate
-    poll.usingFixedRate(5).withExecutor(new SyncTaskExecutor)
+    poll.atFixedRate(5).withExecutor(new SyncTaskExecutor)
 
-    poll.usingFixedRate(5) withExecutor(new SyncTaskExecutor)
+    poll.atFixedRate(5) withExecutor(new SyncTaskExecutor)
 
-    poll.usingFixedRate(5).withMaxMessagesPerPoll(3).withExecutor(new SyncTaskExecutor)
+    poll.atFixedRate(5).withMaxMessagesPerPoll(3).withExecutor(new SyncTaskExecutor)
 
-    poll.usingFixedRate(5) withMaxMessagesPerPoll(3) withExecutor(new SyncTaskExecutor)
+    poll.atFixedRate(5) withMaxMessagesPerPoll(3) withExecutor(new SyncTaskExecutor)
   }
 
   @Test
   def validatePollerValues(){
     val executor = new SimpleAsyncTaskExecutor
 
-    val pollerWithFixedRate = poll.usingFixedRate(4).withMaxMessagesPerPoll(90).withExecutor(executor)
+    val pollerWithFixedRate = poll.atFixedRate(4).withMaxMessagesPerPoll(90).withExecutor(executor)
     Assert.assertEquals(4, pollerWithFixedRate.target.asInstanceOf[Poller].fixedRate)
     Assert.assertEquals(-1, pollerWithFixedRate.target.asInstanceOf[Poller].fixedDelay)
     Assert.assertEquals(90, pollerWithFixedRate.target.asInstanceOf[Poller].maxMessagesPerPoll)
     Assert.assertEquals(executor, pollerWithFixedRate.target.asInstanceOf[Poller].taskExecutor)
 
-    val pollerWithFixedDelay = poll.usingFixedDelay(5)
+    val pollerWithFixedDelay = poll.withFixedDelay(5)
     Assert.assertEquals(5, pollerWithFixedDelay.target.asInstanceOf[Poller].fixedDelay)
 
   }

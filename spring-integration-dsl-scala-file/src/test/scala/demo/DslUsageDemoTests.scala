@@ -31,7 +31,7 @@ class DSLUsageDemoTests {
   def fileInboundAdapterTest = {
 
     val messageFlow =
-      file(""){poll.usingFixedRate(1000)} -->
+      file(""){poll.atFixedRate(1000)} -->
       handle { p: File => println("File: " + p.getAbsolutePath()) }
 
     messageFlow.start()
@@ -43,7 +43,7 @@ class DSLUsageDemoTests {
   def fileInboundAdapterWithExplicitChannelTest = {
 
     val messageFlow =
-      file(""){poll.usingFixedRate(1000)} -->
+      file(""){poll.atFixedRate(1000)} -->
       Channel("foo") -->
       handle { p: File => println("File: " + p.getAbsolutePath()) }
 

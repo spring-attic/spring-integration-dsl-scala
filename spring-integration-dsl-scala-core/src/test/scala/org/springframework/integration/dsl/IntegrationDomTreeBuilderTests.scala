@@ -119,10 +119,10 @@ class IntegrationDomTreeBuilderTests {
     Assert.assertEquals(3, bridgeElement.getAttributes().getLength());
     Assert.assertEquals("foo", bridgeElement.getAttribute("input-channel"))
     Assert.assertEquals("bar", bridgeElement.getAttribute("output-channel"))
-    
+
     val applicationContext = IntegrationDomTreeBuilder.buildApplicationContext(messageFlow)
     val names =  applicationContext.getBeanDefinitionNames()
-    
+
     Assert.assertTrue(applicationContext.containsBean("foo"))
     Assert.assertTrue(applicationContext.containsBean("bar"))
     val bridgeElementsAc = document.getElementsByTagName("int:bridge")
@@ -136,7 +136,7 @@ class IntegrationDomTreeBuilderTests {
   def generateChannelBridgeWithOnePollableChannelAndPoller = {
 
     val messageFlow =
-      Channel("foo").withQueue(4) --> poll.usingFixedDelay(10000).withMaxMessagesPerPoll(4) -->
+      Channel("foo").withQueue(4) --> poll.withFixedDelay(10000).withMaxMessagesPerPoll(4) -->
         Channel("bar")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
@@ -149,10 +149,10 @@ class IntegrationDomTreeBuilderTests {
     val pollerElement = pollerElements.item(0).asInstanceOf[Element]
     Assert.assertTrue(pollerElement.hasAttribute("fixed-delay"))
     Assert.assertTrue(pollerElement.hasAttribute("max-messages-per-poll"))
-    
+
     val applicationContext = IntegrationDomTreeBuilder.buildApplicationContext(messageFlow)
     val names =  applicationContext.getBeanDefinitionNames()
-    
+
     Assert.assertTrue(applicationContext.containsBean("foo"))
     Assert.assertTrue(applicationContext.containsBean("bar"))
     val bridgeElementsAc = document.getElementsByTagName("int:bridge")
@@ -178,7 +178,7 @@ class IntegrationDomTreeBuilderTests {
     Assert.assertEquals(4, saElements.item(0).getAttributes().getLength())
     val saElement: Element = saElements.item(0).asInstanceOf[Element]
     Assert.assertEquals(channelElement.getAttribute("id"), saElement.getAttribute("input-channel"))
-    
+
     val applicationContext = IntegrationDomTreeBuilder.buildApplicationContext(messageFlow)
     Assert.assertTrue(applicationContext.containsBean(saElement.getAttribute("id")))
     Assert.assertTrue(applicationContext.containsBean(saElement.getAttribute("ref")))
@@ -190,7 +190,7 @@ class IntegrationDomTreeBuilderTests {
     val documentA = IntegrationDomTreeBuilder.toDocument(messageFlowA)
     val saElementA: Element = documentA.getElementsByTagName("int:service-activator").item(0).asInstanceOf[Element]
     Assert.assertEquals("sendPayload", saElementA.getAttribute("method"))
-    
+
     val applicationContextA = IntegrationDomTreeBuilder.buildApplicationContext(messageFlowA)
     Assert.assertTrue(applicationContextA.containsBean(saElementA.getAttribute("id")))
     Assert.assertTrue(applicationContextA.containsBean(saElementA.getAttribute("ref")))
@@ -199,7 +199,7 @@ class IntegrationDomTreeBuilderTests {
     val documentD = IntegrationDomTreeBuilder.toDocument(messageFlowD)
     val saElementD: Element = documentD.getElementsByTagName("int:service-activator").item(0).asInstanceOf[Element]
     Assert.assertEquals("sendMessage", saElementD.getAttribute("method"))
-    
+
     val applicationContextD = IntegrationDomTreeBuilder.buildApplicationContext(messageFlowD)
     Assert.assertTrue(applicationContextD.containsBean(saElementD.getAttribute("id")))
     Assert.assertTrue(applicationContextD.containsBean(saElementD.getAttribute("ref")))
@@ -208,7 +208,7 @@ class IntegrationDomTreeBuilderTests {
     val documentB = IntegrationDomTreeBuilder.toDocument(messageFlowB)
     val saElementB: Element = documentB.getElementsByTagName("int:service-activator").item(0).asInstanceOf[Element]
     Assert.assertEquals("sendPayloadAndHeaders", saElementB.getAttribute("method"))
-    
+
     val applicationContextB = IntegrationDomTreeBuilder.buildApplicationContext(messageFlowB)
     Assert.assertTrue(applicationContextB.containsBean(saElementB.getAttribute("id")))
     Assert.assertTrue(applicationContextB.containsBean(saElementB.getAttribute("ref")))
@@ -217,7 +217,7 @@ class IntegrationDomTreeBuilderTests {
     val documentC = IntegrationDomTreeBuilder.toDocument(messageFlowC)
     val saElementC: Element = documentC.getElementsByTagName("int:service-activator").item(0).asInstanceOf[Element]
     Assert.assertEquals("sendPayloadAndHeadersAndReceive", saElementC.getAttribute("method"))
-    
+
     val applicationContextC = IntegrationDomTreeBuilder.buildApplicationContext(messageFlowC)
     Assert.assertTrue(applicationContextC.containsBean(saElementC.getAttribute("id")))
     Assert.assertTrue(applicationContextC.containsBean(saElementC.getAttribute("ref")))
@@ -240,7 +240,7 @@ class IntegrationDomTreeBuilderTests {
     Assert.assertFalse(saEnd.hasAttribute("output-channel"))
     val channels = document.getElementsByTagName("int:channel")
     Assert.assertEquals(2, channels.getLength())
-    
+
     val applicationContext = IntegrationDomTreeBuilder.buildApplicationContext(messageFlow)
     Assert.assertTrue(applicationContext.containsBean(saStart.getAttribute("id")))
     Assert.assertTrue(applicationContext.containsBean(saStart.getAttribute("ref")))
@@ -277,7 +277,7 @@ class IntegrationDomTreeBuilderTests {
     val endBElement = endBElements(0)
     Assert.assertEquals("pubsub", endBElement.getAttribute("input-channel"))
     Assert.assertFalse(endBElement.hasAttribute("output-channel"))
-    
+
     val applicationContext = IntegrationDomTreeBuilder.buildApplicationContext(messageFlow)
     Assert.assertTrue(applicationContext.containsBean("start"))
     Assert.assertTrue(applicationContext.containsBean(saStartElement.getAttribute("ref")))
@@ -310,7 +310,7 @@ class IntegrationDomTreeBuilderTests {
   def generateServiceActivatorsWithPoller = {
 
     val messageFlow =
-      Channel("startChannel").withQueue(4) --> poll.usingFixedDelay(3).withExecutor(Executors.newCachedThreadPool()) -->
+      Channel("startChannel").withQueue(4) --> poll.withFixedDelay(3).withExecutor(Executors.newCachedThreadPool()) -->
         handle { s: String => s }.where(name = "start") -->
         handle { s: String => println }.where(name = "end")
 
@@ -505,7 +505,7 @@ class IntegrationDomTreeBuilderTests {
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
   }
-  
+
   @Test
   def generateAggregator = {
 
