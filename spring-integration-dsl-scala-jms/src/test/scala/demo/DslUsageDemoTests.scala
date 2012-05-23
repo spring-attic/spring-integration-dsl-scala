@@ -41,7 +41,7 @@ class DslUsageDemoTests {
   def jmsInboundGateway = {
 
     val flow =
-      jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
+      jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory)	-->
         handle { m: Message[_] => println("logging existing message and passing through " + m); m } -->
         transform { value: String => value.toUpperCase() }
 

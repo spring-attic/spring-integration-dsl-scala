@@ -178,7 +178,7 @@ private[dsl] class SendingEndpointComposition(parentComposition: BaseIntegration
 /**
  *
  */
-class SendingChannelComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
+private[dsl] class SendingChannelComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends SendingIntegrationComposition(parentComposition, target) {
 
   def -->[T <: BaseIntegrationComposition](compositions: T*): SendingIntegrationComposition = {
@@ -200,10 +200,10 @@ class SendingChannelComposition(parentComposition: BaseIntegrationComposition, t
 /**
  *
  */
-class ListeningIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
+private[dsl] class ListeningIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends BaseIntegrationComposition(parentComposition, target) {
   /**
-   *
+   * Lifecycle method that starts this IntegrationComposition
    */
   def start(parentContext:ApplicationContext = null) = this.getContext(parentContext).start
 
@@ -220,19 +220,19 @@ class ListeningIntegrationComposition(parentComposition: BaseIntegrationComposit
 /**
  *
  */
-class PollerComposition(parentComposition: BaseIntegrationComposition, override val target: Poller)
+private[dsl] class PollerComposition(parentComposition: BaseIntegrationComposition, override val target: Poller)
   extends ListeningIntegrationComposition(parentComposition, target)
 
 /**
  *
  */
-class ChannelIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
+private[dsl] class ChannelIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends SendingChannelComposition(parentComposition, target)
 
 /**
  *
  */
-class PollableChannelIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
+private[dsl] class PollableChannelIntegrationComposition(parentComposition: BaseIntegrationComposition, target: IntegrationComponent)
   extends SendingIntegrationComposition(parentComposition, target) {
   /**
    *

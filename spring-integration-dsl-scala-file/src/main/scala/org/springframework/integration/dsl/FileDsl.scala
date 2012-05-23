@@ -19,7 +19,7 @@ import java.io.File
 /**
  * @author Oleg Zhurakousky
  */
-object FileDsl {
+private[dsl] object FileDsl {
    val fileSchema = " http://www.springframework.org/schema/integration/file " +
    		"http://www.springframework.org/schema/integration/file/spring-integration-file.xsd"
 

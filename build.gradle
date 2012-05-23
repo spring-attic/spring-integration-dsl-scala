@@ -38,7 +38,7 @@ subprojects { subproject ->
       }
   }
 
-  task sourcesJar(type: Jar) {
+  task sourcesJar(type: Jar, dependsOn: scaladoc) {
     classifier = 'sources'
   }
 
@@ -55,6 +55,9 @@ subprojects { subproject ->
 	// Libraries needed to run the scala tools
     scalaTools 'org.scala-lang:scala-compiler:2.9.2'
     scalaTools 'org.scala-lang:scala-library:2.9.2'
+
+	compile 'org.scala-lang:scala-compiler:2.9.2'
+    compile 'org.scala-lang:scala-library:2.9.2'
 
     testCompile "junit:junit-dep:$junitVersion"
     testCompile "log4j:log4j:$log4jVersion"
@@ -200,4 +203,20 @@ def customizePom(def pom, def gradleProject) {
             }
         }
     }
+}
+
+task scaladoc(type: org.gradle.api.tasks.scala.ScalaDoc) {
+	group = 'Documentation'
+	description = 'Generates aggregated ScalaDoc API documentation.'
+	title = "${rootProject.description} ${version} API"
+	source subprojects.collect { project ->
+		project.sourceSets.main.allScala
+	}
+	destinationDir = new File(buildDir, "api")
+	scalaClasspath = files(subprojects.collect { project ->
+		project.sourceSets.main.compileClasspath
+	})
+	classpath = files(subprojects.collect { project ->
+		project.sourceSets.main.compileClasspath
+	})
 }
