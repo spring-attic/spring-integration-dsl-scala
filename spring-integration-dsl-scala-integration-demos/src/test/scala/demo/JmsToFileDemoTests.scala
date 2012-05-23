@@ -32,7 +32,7 @@ class JmsToFileDemoTests {
   @Test
   def demo = {
 
-	val connectionFactory =	JmsDslTestUtils.localConnectionFactory
+	val connectionFactory =	IntegrationDemoUtils.localConnectionFactory
 
     val sendingFlow =
       transform{p:String => p.toUpperCase} -->
@@ -57,9 +57,9 @@ class JmsToFileDemoTests {
     if (file.exists()){
       file.delete()
     }
-    JmsDslTestUtils.before
+    IntegrationDemoUtils.before
   }
   @After
-  def after = JmsDslTestUtils.after
+  def after = IntegrationDemoUtils.after
 
 }
