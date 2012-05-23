@@ -31,12 +31,12 @@ import org.w3c.dom.Document
 object split {
 
   def apply(function: Function1[_, Traversable[Any]]) = new SendingEndpointComposition(null, new Splitter(target = function)) {
-    def where(name: String = "$split_" + UUID.randomUUID().toString.substring(0, 8), applySequence: Boolean = true) =
+    def withAttributes(name: String = "$split_" + UUID.randomUUID().toString.substring(0, 8), applySequence: Boolean = true) =
       new SendingEndpointComposition(null, new Splitter(name = name, target = function, applySequence = applySequence))
   }
 
   def apply(function: (_, Map[String, _]) => Iterable[Any]) = new SendingEndpointComposition(null, new Splitter(target = function)) {
-    def where(name: String) = {
+    def withAttributes(name: String) = {
 
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Splitter(name = name, target = function))
@@ -46,17 +46,17 @@ object split {
 
 private[dsl] class Splitter(name: String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), target: Any, val applySequence: Boolean = false)
   													extends SimpleEndpoint(name, target) {
-  
+
   override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "SPLITTER", "applySequence" -> applySequence)
-  
+
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null, 
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,
     inputChannel:AbstractChannel,
     outputChannel:AbstractChannel): Element = {
-    
+
     require(inputChannel != null, "'inputChannel' must be provided")
-    
+
     val element = document.createElement("int:splitter")
     element.setAttribute("id", this.name)
     val targetDefinnition = targetDefinitionFunction.apply(this.target)

@@ -30,8 +30,8 @@ class MessageAggregatorTests {
 
     val aggregator = aggregate()
     Assert.assertNotNull(aggregator.target.name)
-    
-    val namedAggregator = aggregate().where(name = "myAggregator")
+
+    val namedAggregator = aggregate().withAttributes(name = "myAggregator")
     Assert.assertEquals("myAggregator", namedAggregator.target.name)
     val aggr = namedAggregator.target.asInstanceOf[Aggregator]
     Assert.assertFalse(aggr.keepReleasedMessages)
@@ -39,44 +39,44 @@ class MessageAggregatorTests {
     Assert.assertTrue(aggr.sendPartialResultsOnExpiry)
     Assert.assertNotNull(aggr.messageStore)
   }
-  
+
   // commented syntax is dues to be implemented in 1.0.0.M2
   @Test
   def validateAggregatorConfiguration(){
 
     aggregate()
-    aggregate.where(name = "myAggregator")
-    
+    aggregate.withAttributes(name = "myAggregator")
+
 //    aggregate.on{s:Any => new Object}
 //    aggregate.on{s:Any => new Object}.andExpire
 //    aggregate.on{s:Any => new Object}.where(name="aggr")
 //    aggregate.on{s:Any => new Object}.andExpire.where(name="aggr")
 //    aggregate.on{s:Any => new Object}.until{s:Any => 2<1}.where(name="aggr")
 //    aggregate.on{s:Any => new Object}.until{s:Any => 2<1}.andExpire.where(name="aggr")
-//    
+//
 //    aggregate.until{s:Any => 2<1}
 //    aggregate.until{s:Any => 2<1}.andExpire
 //    aggregate.until{s:Any => 2<1}.where(name="aggr")
-//    aggregate.until{s:Any => 2<1}.andExpire.where(name="aggr")   
-//    
+//    aggregate.until{s:Any => 2<1}.andExpire.where(name="aggr")
+//
 //    aggregate.using{s:Any => new Object}
 //    aggregate.using{s:Any => new Object}.where(name="aggr")
-//    
+//
 //    aggregate.using{s:Any => new Object}.on{s:Any => new Object}.where(name="aggr")
 //    aggregate.using{s:Any => new Object}.on{s:Any => new Object}.andExpire.where(name="aggr")
 //    aggregate.using{s:Any => new Object}.on{s:Any => new Object}.until{s:Any => 2<1}.andExpire.where(name="aggr")
-//   
+//
 //    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}
 //    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}.andExpire
 //    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}.where(name="aggr")
 //    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}.andExpire.where(name="aggr")
-    
-    
-    
+
+
+
 //    aggregate.andExpire.where{name=""}
 //    aggregate.andExpire.andSendPartialResults.where{name=""}
 //    aggregate.andKeepReleasedMessages.where(name = "")
-    
+
 //    aggregate.on{""}
 //    aggregate.on{""}.where(name = "")
 //    aggregate.on{""}.andExpire
@@ -85,7 +85,7 @@ class MessageAggregatorTests {
 //    aggregate.on{""}.andExpire.andSendPartialResults.where(name = "")
 //    aggregate.on{""}.andKeepReleasedMessages
 //    aggregate.on{""}.andKeepReleasedMessages.where(name = "")
-    
+
 //    aggregate.on{""}.until{""}
 //    aggregate.on{""}.until{""}.where(name = "")
 //    aggregate.on{""}.until{""}.andExpire
@@ -94,7 +94,7 @@ class MessageAggregatorTests {
 //    aggregate.on{""}.until{""}.andExpire.andSendPartialResults.where(name = "")
 //    aggregate.on{""}.until{""}.andKeepReleasedMessages
 //    aggregate.on{""}.until{""}.andKeepReleasedMessages.where(name = "")
-//    
+//
 //    aggregate.until{s:String => s != "foo"}
 //    aggregate.until{s:String => s != "foo"}.where(name = "myAggregator")
 //    aggregate.until{""}.andExpire
@@ -103,7 +103,7 @@ class MessageAggregatorTests {
 //    aggregate.until{""}.andExpire.andSendPartialResults.where(name = "")
 //    aggregate.until{""}.andKeepReleasedMessages
 //    aggregate.until{""}.andKeepReleasedMessages.where(name = "")
-    
+
   }
 
 }

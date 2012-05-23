@@ -37,14 +37,14 @@ object transform {
   implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
 
   def apply[T, R: NotUnitType](function: Function1[_, R]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def where(name: String) = {
+    def withAttributes(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Transformer(name = name, target = function))
     }
   }
 
   def apply[T, R: NotUnitType](function: (_, Map[String, _]) => R) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def where(name: String) = {
+    def withAttributes(name: String) = {
 
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Transformer(name = name, target = function))
@@ -54,15 +54,15 @@ object transform {
 
 private[dsl] class Transformer(name: String = "$xfmr_" + UUID.randomUUID().toString.substring(0, 8), target: Any)
   									extends SimpleEndpoint(name, target) {
-  
+
   override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "TRANSFORMER")
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null, 
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,
     inputChannel:AbstractChannel,
     outputChannel:AbstractChannel): Element = {
-    
+
     require(inputChannel != null, "'inputChannel' must be provided")
 
     val element = document.createElement("int:transformer")

@@ -44,14 +44,14 @@ object enrich {
   implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
 
   def apply[R: NotUnitType](function: Function1[_, R]) = new SendingEndpointComposition(null, new Enricher(target = function)) {
-    def where(name: String) = {
+    def withAttributes(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = function))
     }
   }
 
   def apply[T, R: NotUnitType](function: (_, Map[String, _]) => R) = new SendingEndpointComposition(null, new Enricher(target = function)) {
-    def where(name: String) = {
+    def withAttributes(name: String) = {
 
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = function))
@@ -59,14 +59,14 @@ object enrich {
   }
 
   def headers(headersMap: (Tuple2[String, AnyRef])*) = new SendingEndpointComposition(null, new Enricher(target = headersMap)) {
-    def where(name: String) = {
+    def withAttributes(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = headersMap))
     }
   }
 
   def header(headerMap: Tuple2[String, AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = headerMap)) {
-    def where(name: String) = {
+    def withAttributes(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = headerMap))
     }
@@ -78,10 +78,10 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
 
   override def build(document: Document,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit], 
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit],
     inputChannel:AbstractChannel,
     outputChannel:AbstractChannel): Element = {
-    
+
     require(inputChannel != null, "'inputChannel' must be provided")
 
     val headerValueTargetDefinitions: Map[String, _] =
@@ -92,7 +92,7 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
               case fn: Function[_, _] => targetDefinitionFunction.apply(fn)
 
               case s:Some[Function[_, _]] => "@" + targetDefinitionFunction.apply(s)._1
-              
+
               case _ => tp._2
             }
           Map(tp._1 -> targetDefinition)
@@ -103,7 +103,7 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
               val targetDefinition =
                 element._2 match {
                   case fn: Function[_, _] => targetDefinitionFunction.apply(fn)
-                  
+
                   case s:Some[Function[_, _]] => "@" + targetDefinitionFunction.apply(s)._1
 
                   case _ => element._2

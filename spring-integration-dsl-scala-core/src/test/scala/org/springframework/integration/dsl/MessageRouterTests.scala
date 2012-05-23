@@ -29,7 +29,7 @@ class MessageRouterTests {
 
     val typeCondition = when(classOf[String]).then(Channel("hello"))
     Assert.assertTrue(typeCondition.isInstanceOf[PayloadTypeCondition])
-    
+
     val valueCondition = when("foo").then(Channel("hello"))
     Assert.assertTrue(valueCondition.isInstanceOf[ValueCondition])
   }
@@ -45,17 +45,17 @@ class MessageRouterTests {
       when(classOf[String]) then Channel("StringChannel"),
       when(classOf[Int]) then Channel("IntChannel")
 
-    ).where(name = "myRouter")
-  
+    ).withAttributes(name = "myRouter")
+
     val targetRouter = routerA.target.asInstanceOf[Router]
     Assert.assertTrue(targetRouter.name equals "myRouter")
     // infix notation
     route onPayloadType(
 
       when(classOf[String]) then Channel("StringChannel")
-       
 
-    ) where(name = "myRouter")
+
+    ) withAttributes(name = "myRouter")
   }
 
   /**
@@ -70,7 +70,7 @@ class MessageRouterTests {
     route.onValueOfHeader("someHeaderName") (
 
       when("foo") then Channel("stringChannel"),
-      when("bar") then Channel("intChannel") 
+      when("bar") then Channel("intChannel")
     )
   }
 
@@ -79,20 +79,20 @@ class MessageRouterTests {
    */
   @Test
   def validateSpELRouterConfig(){
-    
+
     route("'someChannelName'")_ // if no condition
 
     route("'someChannelName'")(
       when(1) then Channel("1"),
       when(2) then Channel("2")
-    ) where(name = "myRouter")
-    
+    ) withAttributes(name = "myRouter")
+
     (route ("'someChannelName'"))(
       when(1) then Channel("1"),
       when(2) then Channel("2")
-    ) where(name = "myRouter")
-    
-    
+    ) withAttributes(name = "myRouter")
+
+
   }
 
   /**
@@ -100,10 +100,10 @@ class MessageRouterTests {
    */
   @Test
   def validateFunctionRouterConfig(){
-    
+
     route{m:Message[String] => m.getHeaders.get("routeToChannel").asInstanceOf[String]}(
       when(1) then Channel("1"),
       when(2) then Channel("2")
-    ) where(name = "myRouter")
+    ) withAttributes(name = "myRouter")
   }
 }

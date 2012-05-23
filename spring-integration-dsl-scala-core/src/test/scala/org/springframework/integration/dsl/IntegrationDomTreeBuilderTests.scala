@@ -227,8 +227,8 @@ class IntegrationDomTreeBuilderTests {
   def generateServiceActivatorsWithImpliedChannel = {
 
     val messageFlow =
-      handle { s: String => s }.where(name = "start") -->
-        handle { s: String => println }.where(name = "end")
+      handle { s: String => s }.withAttributes(name = "start") -->
+        handle { s: String => println }.withAttributes(name = "end")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
     val serviceActivators = document.getElementsByTagName("int:service-activator")
@@ -252,10 +252,10 @@ class IntegrationDomTreeBuilderTests {
   def generateServiceActivatorsWithExplicitChannelMultipleSubscribers = {
 
     val messageFlow =
-      handle { s: String => s }.where(name = "start") -->
+      handle { s: String => s }.withAttributes(name = "start") -->
         PubSubChannel("pubsub") --> (
-          handle { s: String => println }.where(name = "endA"),
-          handle { s: String => println }.where(name = "endB"))
+          handle { s: String => println }.withAttributes(name = "endA"),
+          handle { s: String => println }.withAttributes(name = "endB"))
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
     val serviceActivators = document.getElementsByTagName("int:service-activator")
@@ -290,9 +290,9 @@ class IntegrationDomTreeBuilderTests {
 
     val messageFlow =
       Channel("startChannel") -->
-        handle { s: String => s }.where(name = "start") -->
+        handle { s: String => s }.withAttributes(name = "start") -->
         Channel("endChannel") -->
-        handle { s: String => println }.where(name = "end")
+        handle { s: String => println }.withAttributes(name = "end")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
     val serviceActivators = document.getElementsByTagName("int:service-activator")
@@ -311,8 +311,8 @@ class IntegrationDomTreeBuilderTests {
 
     val messageFlow =
       Channel("startChannel").withQueue(4) --> poll.withFixedDelay(3).withExecutor(Executors.newCachedThreadPool()) -->
-        handle { s: String => s }.where(name = "start") -->
-        handle { s: String => println }.where(name = "end")
+        handle { s: String => s }.withAttributes(name = "start") -->
+        handle { s: String => println }.withAttributes(name = "end")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
     val serviceActivators = document.getElementsByTagName("int:service-activator")
@@ -329,7 +329,7 @@ class IntegrationDomTreeBuilderTests {
   def generateTransformer = {
 
     val messageFlow =
-      transform { s: String => s }.where(name = "xfmr")
+      transform { s: String => s }.withAttributes(name = "xfmr")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
     val transformers = document.getElementsByTagName("int:transformer")
@@ -351,7 +351,7 @@ class IntegrationDomTreeBuilderTests {
       handle { _: Any => }
 
     val messageFlow =
-      transform { s: String => messageSubFlow.sendAndReceive[String](s) }.where(name = "xfmr")
+      transform { s: String => messageSubFlow.sendAndReceive[String](s) }.withAttributes(name = "xfmr")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
     val transformers = document.getElementsByTagName("int:transformer")
@@ -370,7 +370,7 @@ class IntegrationDomTreeBuilderTests {
   def generateSplitter = {
 
     val messageFlow =
-      split { s: String => s.toTraversable }.where(name = "splitter")
+      split { s: String => s.toTraversable }.withAttributes(name = "splitter")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
     val transformers = document.getElementsByTagName("int:splitter")
@@ -389,7 +389,7 @@ class IntegrationDomTreeBuilderTests {
   def generateFilter = {
 
     val messageFlow =
-      filter { s: String => s.equals("foo") }.where(name = "filter", exceptionOnRejection = true)
+      filter { s: String => s.equals("foo") }.withAttributes(name = "filter", exceptionOnRejection = true)
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
     val transformers = document.getElementsByTagName("int:filter")

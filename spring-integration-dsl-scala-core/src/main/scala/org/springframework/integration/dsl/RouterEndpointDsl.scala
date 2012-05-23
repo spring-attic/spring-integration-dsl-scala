@@ -35,25 +35,25 @@ object route {
 
   def onPayloadType(conditionCompositions: PayloadTypeCondition*) = new SendingEndpointComposition(null, new Router()(conditionCompositions: _*)) {
 
-    def where(name: String) = new SendingEndpointComposition(null, new Router(name, null, null)(conditionCompositions: _*))
+    def withAttributes(name: String) = new SendingEndpointComposition(null, new Router(name, null, null)(conditionCompositions: _*))
   }
 
   def onValueOfHeader(headerName: String)(conditionCompositions: ValueCondition*) = {
     require(StringUtils.hasText(headerName), "'headerName' must not be empty")
     new SendingEndpointComposition(null, new Router(headerName = headerName)(conditionCompositions: _*)) {
 
-      def where(name: String) = new SendingEndpointComposition(null, new Router(name = name, headerName = headerName)(conditionCompositions: _*))
+      def withAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, headerName = headerName)(conditionCompositions: _*))
     }
   }
 
   def apply(target: String)(conditions: ValueCondition*) =
     new SendingEndpointComposition(null, new Router(target = target)(conditions: _*)) {
-      def where(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
+      def withAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
     }
 
   def apply(target: Function1[_, String])(conditions: ValueCondition*) =
     new SendingEndpointComposition(null, new Router(target = target)(conditions: _*)) {
-      def where(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
+      def withAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
     }
 }
 /**
@@ -76,10 +76,10 @@ private[dsl] class Router(name: String = "$rtr_" + UUID.randomUUID().toString.su
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null, 
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,
     inputChannel:AbstractChannel,
     outputChannel:AbstractChannel): Element = {
-    
+
     require(inputChannel != null, "'inputChannel' must be provided")
 
     require(this.conditions != null && this.conditions.size > 0, "Router without conditions is not supported")
@@ -103,7 +103,7 @@ private[dsl] class Router(name: String = "$rtr_" + UUID.randomUUID().toString.su
       logger.debug("Creating Router of type: " + routerElement)
 
     val targetDefinnition:Tuple2[String, String] = if (this.target != null) targetDefinitionFunction(this.target) else null
-    
+
     targetDefinnition match {
       case t:Tuple2[String, String] => {
         routerElement.setAttribute("ref", targetDefinnition._1);
@@ -111,7 +111,7 @@ private[dsl] class Router(name: String = "$rtr_" + UUID.randomUUID().toString.su
       }
       case _ =>
     }
-    
+
     for (condition <- conditions) yield {
       val composition = condition.integrationComposition.copy()
       val normailizedCompositon = composition.normalizeComposition()

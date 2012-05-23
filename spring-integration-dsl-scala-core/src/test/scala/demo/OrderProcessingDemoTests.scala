@@ -22,12 +22,12 @@ import org.junit._
 import java.util.concurrent.Executors
 
 
-/**  
+/**
  * @author Oleg Zhurakousky
  *
  */
 class OrderProcessingDemoTests {
-  
+
   @Test
   def runDemo() = {
 
@@ -37,33 +37,33 @@ class OrderProcessingDemoTests {
       PurchaseOrderItem("bikes", "Canyon Torque FRX")))
 
     val invalidOrder = PurchaseOrder(List())
-    
+
     val errorFlow = handle{m:Message[_] => println("Received ERROR: " + m); "ERROR processing order"}
-    
+
     val aggregationFlow = aggregate()
 
-    val bikeFlow = 
-      handle{m:Message[_] => println("Processing bikes order: " + m); m} --> 
+    val bikeFlow =
+      handle{m:Message[_] => println("Processing bikes order: " + m); m} -->
       aggregationFlow
-   
+
     val orderProcessingFlow =
-      filter{p:PurchaseOrder => !p.items.isEmpty}.where(exceptionOnRejection = true) -->
+      filter{p:PurchaseOrder => !p.items.isEmpty}.withAttributes(exceptionOnRejection = true) -->
       split{p:PurchaseOrder => p.items} -->
-      Channel.withDispatcher(taskExecutor = Executors.newCachedThreadPool) -->    
+      Channel.withDispatcher(taskExecutor = Executors.newCachedThreadPool) -->
       route{pi:PurchaseOrderItem => pi.itemType}(
-        when("books") then 
-            handle{m:Message[_] => println("Processing books order: " + m); m} --> 
-        	    aggregationFlow, 
-        when("bikes") then 
-            bikeFlow    	 
-      ) 
+        when("books") then
+            handle{m:Message[_] => println("Processing books order: " + m); m} -->
+        	    aggregationFlow,
+        when("bikes") then
+            bikeFlow
+      )
 
     val resultValid = orderProcessingFlow.sendAndReceive[Any](validOrder, errorFlow = errorFlow)
     println("Result: " + resultValid)
-    
+
     val resultInvalid = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = errorFlow)
     println("Result: " + resultInvalid)
-    
+
   }
 
   case class PurchaseOrder(val items: List[PurchaseOrderItem])

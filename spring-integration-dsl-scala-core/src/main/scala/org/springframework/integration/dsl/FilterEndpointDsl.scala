@@ -28,13 +28,13 @@ import org.w3c.dom.Document
 object filter {
 
   def apply(function: Function1[_, Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
-    def where(name: String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection: Boolean = false) = {
+    def withAttributes(name: String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection: Boolean = false) = {
       new SendingEndpointComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
     }
   }
 
   def apply(function: (_, Map[String, _]) => Boolean) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
-    def where(name: String) = {
+    def withAttributes(name: String) = {
 
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new MessageFilter(name = name, target = function))
@@ -44,15 +44,15 @@ object filter {
 
 private[dsl] class MessageFilter(name: String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), target: Any, val exceptionOnRejection: Boolean = false)
   extends SimpleEndpoint(name, target) {
-  
+
   override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "FILTER")
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null, 
+    compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,
     inputChannel:AbstractChannel,
     outputChannel:AbstractChannel): Element = {
-    
+
     require(inputChannel != null, "'inputChannel' must be provided")
 
     val element = document.createElement("int:filter")
