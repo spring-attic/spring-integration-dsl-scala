@@ -20,13 +20,14 @@ import org.w3c.dom.Element
 import javax.jms.ConnectionFactory
 import org.springframework.integration.dsl.utils.Conventions
 import org.springframework.util.StringUtils
+import org.springframework.integration.dsl.utils.DslUtils
 /**
  * @author Oleg Zhurakousky
  */
 private[dsl] class JmsInboundGatewayConfig(name: String = "$jms_in_" + UUID.randomUUID().toString.substring(0, 8),
   target: String,
   val connectionFactory: ConnectionFactory,
-  val attributesMap: Map[String, _]) extends InboundMessageSource(name, target) {
+  val additionalAttributes: Map[String, _]) extends InboundMessageSource(name, target) {
 
   def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
@@ -49,25 +50,9 @@ private[dsl] class JmsInboundGatewayConfig(name: String = "$jms_in_" + UUID.rand
 
     element.setAttribute("connection-factory", connectionFactoryName)
     element.setAttribute("auto-startup", "false")
-    if (attributesMap != null){
-      this.setAdditionalAttributes(element, attributesMap)
+    if (additionalAttributes != null){
+      DslUtils.setAdditionalAttributes(element, additionalAttributes)
     }
     element
-  }
-
-  private def setAdditionalAttributes(element: Element, attributeMap: Map[String, _]): Unit = {
-    attributeMap.keys.foreach { key: String =>
-      val propertyValue: Any = attributeMap.get(key).elements.next()
-      val attributeName = Conventions.propertyNameToAttributeName(key)
-      propertyValue match {
-        case Boolean => element.setAttribute(attributeName, attributeMap.get(key).toString)
-        case _ =>
-          if (propertyValue.isInstanceOf[String] && StringUtils.hasText(propertyValue.asInstanceOf[String])) {
-            element.setAttribute(attributeName, propertyValue.toString())
-          } else if (propertyValue != null) {
-            element.setAttribute(attributeName, propertyValue.toString())
-          }
-      }
-    }
   }
 }

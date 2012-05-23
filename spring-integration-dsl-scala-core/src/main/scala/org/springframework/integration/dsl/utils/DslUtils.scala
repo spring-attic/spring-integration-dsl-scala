@@ -26,6 +26,8 @@ import org.springframework.integration.dsl.IntegrationComponent
 import org.springframework.integration.dsl.IntegrationComponent
 import org.springframework.integration.dsl.IntegrationComponent
 import org.springframework.integration.dsl.IntegrationComponent
+import org.w3c.dom.Element
+import org.springframework.util.StringUtils
 
 /**
  * @author Oleg Zhurakousky
@@ -66,6 +68,25 @@ object DslUtils {
     val field = classOf[BaseIntegrationComposition].getDeclaredField("parentComposition")
     field.setAccessible(true)
     field.set(rootComposition, parentComposition)
+  }
+
+  private[dsl] def setAdditionalAttributes(element: Element, attributeMap: Map[String, Any]): Unit = {
+    attributeMap.keys.foreach { key: String =>
+      val propertyValue: Any = attributeMap.get(key).elements.next()
+      val attributeName = Conventions.propertyNameToAttributeName(key)
+      val propertyValueToSet =
+        if (propertyValue != null) {
+          propertyValue match {
+            case str: String => if (StringUtils.hasText(str)) str else null
+            case _ => propertyValue.toString()
+          }
+        } else {
+          null
+        }
+      if (propertyValueToSet != null) {
+        element.setAttribute(attributeName, propertyValueToSet)
+      }
+    }
   }
 
   //TODO - there must be something in Scala already to do that

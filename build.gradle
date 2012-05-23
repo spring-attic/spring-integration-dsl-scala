@@ -117,6 +117,22 @@ project('spring-integration-dsl-scala-file') {
   }
 }
 
+project('spring-integration-dsl-scala-ftp') {
+  description = 'Spring Integration Scala FTP'
+  dependencies {
+    compile project(":spring-integration-dsl-scala-core")
+    compile "org.springframework.integration:spring-integration-ftp:$springintegrationVersion"
+  }
+}
+
+project('spring-integration-dsl-scala-sftp') {
+  description = 'Spring Integration Scala SFTP'
+  dependencies {
+    compile project(":spring-integration-dsl-scala-core")
+    compile "org.springframework.integration:spring-integration-sftp:$springintegrationVersion"
+  }
+}
+
 project('spring-integration-dsl-scala-integration-demos') {
   description = 'Spring Integration Scala Integration Demos'
   dependencies {
