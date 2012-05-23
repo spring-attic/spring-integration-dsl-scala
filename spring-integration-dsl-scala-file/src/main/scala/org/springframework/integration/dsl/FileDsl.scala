@@ -15,25 +15,80 @@
  */
 package org.springframework.integration.dsl
 import java.io.File
+import java.util.concurrent.Executor
 
 /**
  * @author Oleg Zhurakousky
  */
 private[dsl] object FileDsl {
-   val fileSchema = " http://www.springframework.org/schema/integration/file " +
-   		"http://www.springframework.org/schema/integration/file/spring-integration-file.xsd"
+  val fileSchema = " http://www.springframework.org/schema/integration/file " +
+    "http://www.springframework.org/schema/integration/file/spring-integration-file.xsd"
 
 }
 
 object file {
-  def apply(directory:String)(pollerComposition:PollerComposition) =
-    new ListeningIntegrationComposition(null, new FileInboundAdapterConfig(target = directory, poller = pollerComposition.target))
+  def poll(directory: String) = new {
 
-  def write(directory:String) =
-     new SendingEndpointComposition(null, new FileOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = null)) {
+    def atFixedRate(rate: Int): ListeningIntegrationComposition = {
+      val poller = new Poller(fixedRate = rate)
+      new ListeningIntegrationComposition(null, new FileInboundAdapterConfig(target = directory, poller = poller)) {
 
-    def asFile(fileNameGeneratioinFunction: _ => String) =
-      new SendingEndpointComposition(null, new FileOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction))
+        def withMaxMessagesPerPoll(maxMessagesPerPoll: Int): ListeningIntegrationComposition = {
+          val poller = new Poller(fixedRate = rate, maxMessagesPerPoll = maxMessagesPerPoll)
+          new ListeningIntegrationComposition(null, new FileInboundAdapterConfig(target = directory, poller = poller)) {
+
+            def withTaskExecutor(taskExecutor: Executor): ListeningIntegrationComposition = {
+              val poller = new Poller(fixedRate = rate, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor)
+              new ListeningIntegrationComposition(null, new FileInboundAdapterConfig(target = directory, poller = poller))
+            }
+          }
+        }
+
+        def withTaskExecutor(taskExecutor: Executor): ListeningIntegrationComposition = {
+          val poller = new Poller(fixedRate = rate, taskExecutor = taskExecutor)
+          new ListeningIntegrationComposition(null, new FileInboundAdapterConfig(target = directory, poller = poller))
+        }
+
+      }
+
+    }
+
+    def withFixedDelay(delay: Int) = {
+      val poller = new Poller(fixedDelay = delay)
+      new ListeningIntegrationComposition(null, new FileInboundAdapterConfig(target = directory, poller = poller)) {
+
+        def withMaxMessagesPerPoll(maxMessagesPerPoll: Int): ListeningIntegrationComposition = {
+          val poller = new Poller(fixedDelay = delay, maxMessagesPerPoll = maxMessagesPerPoll)
+          new ListeningIntegrationComposition(null, new FileInboundAdapterConfig(target = directory, poller = poller)) {
+
+            def withTaskExecutor(taskExecutor: Executor): ListeningIntegrationComposition = {
+              val poller = new Poller(fixedDelay = delay, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor)
+              new ListeningIntegrationComposition(null, new FileInboundAdapterConfig(target = directory, poller = poller))
+            }
+          }
+        }
+
+        def withTaskExecutor(taskExecutor: Executor): ListeningIntegrationComposition = {
+          val poller = new Poller(fixedDelay = delay, taskExecutor = taskExecutor)
+          new ListeningIntegrationComposition(null, new FileInboundAdapterConfig(target = directory, poller = poller))
+        }
+
+      }
+
+    }
   }
+
+  def write(directory: String) =
+    new SendingEndpointComposition(null, new FileOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = null)) {
+
+      def asFileName(fileNameGeneratioinFunction: _ => String) =
+        new SendingEndpointComposition(null, new FileOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction))
+    }
+
+  def write = new SendingEndpointComposition(null, new FileOutboundGatewayConfig(target = "", oneway = true, fileNameGeneratioinFunction = null)) {
+
+      def asFileName(fileNameGeneratioinFunction: _ => String) =
+        new SendingEndpointComposition(null, new FileOutboundGatewayConfig(target = "", oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction))
+    }
 
 }

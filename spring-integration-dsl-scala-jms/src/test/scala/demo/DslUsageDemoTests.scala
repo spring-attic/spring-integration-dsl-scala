@@ -112,7 +112,7 @@ class DslUsageDemoTests {
       					withAttributes(correlationKey="hello",
       					    transactionManager = null,
       					    subscriptionDurable = true,
-      					    requestTimeout = 89,
+      					    requestTimeout = 8000,
       					    requestPubSubDomain = true) -->
     handle{s:String => println(s)}
 

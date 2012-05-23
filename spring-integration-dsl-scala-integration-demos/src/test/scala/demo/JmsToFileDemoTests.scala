@@ -41,7 +41,8 @@ class JmsToFileDemoTests {
     val receivingFlow =
       jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
       handle{p:String => println("Received Message with payload: " + p);p} -->
-      file.write("").asFile{_:Any => "JmsToFileDemoTests.txt"}
+      file.write.asFileName{_:Any => "JmsToFileDemoTests.txt"} // will write to current directory
+      // use file.write("foo/bar"). . . to specify directory
 
     receivingFlow.start()
 
