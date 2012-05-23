@@ -37,9 +37,11 @@ private[dsl] class JmsOutboundGatewayConfig(name: String = "$jms_out_" + UUID.ra
     val connectionFactoryName = targetDefinitionFunction.apply(Some(connectionFactory))._1
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
-    beansElement.setAttribute("xmlns:int-jms", "http://www.springframework.org/schema/integration/jms")
-    val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
-    beansElement.setAttribute("xsi:schemaLocation", JmsDsl.jmsSchema);
+    if (!beansElement.hasAttribute("xmlns:int-jms")){
+       beansElement.setAttribute("xmlns:int-jms", "http://www.springframework.org/schema/integration/jms")
+       val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
+       beansElement.setAttribute("xsi:schemaLocation", schemaLocation + JmsDsl.jmsSchema);
+    }
 
     val element: Element =
       if (oneway) {

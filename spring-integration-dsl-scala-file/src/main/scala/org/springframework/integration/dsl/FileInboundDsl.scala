@@ -36,9 +36,11 @@ private[dsl] class FileInboundAdapterConfig(name: String = "$file_in_" + UUID.ra
     require(requestChannelName != null, "File Inbound Channel Adapter requires continuation but message flow ends here")
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
-    beansElement.setAttribute("xmlns:int-file", "http://www.springframework.org/schema/integration/file")
-    val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
-    beansElement.setAttribute("xsi:schemaLocation", FileDsl.fileSchema)
+    if (!beansElement.hasAttribute("xmlns:int-file")){
+       beansElement.setAttribute("xmlns:int-file", "http://www.springframework.org/schema/integration/file")
+       val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
+       beansElement.setAttribute("xsi:schemaLocation", schemaLocation + FileDsl.fileSchema);
+    }
 
     val element = document.createElement("int-file:inbound-channel-adapter")
     element.setAttribute("id", this.name)

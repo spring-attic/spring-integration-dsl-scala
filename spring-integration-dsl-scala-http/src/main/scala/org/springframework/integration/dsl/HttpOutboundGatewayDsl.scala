@@ -135,29 +135,31 @@ private[dsl] class HttpOutboundGateway(name: String = "$http_out_" + UUID.random
     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,
     inputChannel:AbstractChannel,
     outputChannel:AbstractChannel): Element = {
-    
+
     require(inputChannel != null, "'inputChannel' must be provided")
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
-    beansElement.setAttribute("xmlns:int-http", "http://www.springframework.org/schema/integration/http")
-    val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
-    
-    beansElement.setAttribute("xsi:schemaLocation", schemaLocation +
-      " http://www.springframework.org/schema/integration/http http://www.springframework.org/schema/integration/http/spring-integration-http.xsd")
 
-    
+    if (!beansElement.hasAttribute("xmlns:int-http")){
+       beansElement.setAttribute("xmlns:int-http", "http://www.springframework.org/schema/integration/http")
+       val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
+       beansElement.setAttribute("xsi:schemaLocation", schemaLocation +
+    		   " http://www.springframework.org/schema/integration/http " +
+    		   "http://www.springframework.org/schema/integration/http/spring-integration-http.xsd")
+    }
+
     val element = document.createElement("int-http:outbound-gateway")
     element.setAttribute("id", this.name)
-    
+
     element.setAttribute("http-method", this.httpMethod.toString)
     element.setAttribute("expected-response-type", this.expectedResponseType.getName)
 
     this.target match {
       case fn: Function[_, _] => {
         val targetDefinition = targetDefinitionFunction.apply(this.target)
-        
+
         element.setAttribute("url", "{url}")
-        
+
         val uriVarElement = document.createElement("int-http:uri-variable")
         uriVarElement.setAttribute("name", "url")
         val expressionParam =

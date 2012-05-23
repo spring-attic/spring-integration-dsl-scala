@@ -35,9 +35,11 @@ private[dsl] class FileOutboundGatewayConfig(name: String = "$file_out_" + UUID.
     require(inputChannel != null, "'inputChannel' must be provided")
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
-    beansElement.setAttribute("xmlns:int-file", "http://www.springframework.org/schema/integration/file")
-    val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
-    beansElement.setAttribute("xsi:schemaLocation", FileDsl.fileSchema);
+    if (!beansElement.hasAttribute("xmlns:int-file")){
+       beansElement.setAttribute("xmlns:int-file", "http://www.springframework.org/schema/integration/file")
+       val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
+       beansElement.setAttribute("xsi:schemaLocation", schemaLocation + FileDsl.fileSchema);
+    }
 
     val element: Element =
       if (oneway) {

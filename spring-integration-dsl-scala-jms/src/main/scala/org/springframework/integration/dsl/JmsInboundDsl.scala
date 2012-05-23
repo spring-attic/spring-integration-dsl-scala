@@ -41,9 +41,11 @@ private[dsl] class JmsInboundGatewayConfig(name: String = "$jms_in_" + UUID.rand
 
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
-    beansElement.setAttribute("xmlns:int-jms", "http://www.springframework.org/schema/integration/jms")
-    val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
-    beansElement.setAttribute("xsi:schemaLocation", JmsDsl.jmsSchema)
+    if (!beansElement.hasAttribute("xmlns:int-jms")){
+       beansElement.setAttribute("xmlns:int-jms", "http://www.springframework.org/schema/integration/jms")
+       val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
+       beansElement.setAttribute("xsi:schemaLocation", schemaLocation + JmsDsl.jmsSchema);
+    }
 
     val element = document.createElement("int-jms:inbound-gateway")
     element.setAttribute("id", this.name)

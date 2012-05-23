@@ -114,6 +114,24 @@ project('spring-integration-dsl-scala-file') {
   }
 }
 
+project('spring-integration-dsl-scala-integration-demos') {
+  description = 'Spring Integration Scala Integration Demos'
+  dependencies {
+    compile project(":spring-integration-dsl-scala-core")
+    compile project(":spring-integration-dsl-scala-jms")
+    compile project(":spring-integration-dsl-scala-gemfire")
+    compile project(":spring-integration-dsl-scala-file")
+    compile project(":spring-integration-dsl-scala-http")
+	compile ("org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1") 
+  
+    // libraries only needed for test
+    testCompile ("org.apache.activemq:activemq-core:5.3.0") {
+         exclude group: 'org.springframework', module: 'spring-context'
+    }
+  }
+}
+
+
 task wrapper(type: Wrapper) {
     description = 'Generates gradlew[.bat] scripts'
     gradleVersion = '1.0-milestone-8'

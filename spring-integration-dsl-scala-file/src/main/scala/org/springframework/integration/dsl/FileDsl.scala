@@ -20,9 +20,8 @@ import java.io.File
  * @author Oleg Zhurakousky
  */
 object FileDsl {
-   val fileSchema = "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd " +
-    "http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd " +
-    "http://www.springframework.org/schema/integration/file http://www.springframework.org/schema/integration/file/spring-integration-file.xsd"
+   val fileSchema = " http://www.springframework.org/schema/integration/file " +
+   		"http://www.springframework.org/schema/integration/file/spring-integration-file.xsd"
 
 }
 
