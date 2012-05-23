@@ -15,6 +15,7 @@
  */
 package demo
 import org.junit.Test
+import org.junit.Assert._
 import org.springframework.integration.dsl.utils.JmsDslTestUtils
 import org.springframework.integration.dsl.handle
 import org.springframework.integration.dsl.jms
@@ -59,6 +60,7 @@ class DslUsageDemoTests {
     });
 
     val replyMessage = jmsTemplate.receive(reply);
+    assertNotNull(replyMessage)
     println("Reply Message: " + replyMessage.asInstanceOf[TextMessage].getText())
 
     flow.stop()
@@ -78,6 +80,8 @@ class DslUsageDemoTests {
 
     receivingMessageFlow.start()
     val reply = sendingMessageFlow.sendAndReceive[String]("Hello JMS!")
+    assertNotNull(reply)
+    receivingMessageFlow.stop()
     println("Received reply: " + reply)
   }
 
@@ -94,6 +98,8 @@ class DslUsageDemoTests {
 
     receivingMessageFlow.start()
     sendingMessageFlow.send("Hello JMS!")
+    Thread.sleep(2000)
+    receivingMessageFlow.stop()
     println("Done")
   }
 
@@ -117,5 +123,6 @@ class DslUsageDemoTests {
   @After
   def after = {
     connectionFactory.destroy()
+    Thread.sleep(1000)
   }
 }
