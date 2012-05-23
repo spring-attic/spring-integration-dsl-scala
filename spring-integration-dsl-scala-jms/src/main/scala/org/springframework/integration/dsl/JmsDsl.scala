@@ -28,7 +28,7 @@ private[dsl] object JmsDsl {
 object jms {
 
   def listen(requestDestinationName: String, connectionFactory: ConnectionFactory) =
-    new ListeningIntegrationComposition(null, new JmsInboundGatewayConfig(target = requestDestinationName, connectionFactory = connectionFactory)) {
+    new ListeningIntegrationComposition(null, new JmsInboundGatewayConfig(target = requestDestinationName, connectionFactory = connectionFactory, attributesMap = null)) {
 
     /**
      * Below are the docs for each attribute:
@@ -56,20 +56,34 @@ object jms {
 	 * typically in combination with a "durableSubscriptionName" value (unless your message listener class name is good enough as
 	 * subscription name). Only makes sense when listening to a topic (pub-sub domain)''
      */
-    def withAttributes(requestPubSubDomain:Boolean = false,
+    def withAttributes(requestPubSubDomain:Boolean = null.asInstanceOf[Boolean],
     			       correlationKey:String = null,
-    			       requestTimeout:Long = -1,
-    			       replyTimeout:Long = -1,
+    			       requestTimeout:Integer = null.asInstanceOf[Integer],
+    			       replyTimeout:Integer = null.asInstanceOf[Integer],
     			       errorFlow:SendingEndpointComposition = null,
     			       transactionManager:PlatformTransactionManager = null,
-    			       subscriptionDurable:Boolean = false,
+    			       subscriptionDurable:Boolean = null.asInstanceOf[Boolean],
     			       durableSubscriptionName:String = null,
     			       clientId:String = null,
-    			       concurrentConsumers:Integer = -1,
-    			       maxConcurrentConsumers:Integer = -1,
+    			       concurrentConsumers:Integer = null.asInstanceOf[Integer],
+    			       maxConcurrentConsumers:Integer = null.asInstanceOf[Integer],
     			       cacheLevel:CacheLevel.CacheLevel = null,
-    			       maxMessagesPerTask:Integer = -1):ListeningIntegrationComposition = {
-      new ListeningIntegrationComposition(null, new JmsInboundGatewayConfig(target = requestDestinationName, connectionFactory = connectionFactory))
+    			       maxMessagesPerTask:Integer = null.asInstanceOf[Integer]):ListeningIntegrationComposition = {
+
+      val attributesMap = Map[String, Any]("requestPubSubDomain" -> requestPubSubDomain,
+                              "correlationKey" -> correlationKey,
+                              "requestTimeout" -> requestTimeout,
+                              "replyTimeout" -> replyTimeout,
+                              "errorFlow" -> errorFlow,
+                              "transactionManager" -> transactionManager,
+                              "subscriptionDurable" -> subscriptionDurable,
+                              "durableSubscriptionName" -> durableSubscriptionName,
+                              "clientId" -> clientId,
+                              "concurrentConsumers" -> concurrentConsumers,
+                              "maxConcurrentConsumers" -> maxConcurrentConsumers,
+                              "cacheLevel" -> cacheLevel,
+                              "maxMessagesPerTask" -> maxMessagesPerTask)
+      new ListeningIntegrationComposition(null, new JmsInboundGatewayConfig(target = requestDestinationName, connectionFactory = connectionFactory, attributesMap = attributesMap))
     }
   }
 

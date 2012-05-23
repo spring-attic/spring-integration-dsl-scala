@@ -30,6 +30,7 @@ import org.junit.Before
 import javax.jms.ConnectionFactory
 import org.springframework.jms.connection.CachingConnectionFactory
 import org.junit.After
+import org.springframework.integration.dsl.CacheLevel
 /**
  * @author Oleg Zhurakousky
  */
@@ -101,6 +102,22 @@ class DslUsageDemoTests {
     Thread.sleep(2000)
     receivingMessageFlow.stop()
     println("Done")
+  }
+
+  @Test
+  def jmsInboundGatewayWithAdditionalProperties = {
+
+    val messageFlow =
+      jms.listen(requestDestinationName = "fooQueue", connectionFactory = connectionFactory).
+      					withAttributes(correlationKey="hello",
+      					    transactionManager = null,
+      					    subscriptionDurable = true,
+      					    requestTimeout = 89,
+      					    requestPubSubDomain = true) -->
+    handle{s:String => println(s)}
+
+    messageFlow.start()
+    messageFlow.stop()
   }
 
   @Before

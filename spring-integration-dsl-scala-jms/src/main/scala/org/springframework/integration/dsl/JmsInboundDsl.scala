@@ -14,37 +14,30 @@
  * limitations under the License.
  */
 package org.springframework.integration.dsl
-import org.springframework.beans.factory.support.BeanDefinitionBuilder
-import org.springframework.beans.factory.support.BeanDefinitionReaderUtils
-import org.springframework.beans.factory.support.BeanDefinitionRegistry
-import org.springframework.integration.jms.ChannelPublishingJmsMessageListener
-import org.springframework.integration.jms.JmsMessageDrivenEndpoint
-import org.springframework.jms.listener.DefaultMessageListenerContainer
-import javax.jms.ConnectionFactory
 import java.util.UUID
 import org.w3c.dom.Document
 import org.w3c.dom.Element
-import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.beans.factory.config.ConfigurableBeanFactory
-
+import javax.jms.ConnectionFactory
+import org.springframework.integration.dsl.utils.Conventions
+import org.springframework.util.StringUtils
 /**
  * @author Oleg Zhurakousky
  */
 private[dsl] class JmsInboundGatewayConfig(name: String = "$jms_in_" + UUID.randomUUID().toString.substring(0, 8),
   target: String,
-  val connectionFactory: ConnectionFactory) extends InboundMessageSource(name, target) {
+  val connectionFactory: ConnectionFactory,
+  val attributesMap: Map[String, _]) extends InboundMessageSource(name, target) {
 
   def build(document: Document = null,
-            targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
-            pollerDefinitionFunction: Function3[IntegrationComponent, Poller, Element, Unit],
-            requestChannelName: String): Element = {
-
+    targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
+    pollerDefinitionFunction: Function3[IntegrationComponent, Poller, Element, Unit],
+    requestChannelName: String): Element = {
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
-    if (!beansElement.hasAttribute("xmlns:int-jms")){
-       beansElement.setAttribute("xmlns:int-jms", "http://www.springframework.org/schema/integration/jms")
-       val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
-       beansElement.setAttribute("xsi:schemaLocation", schemaLocation + JmsDsl.jmsSchema);
+    if (!beansElement.hasAttribute("xmlns:int-jms")) {
+      beansElement.setAttribute("xmlns:int-jms", "http://www.springframework.org/schema/integration/jms")
+      val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
+      beansElement.setAttribute("xsi:schemaLocation", schemaLocation + JmsDsl.jmsSchema);
     }
 
     val element = document.createElement("int-jms:inbound-gateway")
@@ -56,6 +49,25 @@ private[dsl] class JmsInboundGatewayConfig(name: String = "$jms_in_" + UUID.rand
 
     element.setAttribute("connection-factory", connectionFactoryName)
     element.setAttribute("auto-startup", "false")
+    if (attributesMap != null){
+      this.setAdditionalAttributes(element, attributesMap)
+    }
     element
+  }
+
+  private def setAdditionalAttributes(element: Element, attributeMap: Map[String, _]): Unit = {
+    attributeMap.keys.foreach { key: String =>
+      val propertyValue: Any = attributeMap.get(key).elements.next()
+      val attributeName = Conventions.propertyNameToAttributeName(key)
+      propertyValue match {
+        case Boolean => element.setAttribute(attributeName, attributeMap.get(key).toString)
+        case _ =>
+          if (propertyValue.isInstanceOf[String] && StringUtils.hasText(propertyValue.asInstanceOf[String])) {
+            element.setAttribute(attributeName, propertyValue.toString())
+          } else if (propertyValue != null) {
+            element.setAttribute(attributeName, propertyValue.toString())
+          }
+      }
+    }
   }
 }
