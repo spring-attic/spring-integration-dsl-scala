@@ -77,7 +77,7 @@ class DSLUsageDemoTests {
     val sessionFactory = Mockito.mock(classOf[DefaultSftpSessionFactory])
 
     val messageFlow =
-      sftp(sessionFactory).poll("/").into("/foo/bar").atFixedRate(3).withAttributes(name = "myAdapter", deleteRemoteFiles = false) -->
+      sftp(sessionFactory).poll("/").into("build").atFixedRate(3).withAttributes(name = "myAdapter", deleteRemoteFiles = false) -->
         handle { f: File => f.getAbsolutePath() }
 
     messageFlow.start()
@@ -92,7 +92,7 @@ class DSLUsageDemoTests {
     val sessionFactory = Mockito.mock(classOf[DefaultSftpSessionFactory])
 
     val messageFlow =
-      sftp(sessionFactory).poll("/").into("/foo/bar").atFixedRate(3) -->
+      sftp(sessionFactory).poll("/").into("build").atFixedRate(3) -->
         Channel("foo") -->
         handle { p: File => println("File: " + p.getAbsolutePath()) }
 
