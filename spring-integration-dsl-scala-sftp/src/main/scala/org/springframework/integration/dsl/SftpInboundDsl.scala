@@ -38,7 +38,7 @@ private[dsl] class SftpInboundAdapterConfig(name: String = "$sftp_in_" + UUID.ra
             pollerDefinitionFunction: Function3[IntegrationComponent, Poller, Element, Unit],
             requestChannelName: String): Element = {
 
-    require(requestChannelName != null, "File Inbound Channel Adapter requires continuation but message flow ends here")
+    require(requestChannelName != null, "SFTP Inbound Channel Adapter requires continuation but message flow ends here")
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
     if (!beansElement.hasAttribute("xmlns:int-sftp")){

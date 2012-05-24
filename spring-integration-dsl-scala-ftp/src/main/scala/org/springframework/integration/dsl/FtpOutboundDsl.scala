@@ -18,13 +18,18 @@ import java.util.UUID
 import org.w3c.dom.Element
 import org.w3c.dom.Document
 import java.io.File
+import org.springframework.integration.ftp.session.AbstractFtpSessionFactory
+import org.apache.commons.net.ftp.FTPClient
+import org.springframework.integration.dsl.utils.DslUtils
 /**
  * @author Oleg Zhurakousky
  */
 private[dsl] class FtpOutboundGatewayConfig(name: String = "$ftp_out_" + UUID.randomUUID().toString.substring(0, 8),
-  target: String,
-  oneway: Boolean,
-  fileNameGeneratioinFunction:_ => String) extends SimpleEndpoint(name, target) with OutboundAdapterEndpoint {
+  override val target: Any,
+  val oneway: Boolean,
+  val fileNameGeneratioinFunction: _ => String,
+  val sessionFactory:AbstractFtpSessionFactory[FTPClient],
+  additionalAttributes:Map[String,_] = null) extends SimpleEndpoint(name, target) with OutboundAdapterEndpoint {
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
@@ -35,35 +40,56 @@ private[dsl] class FtpOutboundGatewayConfig(name: String = "$ftp_out_" + UUID.ra
     require(inputChannel != null, "'inputChannel' must be provided")
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
-    if (!beansElement.hasAttribute("xmlns:int-file")){
-       beansElement.setAttribute("xmlns:int-file", "http://www.springframework.org/schema/integration/file")
-       val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
-       beansElement.setAttribute("xsi:schemaLocation", schemaLocation + FtpDsl.ftpSchema);
+    if (!beansElement.hasAttribute("xmlns:int-ftp")) {
+      beansElement.setAttribute("xmlns:int-ftp", "http://www.springframework.org/schema/integration/ftp")
+      val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
+      beansElement.setAttribute("xsi:schemaLocation", schemaLocation + FtpDsl.ftpSchema);
     }
 
     val element: Element =
       if (oneway) {
-        val outboundAdapterElement = document.createElement("int-file:outbound-channel-adapter")
+        val outboundAdapterElement = document.createElement("int-ftp:outbound-channel-adapter")
 
-        outboundAdapterElement.setAttribute("directory", new File(this.target).getAbsolutePath)
+        this.target match {
+          case str: String => outboundAdapterElement.setAttribute("remote-directory", new File(str).getAbsolutePath)
+          case _ => {
+            val directoryNameGenerator = targetDefinitionFunction(this.target)
+            val expressionParam =
+              if (directoryNameGenerator._2.startsWith("sendMessage")) "#this"
+              else if (directoryNameGenerator._2.startsWith("sendPayloadAndHeaders")) "payload, headers"
+              else if (directoryNameGenerator._2.startsWith("sendPayload")) "payload"
+            	  outboundAdapterElement.setAttribute("remote-directory-expression", "@" + directoryNameGenerator._1 + "." +
+            	  directoryNameGenerator._2 + "(" + expressionParam + ")")
+          }
+        }
+
         outboundAdapterElement.setAttribute("channel", inputChannel.name)
 
-        if (fileNameGeneratioinFunction != null){
+        if (fileNameGeneratioinFunction != null) {
           val fileNameGenerator = targetDefinitionFunction(fileNameGeneratioinFunction)
           val expressionParam =
-          	if (fileNameGenerator._2.startsWith("sendMessage")) "#this"
-          	else if (fileNameGenerator._2.startsWith("sendPayloadAndHeaders")) "payload, headers"
-          	else if (fileNameGenerator._2.startsWith("sendPayload")) "payload"
-          outboundAdapterElement.setAttribute("filename-generator-expression", "@" + fileNameGenerator._1 + "." +
-          fileNameGenerator._2 + "(" + expressionParam + ")")
+            if (fileNameGenerator._2.startsWith("sendMessage")) "#this"
+            else if (fileNameGenerator._2.startsWith("sendPayloadAndHeaders")) "payload, headers"
+            else if (fileNameGenerator._2.startsWith("sendPayload")) "payload"
+          outboundAdapterElement.setAttribute("remote-filename-generator-expression", "@" + fileNameGenerator._1 + "." +
+            fileNameGenerator._2 + "(" + expressionParam + ")")
         }
 
         outboundAdapterElement
       } else {
 
-        throw new UnsupportedOperationException("int-file:outbound-gateway is not currently supported")
+        throw new UnsupportedOperationException("int-ftp:outbound-gateway is not currently supported")
       }
+
     element.setAttribute("id", this.name)
+
+    val sessionFactoryName = targetDefinitionFunction(Some(sessionFactory))._1
+
+    element.setAttribute("session-factory", sessionFactoryName)
+
+    if (additionalAttributes != null){
+      DslUtils.setAdditionalAttributes(element, additionalAttributes)
+    }
     element
   }
 }

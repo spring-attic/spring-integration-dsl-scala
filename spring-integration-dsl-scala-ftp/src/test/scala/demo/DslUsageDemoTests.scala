@@ -38,11 +38,11 @@ class DSLUsageDemoTests {
 
     ftp(sessionFactory).poll("/").into("~/").atFixedRate(3)
 
-    ftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withAttributes(name="foo", deleteRemoteFiles=false)
+    ftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withAttributes(name = "foo", deleteRemoteFiles = false)
 
     ftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4)
 
-    ftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4).withAttributes(name="foo")
+    ftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4).withAttributes(name = "foo")
 
     ftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4).withTaskExecutor(executor)
 
@@ -77,7 +77,7 @@ class DSLUsageDemoTests {
     val sessionFactory = Mockito.mock(classOf[DefaultFtpSessionFactory])
 
     val messageFlow =
-      ftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withAttributes(name="foo", deleteRemoteFiles=false) -->
+      ftp(sessionFactory).poll("/").into("/foo/bar").atFixedRate(3).withAttributes(name = "myAdapter", deleteRemoteFiles = false) -->
         handle { f: File => f.getAbsolutePath() }
 
     messageFlow.start()
@@ -86,41 +86,59 @@ class DSLUsageDemoTests {
     println("done")
   }
 
-  //  @Test
-  //  def fileInboundAdapterWithExplicitChannelTest = {
-  //
-  //    val messageFlow =
-  //      file(""){poll.atFixedRate(1000)} -->
-  //      Channel("foo") -->
-  //      handle { p: File => println("File: " + p.getAbsolutePath()) }
-  //
-  //    messageFlow.start()
-  //
-  //    println("done")
-  //  }
-  //
-  //  @Test
-  //  def fileOutboundAdapter = {
-  //
-  //    val messageFlow =
-  //      transform{p:String => p.toUpperCase()} -->
-  //      file.write("")
-  //
-  //    messageFlow.send("Hello File")
-  //
-  //    println("done")
-  //  }
-  //
-  //  @Test
-  //  def fileOutboundAdapterWithFileName = {
-  //
-  //    val messageFlow =
-  //      transform{p:String => p.toUpperCase()} -->
-  //      file.write("").asFile{s:String => s.substring(0, 3) + "-file.txt"}
-  //
-  //    messageFlow.send("Hello File")
-  //
-  //    println("done")
-  //  }
+  @Test
+  def ftpInboundAdapterWithExplicitChannelTest = {
+
+    val sessionFactory = Mockito.mock(classOf[DefaultFtpSessionFactory])
+
+    val messageFlow =
+      ftp(sessionFactory).poll("/").into("/foo/bar").atFixedRate(3) -->
+        Channel("foo") -->
+        handle { p: File => println("File: " + p.getAbsolutePath()) }
+
+    messageFlow.start()
+    messageFlow.stop()
+
+    println("done")
+  }
+
+  @Test
+  def ftpOutboundAdapterCompilationTest = {
+
+    val sessionFactory = Mockito.mock(classOf[DefaultFtpSessionFactory])
+    val executor = Mockito.mock(classOf[Executor])
+
+    ftp(sessionFactory).send("remote/directory")
+
+    ftp(sessionFactory).send { s: String => s }
+
+    ftp(sessionFactory).send("remote/directory").withAttributes(name = "foo")
+
+    ftp(sessionFactory).send { s: String => s }.withAttributes(name = "foo")
+
+    ftp(sessionFactory).send("remote/directory").asFileName { s: String => s }
+
+    ftp(sessionFactory).send("remote/directory").asFileName { s: String => s }.withAttributes(name = "foo")
+
+    ftp(sessionFactory).send { s: String => s }.asFileName { s: String => s }
+
+    ftp(sessionFactory).send { s: String => s }.asFileName { s: String => s }.withAttributes(name = "foo")
+
+    println("done")
+  }
+
+  @Test
+  def ftpOutboundAdapterTest = {
+
+    val sessionFactory = new TestSessionFactory
+
+    val messageFlow =
+      transform { p: String => p.toUpperCase() } -->
+        ftp(sessionFactory).send("/").asFileName { s: String => "foo.txt" }.withAttributes(cacheSessions = false)
+
+    messageFlow.send("Hello File")
+
+    println("done")
+  }
 
 }
