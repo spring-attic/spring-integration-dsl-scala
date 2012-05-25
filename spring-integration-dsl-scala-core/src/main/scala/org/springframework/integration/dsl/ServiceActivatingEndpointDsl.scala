@@ -38,10 +38,10 @@ object handle {
   private trait InOut {
     implicit def anySendingEndpointComposition[I] = new In[I, SendingEndpointComposition with WithAttributesContinued] {
       def apply(function: _ => I) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode ,target = function)) with WithAttributesContinued{
-        def withAttributes(name: String) = doWithAttributesWithContinuity(name, function)
+        def additionalAttributes(name: String) = doWithAttributesWithContinuity(name, function)
       }
       def apply(function: (_, Map[String, _]) => I) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributesContinued{
-        def withAttributes(name: String) = doWithAttributesWithContinuity(name, function)
+        def additionalAttributes(name: String) = doWithAttributesWithContinuity(name, function)
       }
     }
   }
@@ -49,10 +49,10 @@ object handle {
   private object In extends InOut {
     implicit object UnitUnit extends In[Unit, SendingIntegrationComposition with WithAttributes] {
       def apply(function: _ => Unit) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributes{
-        def withAttributes(name: String) = doWithAttributesWithoutContinuity(name, function)
+        def additionalAttributes(name: String) = doWithAttributesWithoutContinuity(name, function)
       }
       def apply(function: (_, Map[String, _]) => Unit) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributes{
-        def withAttributes(name: String) = doWithAttributesWithoutContinuity(name, function)
+        def additionalAttributes(name: String) = doWithAttributesWithoutContinuity(name, function)
       }
     }
   }
@@ -67,10 +67,10 @@ object handle {
   }
 
   trait WithAttributes {
-    def withAttributes(name: String):SendingIntegrationComposition
+    def additionalAttributes(name: String):SendingIntegrationComposition
   }
   trait WithAttributesContinued {
-    def withAttributes(name: String):SendingEndpointComposition
+    def additionalAttributes(name: String):SendingEndpointComposition
   }
 
   def apply[F, R](function: _ => F)(implicit ab: In[F, R]): R = ab.apply(function)

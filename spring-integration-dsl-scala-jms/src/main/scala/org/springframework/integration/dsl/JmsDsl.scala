@@ -56,7 +56,7 @@ object jms {
 	 * typically in combination with a "durableSubscriptionName" value (unless your message listener class name is good enough as
 	 * subscription name). Only makes sense when listening to a topic (pub-sub domain)''
      */
-    def withAttributes(requestPubSubDomain:java.lang.Boolean = null,
+    def additionalAttributes(requestPubSubDomain:java.lang.Boolean = null,
     			       correlationKey:String = null,
     			       requestTimeout:java.lang.Integer = null,
     			       replyTimeout:java.lang.Integer = null,

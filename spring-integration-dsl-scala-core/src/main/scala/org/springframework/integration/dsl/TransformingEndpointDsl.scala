@@ -37,14 +37,14 @@ object transform {
   implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
 
   def apply[T, R: NotUnitType](function: Function1[_, R]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def withAttributes(name: String) = {
+    def additionalAttributes(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Transformer(name = name, target = function))
     }
   }
 
   def apply[T, R: NotUnitType](function: (_, Map[String, _]) => R) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def withAttributes(name: String) = {
+    def additionalAttributes(name: String) = {
 
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Transformer(name = name, target = function))

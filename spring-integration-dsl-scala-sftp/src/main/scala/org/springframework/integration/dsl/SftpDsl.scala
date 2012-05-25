@@ -94,7 +94,7 @@ object sftp {
 
 private[dsl] trait WithInboundAttributes {
 
-  def withAttributes(name: String = null,
+  def additionalAttributes(name: String = null,
     localDirectory: String = null,
     deleteRemoteFiles: java.lang.Boolean = null,
     autoCreateLocalDirectory: java.lang.Boolean = null,
@@ -112,7 +112,7 @@ private[dsl] trait WithInboundAttributes {
 
 private[dsl] trait WithOutboundAttributes {
 
-  def withAttributes(name: String = null,
+  def additionalAttributes(name: String = null,
     autoCreateDirectory: java.lang.Boolean = null,
     charset: String = null,
     order:java.lang.Integer = null,

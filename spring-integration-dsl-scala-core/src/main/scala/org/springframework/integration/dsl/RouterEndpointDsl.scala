@@ -35,25 +35,25 @@ object route {
 
   def onPayloadType(conditionCompositions: PayloadTypeCondition*) = new SendingEndpointComposition(null, new Router()(conditionCompositions: _*)) {
 
-    def withAttributes(name: String) = new SendingEndpointComposition(null, new Router(name, null, null)(conditionCompositions: _*))
+    def additionalAttributes(name: String) = new SendingEndpointComposition(null, new Router(name, null, null)(conditionCompositions: _*))
   }
 
   def onValueOfHeader(headerName: String)(conditionCompositions: ValueCondition*) = {
     require(StringUtils.hasText(headerName), "'headerName' must not be empty")
     new SendingEndpointComposition(null, new Router(headerName = headerName)(conditionCompositions: _*)) {
 
-      def withAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, headerName = headerName)(conditionCompositions: _*))
+      def additionalAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, headerName = headerName)(conditionCompositions: _*))
     }
   }
 
   def apply(target: String)(conditions: ValueCondition*) =
     new SendingEndpointComposition(null, new Router(target = target)(conditions: _*)) {
-      def withAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
+      def additionalAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
     }
 
   def apply(target: Function1[_, String])(conditions: ValueCondition*) =
     new SendingEndpointComposition(null, new Router(target = target)(conditions: _*)) {
-      def withAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
+      def additionalAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
     }
 }
 /**

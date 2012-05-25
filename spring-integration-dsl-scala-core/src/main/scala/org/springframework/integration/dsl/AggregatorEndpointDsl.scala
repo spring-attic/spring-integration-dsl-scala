@@ -30,94 +30,44 @@ import org.w3c.dom.Element
  * @author Oleg Zhurakousky
  */
 object aggregate {
+
+  trait RestrictiveFunction[A, B]
+
+  type NotUnitType[T] = RestrictiveFunction[T, Unit]
+
+  implicit def nsub[A, B]: RestrictiveFunction[A, B] = null
+  implicit def nsubAmbig1[A, B >: A]: RestrictiveFunction[A, B] = null
+  implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
   /**
    *
    */
-  def apply() = new SendingEndpointComposition(null, new Aggregator()) with On with Until {
-    def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-      keepReleasedMessages: Boolean = false,
-      messageStore: MessageStore = new SimpleMessageStore,
-      sendPartialResultsOnExpiry: Boolean = true,
-      expireGroupsUponCompletion: Boolean = false) =
-      new SendingEndpointComposition(null, new Aggregator(name = name,
-        keepReleasedMessages = keepReleasedMessages,
-        messageStore = messageStore,
-        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-        expireGroupsUponCompletion = expireGroupsUponCompletion))
+  def apply() = new SendingEndpointComposition(null, new Aggregator()) with On with Until with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages{
+
   }
 
-  def using(function: _ => AnyRef) = new SendingEndpointComposition(null, new Aggregator()) with On with Until {
-    def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-      keepReleasedMessages: Boolean = false,
-      messageStore: MessageStore = new SimpleMessageStore,
-      sendPartialResultsOnExpiry: Boolean = true,
-      expireGroupsUponCompletion: Boolean = false) =
-      new SendingEndpointComposition(null, new Aggregator(name = name,
-        keepReleasedMessages = keepReleasedMessages,
-        messageStore = messageStore,
-        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-        expireGroupsUponCompletion = expireGroupsUponCompletion))
+  def apply[T, R: NotUnitType](aggregationFunction: Function1[Iterable[_], R]) = new SendingEndpointComposition(null, new Aggregator()) with On with Until with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages{
+
   }
 
   /**
    *
    */
-  def on(correlationFunction: Function1[_, AnyRef]) = new SendingEndpointComposition(null, new Aggregator()) {
-    throw new UnsupportedOperationException("Currently this DSL element is not supported. Support will be added in version 1.0.0.M2")
-    def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-      keepReleasedMessages: Boolean = false,
-      messageStore: MessageStore = new SimpleMessageStore,
-      sendPartialResultsOnExpiry: Boolean = true,
-      expireGroupsUponCompletion: Boolean = false) =
-      new SendingEndpointComposition(null, new Aggregator(name = name,
-        keepReleasedMessages = keepReleasedMessages,
-        messageStore = messageStore,
-        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-        expireGroupsUponCompletion = expireGroupsUponCompletion))
+  def on[T, R: NotUnitType](correlationFunction: Function1[_, R]) = new SendingEndpointComposition(null, new Aggregator()) with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages{
 
-    def until(releaseFunction: Function1[_, Boolean]) = new SendingEndpointComposition(null, new Aggregator()) with AndExpire {
-      def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-        keepReleasedMessages: Boolean = false,
-        messageStore: MessageStore = new SimpleMessageStore,
-        sendPartialResultsOnExpiry: Boolean = true,
-        expireGroupsUponCompletion: Boolean = false) =
-        new SendingEndpointComposition(null, new Aggregator(name = name,
-          keepReleasedMessages = keepReleasedMessages,
-          messageStore = messageStore,
-          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-          expireGroupsUponCompletion = expireGroupsUponCompletion))
+
+    def until(releaseFunction: Function1[_, Boolean]) = new SendingEndpointComposition(null, new Aggregator()) with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages{
+
     }
-    def andExpire = new SendingEndpointComposition(null, new Aggregator()) {
-      def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-        keepReleasedMessages: Boolean = false,
-        messageStore: MessageStore = new SimpleMessageStore,
-        sendPartialResultsOnExpiry: Boolean = true,
-        expireGroupsUponCompletion: Boolean = false) =
-        new SendingEndpointComposition(null, new Aggregator(name = name,
-          keepReleasedMessages = keepReleasedMessages,
-          messageStore = messageStore,
-          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-          expireGroupsUponCompletion = expireGroupsUponCompletion))
-    }
+
   }
   /**
    *
    */
-  def until(releaseFunction: Function1[_, Boolean]) = new SendingEndpointComposition(null, new Aggregator()) with AndExpire {
-    throw new UnsupportedOperationException("Currently this DSL element is not supported. Support will be added in version 1.0.0.M2")
-    def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-      keepReleasedMessages: Boolean = false,
-      messageStore: MessageStore = new SimpleMessageStore,
-      sendPartialResultsOnExpiry: Boolean = true,
-      expireGroupsUponCompletion: Boolean = false) =
-      new SendingEndpointComposition(null, new Aggregator(name = name,
-        keepReleasedMessages = keepReleasedMessages,
-        messageStore = messageStore,
-        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-        expireGroupsUponCompletion = expireGroupsUponCompletion))
+  def until(releaseFunction: Function1[_, Boolean]) = new SendingEndpointComposition(null, new Aggregator()) with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages{
+
   }
 
-  def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
+  def additionalAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
     keepReleasedMessages: Boolean = true,
     messageStore: MessageStore = new SimpleMessageStore,
     sendPartialResultsOnExpiry: Boolean = false,
@@ -159,34 +109,16 @@ private[dsl] class Aggregator(name: String = "$ag_" + UUID.randomUUID().toString
 }
 
 private[dsl] trait On {
-  /**
-   *
-   */
-  def on(correlationFunction: Function1[_, AnyRef]) = new SendingEndpointComposition(null, new Aggregator()) with AndExpire {
-    //throw new UnsupportedOperationException("Currently this DSL element is not supported. Support will be added in version 1.0.0.M2")
-    def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-      keepReleasedMessages: Boolean = false,
-      messageStore: MessageStore = new SimpleMessageStore,
-      sendPartialResultsOnExpiry: Boolean = true,
-      expireGroupsUponCompletion: Boolean = false) =
-      new SendingEndpointComposition(null, new Aggregator(name = name,
-        keepReleasedMessages = keepReleasedMessages,
-        messageStore = messageStore,
-        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-        expireGroupsUponCompletion = expireGroupsUponCompletion))
 
-    def until(releaseFunction: Function1[_, Boolean]) = new SendingEndpointComposition(null, new Aggregator()) with AndExpire {
-      def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-        keepReleasedMessages: Boolean = false,
-        messageStore: MessageStore = new SimpleMessageStore,
-        sendPartialResultsOnExpiry: Boolean = true,
-        expireGroupsUponCompletion: Boolean = false) =
-        new SendingEndpointComposition(null, new Aggregator(name = name,
-          keepReleasedMessages = keepReleasedMessages,
-          messageStore = messageStore,
-          sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-          expireGroupsUponCompletion = expireGroupsUponCompletion))
+  import aggregate._
+
+  def on[T, R: NotUnitType](correlationFunction: Function1[_, R]) = new SendingEndpointComposition(null, new Aggregator()) with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages{
+
+
+    def until(releaseFunction: Function1[_, Boolean]) = new SendingEndpointComposition(null, new Aggregator()) with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages{
+
     }
+
   }
 }
 
@@ -194,24 +126,49 @@ private[dsl] trait Until {
   /**
    *
    */
-  def until(releaseFunction: Function1[_, Boolean]) = new SendingEndpointComposition(null, new Aggregator()) with AndExpire {
-    throw new UnsupportedOperationException("Currently this DSL element is not supported. Support will be added in version 1.0.0.M2")
-    def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
-      keepReleasedMessages: Boolean = false,
-      messageStore: MessageStore = new SimpleMessageStore,
-      sendPartialResultsOnExpiry: Boolean = true,
-      expireGroupsUponCompletion: Boolean = false) =
-      new SendingEndpointComposition(null, new Aggregator(name = name,
-        keepReleasedMessages = keepReleasedMessages,
-        messageStore = messageStore,
-        sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
-        expireGroupsUponCompletion = expireGroupsUponCompletion))
+  def until(releaseFunction: Function1[_, Boolean]) = new SendingEndpointComposition(null, new Aggregator()) with ExpireGroupsOnCompletion with SendPartialResultOnExpiry  with AggregatorAttributes {
+    //throw new UnsupportedOperationException("Currently this DSL element is not supported. Support will be added in version 1.0.0.M2")
   }
 }
 
-private[dsl] trait AndExpire {
-  def andExpire = new SendingEndpointComposition(null, new Aggregator()) {
-    def withAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
+private[dsl] trait ExpireGroupsOnCompletion {
+  def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes {
+    def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes {
+      def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes
+    }
+
+    def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes {
+      def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes
+    }
+  }
+}
+
+private[dsl] trait SendPartialResultOnExpiry {
+  def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes {
+    def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes {
+      def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes
+    }
+
+    def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes {
+      def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes
+    }
+  }
+}
+
+private[dsl] trait KeepReleasedMessages {
+  def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes {
+    def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes {
+      def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes
+    }
+
+    def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes {
+      def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator()) with AggregatorAttributes
+    }
+  }
+}
+
+private[dsl] trait AggregatorAttributes {
+  def additionalAttributes(name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
       keepReleasedMessages: Boolean = false,
       messageStore: MessageStore = new SimpleMessageStore,
       sendPartialResultsOnExpiry: Boolean = true,
@@ -221,7 +178,6 @@ private[dsl] trait AndExpire {
         messageStore = messageStore,
         sendPartialResultsOnExpiry = sendPartialResultsOnExpiry,
         expireGroupsUponCompletion = expireGroupsUponCompletion))
-  }
 }
 
 

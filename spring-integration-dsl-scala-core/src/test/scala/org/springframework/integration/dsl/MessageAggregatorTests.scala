@@ -31,7 +31,7 @@ class MessageAggregatorTests {
     val aggregator = aggregate()
     Assert.assertNotNull(aggregator.target.name)
 
-    val namedAggregator = aggregate().withAttributes(name = "myAggregator")
+    val namedAggregator = aggregate().additionalAttributes(name = "myAggregator")
     Assert.assertEquals("myAggregator", namedAggregator.target.name)
     val aggr = namedAggregator.target.asInstanceOf[Aggregator]
     Assert.assertFalse(aggr.keepReleasedMessages)
@@ -44,65 +44,96 @@ class MessageAggregatorTests {
   @Test
   def validateAggregatorConfiguration(){
 
+    // additionalAttributes(name="foo") is always the last one
+
     aggregate()
-    aggregate.withAttributes(name = "myAggregator")
+    aggregate.additionalAttributes(name="foo")
+    aggregate().additionalAttributes(name="foo")
 
-//    aggregate.on{s:Any => new Object}
-//    aggregate.on{s:Any => new Object}.andExpire
-//    aggregate.on{s:Any => new Object}.where(name="aggr")
-//    aggregate.on{s:Any => new Object}.andExpire.where(name="aggr")
-//    aggregate.on{s:Any => new Object}.until{s:Any => 2<1}.where(name="aggr")
-//    aggregate.on{s:Any => new Object}.until{s:Any => 2<1}.andExpire.where(name="aggr")
-//
-//    aggregate.until{s:Any => 2<1}
-//    aggregate.until{s:Any => 2<1}.andExpire
-//    aggregate.until{s:Any => 2<1}.where(name="aggr")
-//    aggregate.until{s:Any => 2<1}.andExpire.where(name="aggr")
-//
-//    aggregate.using{s:Any => new Object}
-//    aggregate.using{s:Any => new Object}.where(name="aggr")
-//
-//    aggregate.using{s:Any => new Object}.on{s:Any => new Object}.where(name="aggr")
-//    aggregate.using{s:Any => new Object}.on{s:Any => new Object}.andExpire.where(name="aggr")
-//    aggregate.using{s:Any => new Object}.on{s:Any => new Object}.until{s:Any => 2<1}.andExpire.where(name="aggr")
-//
-//    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}
-//    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}.andExpire
-//    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}.where(name="aggr")
-//    aggregate.using{s:Any => new Object}.until{s:Any => 2<1}.andExpire.where(name="aggr")
+    //ON
 
+    aggregate.on{s:Any => s}
+    aggregate.on{s:Any => s}.keepReleasedMessages
+    aggregate.on{s:Any => s}.keepReleasedMessages.additionalAttributes(name="foo")
+    aggregate.on{s:Any => s}.keepReleasedMessages.expireGroupsOnCompletion
+    aggregate.on{s:Any => s}.keepReleasedMessages.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate.on{s:Any => s}.keepReleasedMessages.sendPartialResultOnExpiry
+    aggregate.on{s:Any => s}.keepReleasedMessages.sendPartialResultOnExpiry.additionalAttributes(name="foo")
 
+    aggregate.on{s:Any => s}.sendPartialResultOnExpiry
+    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.keepReleasedMessages
+    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.keepReleasedMessages.expireGroupsOnCompletion
+    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate.on{s:Any => s}.additionalAttributes(name="foo")
+    aggregate.on{s:Any => s}.expireGroupsOnCompletion
+    aggregate.on{s:Any => s}.expireGroupsOnCompletion.keepReleasedMessages
+    aggregate.on{s:Any => s}.expireGroupsOnCompletion.keepReleasedMessages.sendPartialResultOnExpiry
+    aggregate.on{s:Any => s}.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate.on{s:Any => s}.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate.on{s:Any => s}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
 
-//    aggregate.andExpire.where{name=""}
-//    aggregate.andExpire.andSendPartialResults.where{name=""}
-//    aggregate.andKeepReleasedMessages.where(name = "")
+    //UNTIL
 
-//    aggregate.on{""}
-//    aggregate.on{""}.where(name = "")
-//    aggregate.on{""}.andExpire
-//    aggregate.on{""}.andExpire.where(name = "")
-//    aggregate.on{""}.andExpire.andSendPartialResults
-//    aggregate.on{""}.andExpire.andSendPartialResults.where(name = "")
-//    aggregate.on{""}.andKeepReleasedMessages
-//    aggregate.on{""}.andKeepReleasedMessages.where(name = "")
+    aggregate.until{payload:String => payload == "foo"}
+    aggregate.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry
+    aggregate.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate.until{payload:String => payload == "foo"}.additionalAttributes(name="foo")
+    aggregate.until{payload:String => payload == "foo"}.expireGroupsOnCompletion
+    aggregate.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
 
-//    aggregate.on{""}.until{""}
-//    aggregate.on{""}.until{""}.where(name = "")
-//    aggregate.on{""}.until{""}.andExpire
-//    aggregate.on{""}.until{""}.andExpire.where(name = "")
-//    aggregate.on{""}.until{""}.andExpire.andSendPartialResults
-//    aggregate.on{""}.until{""}.andExpire.andSendPartialResults.where(name = "")
-//    aggregate.on{""}.until{""}.andKeepReleasedMessages
-//    aggregate.on{""}.until{""}.andKeepReleasedMessages.where(name = "")
-//
-//    aggregate.until{s:String => s != "foo"}
-//    aggregate.until{s:String => s != "foo"}.where(name = "myAggregator")
-//    aggregate.until{""}.andExpire
-//    aggregate.until{""}.andExpire.where(name = "")
-//    aggregate.until{""}.andExpire.andSendPartialResults
-//    aggregate.until{""}.andExpire.andSendPartialResults.where(name = "")
-//    aggregate.until{""}.andKeepReleasedMessages
-//    aggregate.until{""}.andKeepReleasedMessages.where(name = "")
+    // AGGREGATE UNTIL
+
+    aggregate{s => s}.until{payload:String => payload == "foo"}
+    aggregate{s => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry
+    aggregate{s => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate{s => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate{s => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate{s => s}.until{payload:String => payload == "foo"}.additionalAttributes(name="foo")
+    aggregate{s => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion
+    aggregate{s => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate{s => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate{s => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+
+    // AGGREGATE ON
+
+    aggregate{s => s}.on{s:Any => s}
+    aggregate{s => s}.on{s:Any => s}.sendPartialResultOnExpiry
+    aggregate{s => s}.on{s:Any => s}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate{s => s}.on{s:Any => s}.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate{s => s}.on{s:Any => s}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate{s => s}.on{s:Any => s}.additionalAttributes(name="foo")
+    aggregate{s => s}.on{s:Any => s}.expireGroupsOnCompletion
+    aggregate{s => s}.on{s:Any => s}.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate{s => s}.on{s:Any => s}.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate{s => s}.on{s:Any => s}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+
+    // AGGREGATE ON/UNTIL
+
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.additionalAttributes(name="foo")
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.additionalAttributes(name="foo")
+
+    // AGGRGATE with ON/UNTIL
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.additionalAttributes(name="foo")
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion
+    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.
+    			expireGroupsOnCompletion.
+    			keepReleasedMessages.
+    			additionalAttributes(name="foo")
 
   }
 

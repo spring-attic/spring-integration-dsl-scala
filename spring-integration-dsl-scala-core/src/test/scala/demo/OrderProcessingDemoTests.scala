@@ -47,7 +47,7 @@ class OrderProcessingDemoTests {
       aggregationFlow
 
     val orderProcessingFlow =
-      filter{p:PurchaseOrder => !p.items.isEmpty}.withAttributes(exceptionOnRejection = true) -->
+      filter{p:PurchaseOrder => !p.items.isEmpty}.additionalAttributes(exceptionOnRejection = true) -->
       split{p:PurchaseOrder => p.items} -->
       Channel.withDispatcher(taskExecutor = Executors.newCachedThreadPool) -->
       route{pi:PurchaseOrderItem => pi.itemType}(

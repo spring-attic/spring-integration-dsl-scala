@@ -26,7 +26,6 @@ import org.junit.Ignore
 class DSLUsageDemoTests {
 
   @Test
-  @Ignore
   def httpOutboundWithFunctionUrl = {
 
     val tickerService =

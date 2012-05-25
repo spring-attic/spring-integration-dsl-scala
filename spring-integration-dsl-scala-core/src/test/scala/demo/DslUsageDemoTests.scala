@@ -103,7 +103,7 @@ class DslUsageDemoTests {
   @Test
   def demoSendWithPubSubChannel = {
     val messageFlow =
-      handle { m: Message[String] => m.getPayload().toUpperCase() }.withAttributes(name = "myTransformer") -->
+      handle { m: Message[String] => m.getPayload().toUpperCase() }.additionalAttributes(name = "myTransformer") -->
         PubSubChannel("pubSub") --> (
           transform { m: Message[_] => m.getPayload() + " - subscriber-1" } -->
           handle { m: Message[_] => println(m) },

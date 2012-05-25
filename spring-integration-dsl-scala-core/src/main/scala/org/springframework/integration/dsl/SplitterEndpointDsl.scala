@@ -31,12 +31,12 @@ import org.w3c.dom.Document
 object split {
 
   def apply(function: Function1[_, Traversable[Any]]) = new SendingEndpointComposition(null, new Splitter(target = function)) {
-    def withAttributes(name: String = "$split_" + UUID.randomUUID().toString.substring(0, 8), applySequence: Boolean = true) =
+    def additionalAttributes(name: String = "$split_" + UUID.randomUUID().toString.substring(0, 8), applySequence: Boolean = true) =
       new SendingEndpointComposition(null, new Splitter(name = name, target = function, applySequence = applySequence))
   }
 
   def apply(function: (_, Map[String, _]) => Iterable[Any]) = new SendingEndpointComposition(null, new Splitter(target = function)) {
-    def withAttributes(name: String) = {
+    def additionalAttributes(name: String) = {
 
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Splitter(name = name, target = function))

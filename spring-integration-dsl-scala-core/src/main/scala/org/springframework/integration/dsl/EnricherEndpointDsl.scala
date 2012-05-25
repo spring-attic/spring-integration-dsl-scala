@@ -44,14 +44,14 @@ object enrich {
   implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
 
   def apply[R: NotUnitType](function: Function1[_, R]) = new SendingEndpointComposition(null, new Enricher(target = function)) {
-    def withAttributes(name: String) = {
+    def additionalAttributes(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = function))
     }
   }
 
   def apply[T, R: NotUnitType](function: (_, Map[String, _]) => R) = new SendingEndpointComposition(null, new Enricher(target = function)) {
-    def withAttributes(name: String) = {
+    def additionalAttributes(name: String) = {
 
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = function))
@@ -59,14 +59,14 @@ object enrich {
   }
 
   def headers(headersMap: (Tuple2[String, AnyRef])*) = new SendingEndpointComposition(null, new Enricher(target = headersMap)) {
-    def withAttributes(name: String) = {
+    def additionalAttributes(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = headersMap))
     }
   }
 
   def header(headerMap: Tuple2[String, AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = headerMap)) {
-    def withAttributes(name: String) = {
+    def additionalAttributes(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = headerMap))
     }

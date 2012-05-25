@@ -109,7 +109,7 @@ class DslUsageDemoTests {
 
     val messageFlow =
       jms.listen(requestDestinationName = "fooQueue", connectionFactory = connectionFactory).
-      					withAttributes(correlationKey="hello",
+      					additionalAttributes(correlationKey="hello",
       					    transactionManager = null,
       					    subscriptionDurable = true,
       					    requestTimeout = 8000,

@@ -38,35 +38,35 @@ class DSLUsageDemoTests {
 
     sftp(sessionFactory).poll("/").into("~/").atFixedRate(3)
 
-    sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withAttributes(name = "foo", deleteRemoteFiles = false)
+    sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).additionalAttributes(name = "foo", deleteRemoteFiles = false)
 
     sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4)
 
-    sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4).withAttributes(name = "foo")
+    sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4).additionalAttributes(name = "foo")
 
     sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4).withTaskExecutor(executor)
 
-    sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4).withTaskExecutor(executor).withAttributes(name = "fpp")
+    sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withMaxMessagesPerPoll(4).withTaskExecutor(executor).additionalAttributes(name = "fpp")
 
     sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withTaskExecutor(executor)
 
-    sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withTaskExecutor(executor).withAttributes(name = "fpp")
+    sftp(sessionFactory).poll("/").into("~/").atFixedRate(3).withTaskExecutor(executor).additionalAttributes(name = "fpp")
 
     sftp(sessionFactory).poll("/").into("~/").withFixedDelay(6)
 
-    sftp(sessionFactory).poll("/").into("~/").withFixedDelay(6).withAttributes(name = "fpp")
+    sftp(sessionFactory).poll("/").into("~/").withFixedDelay(6).additionalAttributes(name = "fpp")
 
     sftp(sessionFactory).poll("/").into("~/").withFixedDelay(3).withMaxMessagesPerPoll(4)
 
-    sftp(sessionFactory).poll("/").into("~/").withFixedDelay(3).withMaxMessagesPerPoll(4).withAttributes(name = "fpp")
+    sftp(sessionFactory).poll("/").into("~/").withFixedDelay(3).withMaxMessagesPerPoll(4).additionalAttributes(name = "fpp")
 
     sftp(sessionFactory).poll("/").into("~/").withFixedDelay(3).withMaxMessagesPerPoll(4).withTaskExecutor(executor)
 
-    sftp(sessionFactory).poll("/").into("~/").withFixedDelay(3).withMaxMessagesPerPoll(4).withTaskExecutor(executor).withAttributes(name = "fpp")
+    sftp(sessionFactory).poll("/").into("~/").withFixedDelay(3).withMaxMessagesPerPoll(4).withTaskExecutor(executor).additionalAttributes(name = "fpp")
 
     sftp(sessionFactory).poll("/").into("~/").withFixedDelay(3).withTaskExecutor(executor)
 
-    sftp(sessionFactory).poll("/").into("~/").withFixedDelay(3).withTaskExecutor(executor).withAttributes(name = "fpp")
+    sftp(sessionFactory).poll("/").into("~/").withFixedDelay(3).withTaskExecutor(executor).additionalAttributes(name = "fpp")
 
     println("done")
   }
@@ -77,7 +77,7 @@ class DSLUsageDemoTests {
     val sessionFactory = Mockito.mock(classOf[DefaultSftpSessionFactory])
 
     val messageFlow =
-      sftp(sessionFactory).poll("/").into("build").atFixedRate(3).withAttributes(name = "myAdapter", deleteRemoteFiles = false) -->
+      sftp(sessionFactory).poll("/").into("build").atFixedRate(3).additionalAttributes(name = "myAdapter", deleteRemoteFiles = false) -->
         handle { f: File => f.getAbsolutePath() }
 
     messageFlow.start()
@@ -112,17 +112,17 @@ class DSLUsageDemoTests {
 
     sftp(sessionFactory).send { s: String => s }
 
-    sftp(sessionFactory).send("remote/directory").withAttributes(name = "foo")
+    sftp(sessionFactory).send("remote/directory").additionalAttributes(name = "foo")
 
-    sftp(sessionFactory).send { s: String => s }.withAttributes(name = "foo")
+    sftp(sessionFactory).send { s: String => s }.additionalAttributes(name = "foo")
 
     sftp(sessionFactory).send("remote/directory").asFileName { s: String => s }
 
-    sftp(sessionFactory).send("remote/directory").asFileName { s: String => s }.withAttributes(name = "foo")
+    sftp(sessionFactory).send("remote/directory").asFileName { s: String => s }.additionalAttributes(name = "foo")
 
     sftp(sessionFactory).send { s: String => s }.asFileName { s: String => s }
 
-    sftp(sessionFactory).send { s: String => s }.asFileName { s: String => s }.withAttributes(name = "foo")
+    sftp(sessionFactory).send { s: String => s }.asFileName { s: String => s }.additionalAttributes(name = "foo")
 
     println("done")
   }
@@ -134,7 +134,7 @@ class DSLUsageDemoTests {
 
     val messageFlow =
       transform { p: String => p.toUpperCase() } -->
-        sftp(sessionFactory).send("/").asFileName { s: String => "foo.txt" }.withAttributes(cacheSessions = false)
+        sftp(sessionFactory).send("/").asFileName { s: String => "foo.txt" }.additionalAttributes(cacheSessions = false)
 
     messageFlow.send("Hello File")
 

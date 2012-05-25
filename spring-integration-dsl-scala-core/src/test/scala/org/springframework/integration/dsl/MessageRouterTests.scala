@@ -45,7 +45,7 @@ class MessageRouterTests {
       when(classOf[String]) then Channel("StringChannel"),
       when(classOf[Int]) then Channel("IntChannel")
 
-    ).withAttributes(name = "myRouter")
+    ).additionalAttributes(name = "myRouter")
 
     val targetRouter = routerA.target.asInstanceOf[Router]
     Assert.assertTrue(targetRouter.name equals "myRouter")
@@ -55,7 +55,7 @@ class MessageRouterTests {
       when(classOf[String]) then Channel("StringChannel")
 
 
-    ) withAttributes(name = "myRouter")
+    ) additionalAttributes(name = "myRouter")
   }
 
   /**
@@ -85,12 +85,12 @@ class MessageRouterTests {
     route("'someChannelName'")(
       when(1) then Channel("1"),
       when(2) then Channel("2")
-    ) withAttributes(name = "myRouter")
+    ) additionalAttributes(name = "myRouter")
 
     (route ("'someChannelName'"))(
       when(1) then Channel("1"),
       when(2) then Channel("2")
-    ) withAttributes(name = "myRouter")
+    ) additionalAttributes(name = "myRouter")
 
 
   }
@@ -104,6 +104,6 @@ class MessageRouterTests {
     route{m:Message[String] => m.getHeaders.get("routeToChannel").asInstanceOf[String]}(
       when(1) then Channel("1"),
       when(2) then Channel("2")
-    ) withAttributes(name = "myRouter")
+    ) additionalAttributes(name = "myRouter")
   }
 }

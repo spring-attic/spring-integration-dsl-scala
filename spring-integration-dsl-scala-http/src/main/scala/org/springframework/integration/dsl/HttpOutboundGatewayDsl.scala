@@ -156,20 +156,14 @@ private[dsl] class HttpOutboundGateway(name: String = "$http_out_" + UUID.random
 
     this.target match {
       case fn: Function[_, _] => {
-        val targetDefinition = targetDefinitionFunction.apply(this.target)
+        val urlExpressionTargetDefinition = targetDefinitionFunction.apply(this.target)
+        val urlExpressionTargetParam =
+          if (urlExpressionTargetDefinition._2.startsWith("sendMessage")) "#this"
+          else if (urlExpressionTargetDefinition._2.startsWith("sendPayloadAndHeaders")) "payload, headers"
+          else if (urlExpressionTargetDefinition._2.startsWith("sendPayload")) "payload"
 
-        element.setAttribute("url", "{url}")
-
-        val uriVarElement = document.createElement("int-http:uri-variable")
-        uriVarElement.setAttribute("name", "url")
-        val expressionParam =
-          if (targetDefinition._2.startsWith("sendMessage")) "#this"
-          else if (targetDefinition._2.startsWith("sendPayloadAndHeaders")) "payload, headers"
-          else if (targetDefinition._2.startsWith("sendPayload")) "payload"
-
-        uriVarElement.setAttribute("expression", "@" + targetDefinition._1 + "." +
-          targetDefinition._2 + "(" + expressionParam + ")")
-        element.appendChild(uriVarElement)
+        element.setAttribute("url-expression", "@" + urlExpressionTargetDefinition._1 + "." +
+          urlExpressionTargetDefinition._2 + "(" + urlExpressionTargetParam + ")")
       }
       case url: String => {
         element.setAttribute("url", this.target.toString())

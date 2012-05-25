@@ -28,13 +28,13 @@ import org.w3c.dom.Document
 object filter {
 
   def apply(function: Function1[_, Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
-    def withAttributes(name: String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection: Boolean = false) = {
+    def additionalAttributes(name: String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection: Boolean = false) = {
       new SendingEndpointComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
     }
   }
 
   def apply(function: (_, Map[String, _]) => Boolean) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
-    def withAttributes(name: String) = {
+    def additionalAttributes(name: String) = {
 
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new MessageFilter(name = name, target = function))
