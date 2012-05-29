@@ -47,8 +47,6 @@ object split {
 private[dsl] class Splitter(name: String = "$splt_" + UUID.randomUUID().toString.substring(0, 8), target: Any, val applySequence: Boolean = false)
   													extends SimpleEndpoint(name, target) {
 
-  override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "SPLITTER", "applySequence" -> applySequence)
-
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,

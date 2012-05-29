@@ -104,4 +104,8 @@ object DslUtils {
     else
       t
   }
+
+  private[dsl] def getTarget[T](composition:BaseIntegrationComposition):T = {
+	  composition.target.asInstanceOf[T]
+  }
 }

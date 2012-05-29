@@ -81,7 +81,6 @@ object handle {
 
 private[dsl] class ServiceActivator(name: String, target: Any)
   						extends SimpleEndpoint(name, target) {
-  override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "SERVICE-ACTIVATOR")
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],

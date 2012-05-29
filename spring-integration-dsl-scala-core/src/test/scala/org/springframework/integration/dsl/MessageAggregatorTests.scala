@@ -34,10 +34,7 @@ class MessageAggregatorTests {
     val namedAggregator = aggregate().additionalAttributes(name = "myAggregator")
     Assert.assertEquals("myAggregator", namedAggregator.target.name)
     val aggr = namedAggregator.target.asInstanceOf[Aggregator]
-    Assert.assertFalse(aggr.keepReleasedMessages)
-    Assert.assertFalse(aggr.expireGroupsUponCompletion)
-    Assert.assertTrue(aggr.sendPartialResultsOnExpiry)
-    Assert.assertNotNull(aggr.messageStore)
+    Assert.assertNull(aggr.keepReleasedMessages)
   }
 
   // commented syntax is dues to be implemented in 1.0.0.M2
