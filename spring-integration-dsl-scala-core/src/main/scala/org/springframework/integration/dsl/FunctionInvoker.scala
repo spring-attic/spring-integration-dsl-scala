@@ -108,11 +108,12 @@ private final class FunctionInvoker(f: => Any) {
   }
 
   /*
-   * 
+   *
    */
   private def invokeMethod[T](value: Object): T = {
     var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any])
     method.setAccessible(true)
+    //method.invoke(f, value).asInstanceOf[T]
     this.normalizeResult[T](method.invoke(f, value))
   }
 
@@ -120,11 +121,12 @@ private final class FunctionInvoker(f: => Any) {
     val declaredMethods = f.getClass().getDeclaredMethods()
     var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any], classOf[Any])
     method.setAccessible(true)
+   // method.invoke(f, value, headers.toMap).asInstanceOf[T]
     this.normalizeResult[T](method.invoke(f, value, headers.toMap))
   }
 
   /*
-   * 
+   *
    */
   private def normalizeResult[T](result: Any): T = {
     val normalizedResponse =
@@ -153,7 +155,7 @@ private final class FunctionInvoker(f: => Any) {
   }
 
   /*
-   * 
+   *
    */
   private def determineApplyWrapperName: String = {
 
