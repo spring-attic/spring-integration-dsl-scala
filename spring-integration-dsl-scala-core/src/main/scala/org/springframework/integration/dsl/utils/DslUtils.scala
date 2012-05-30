@@ -105,7 +105,10 @@ object DslUtils {
       t
   }
 
-  private[dsl] def getTarget[T](composition:BaseIntegrationComposition):T = {
-	  composition.target.asInstanceOf[T]
+  private[dsl] def getTarget[T](composition:Any):T = {
+    composition match {
+      case integrationComposition:BaseIntegrationComposition => integrationComposition.target.asInstanceOf[T]
+      case _ => throw new IllegalArgumentException("parameter must be an instance of BaseIntegrationComposition")
+    }
   }
 }

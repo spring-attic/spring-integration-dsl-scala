@@ -28,20 +28,46 @@ import org.springframework.integration.MessageHeaders
 
 class MessageAggregatorTests {
 
+//  @Test
+//  def validateDefaultAggregatorConfiguration() {
+//
+//    val aggregator = aggregate()
+//    Assert.assertNotNull(aggregator.target.name)
+//
+//    val namedAggregator = aggregate().additionalAttributes(name = "myAggregator")
+//    Assert.assertEquals("myAggregator", namedAggregator.target.name)
+//    val aggr = namedAggregator.target.asInstanceOf[Aggregator]
+//    Assert.assertNull(aggr.keepReleasedMessages)
+//  }
+
   @Test
-  def validateDefaultAggregatorConfiguration() {
+  def validateAggregatorWithCustomCorrelationAndReleaseStrategy() {
 
-    val aggregator = aggregate()
-    Assert.assertNotNull(aggregator.target.name)
+    val aggregatorFlow =
+      aggregate.on{payload:String => payload}.until[String] { messages => messages.size == 2 } -->
+      handle { s: Iterable[String] => assertEquals(2, s.size); s.foreach(println _) }
 
-    val namedAggregator = aggregate().additionalAttributes(name = "myAggregator")
-    Assert.assertEquals("myAggregator", namedAggregator.target.name)
-    val aggr = namedAggregator.target.asInstanceOf[Aggregator]
-    Assert.assertNull(aggr.keepReleasedMessages)
+    aggregatorFlow.send("1")
+    Thread.sleep(1000)
+    aggregatorFlow.send("1")
+    Thread.sleep(1000)
   }
 
   @Test
-  def validateAggregatorWithCustomReleaseStartegyAndScalaTypeOutput() {
+  def validateAggregatorWithCustomAggregationCorrelationAndReleaseStrategy() {
+
+    val aggregatorFlow =
+      aggregate{s: Iterable[String] => s}.on{payload:String => payload}.until[String] { messages => messages.size == 2 } -->
+      handle { s: Iterable[String] => assertEquals(2, s.size); s.foreach(println _) }
+
+    aggregatorFlow.send("1")
+    Thread.sleep(1000)
+    aggregatorFlow.send("1")
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateAggregatorWithCustomReleaseStrategyAndScalaTypeOutput() {
 
     val aggregatorFlow =
       aggregate.until[String] { messages => messages.size == 2 } -->
@@ -54,7 +80,7 @@ class MessageAggregatorTests {
   }
 
   @Test
-  def validateAggregatorWithCustomReleaseStartegyAndJavaTypeOutput() {
+  def validateAggregatorWithCustomReleaseStrategyAndJavaTypeOutput() {
 
     val aggregatorFlow =
       aggregate.until[String] { messages => messages.size == 2 } -->
@@ -200,92 +226,94 @@ class MessageAggregatorTests {
 
     aggregate()
     aggregate.additionalAttributes(name = "foo")
-    aggregate().additionalAttributes(name = "foo")
+//    aggregate().additionalAttributes(name = "foo")
 
     //ON
 
     aggregate.on { s: Any => s }
     aggregate.on { s: Any => s }.keepReleasedMessages
-    aggregate.on { s: Any => s }.keepReleasedMessages.additionalAttributes(name = "foo")
+//    aggregate.on { s: Any => s }.keepReleasedMessages.additionalAttributes(name = "foo")
     aggregate.on { s: Any => s }.keepReleasedMessages.expireGroupsOnCompletion
-    aggregate.on { s: Any => s }.keepReleasedMessages.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+//    aggregate.on { s: Any => s }.keepReleasedMessages.expireGroupsOnCompletion.additionalAttributes(name = "foo")
     aggregate.on { s: Any => s }.keepReleasedMessages.sendPartialResultOnExpiry
-    aggregate.on { s: Any => s }.keepReleasedMessages.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+//    aggregate.on { s: Any => s }.keepReleasedMessages.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
     aggregate.on { s: Any => s }.sendPartialResultOnExpiry
     aggregate.on { s: Any => s }.sendPartialResultOnExpiry.keepReleasedMessages
     aggregate.on { s: Any => s }.sendPartialResultOnExpiry.keepReleasedMessages.expireGroupsOnCompletion
-    aggregate.on { s: Any => s }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+//    aggregate.on { s: Any => s }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
     aggregate.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion
-    aggregate.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
-    aggregate.on { s: Any => s }.additionalAttributes(name = "foo")
+//    aggregate.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+//    aggregate.on { s: Any => s }.additionalAttributes(name = "foo")
     aggregate.on { s: Any => s }.expireGroupsOnCompletion
     aggregate.on { s: Any => s }.expireGroupsOnCompletion.keepReleasedMessages
     aggregate.on { s: Any => s }.expireGroupsOnCompletion.keepReleasedMessages.sendPartialResultOnExpiry
-    aggregate.on { s: Any => s }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+//    aggregate.on { s: Any => s }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
     aggregate.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry
-    aggregate.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+//    aggregate.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
     //UNTIL
 
     aggregate.until[String] { messages => messages.size == 3 }
     aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry
-    aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+//    aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
     aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion
-    aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
-    aggregate.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
+//    aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+//    aggregate.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
     aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
-    aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+//    aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
     aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry
-    aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+//    aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
     // AGGREGATE UNTIL
 
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry
-    aggregate { s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate { s:Iterable[String] => s }.until[String] { messages => messages.size == 3 }
+    aggregate { s:Iterable[String] => s }.until[String] { messages => messages.size == 3 }.keepReleasedMessages
+    aggregate [String]{ s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry
+//    aggregate [String]{ s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion
+//    aggregate [String]{ s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+//    aggregate [String]{ s => s }.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
+//    aggregate [String]{ s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry
+//    aggregate [String]{ s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
     // AGGREGATE ON
 
-    aggregate { s => s }.on { s: Any => s }
-    aggregate { s => s }.on { s: Any => s }.sendPartialResultOnExpiry
-    aggregate { s => s }.on { s: Any => s }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
-    aggregate { s => s }.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion
-    aggregate { s => s }.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
-    aggregate { s => s }.on { s: Any => s }.additionalAttributes(name = "foo")
-    aggregate { s => s }.on { s: Any => s }.expireGroupsOnCompletion
-    aggregate { s => s }.on { s: Any => s }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
-    aggregate { s => s }.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry
-    aggregate { s => s }.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.on { s: Any => s }
+    aggregate [String]{ s => s }.on { s: Any => s }.keepReleasedMessages
+    aggregate [String]{ s => s }.on { s: Any => s }.sendPartialResultOnExpiry
+//    aggregate [String]{ s => s }.on { s: Any => s }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion
+//    aggregate [String]{ s => s }.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+//    aggregate [String]{ s => s }.on { s: Any => s }.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.on { s: Any => s }.expireGroupsOnCompletion
+//    aggregate [String]{ s => s }.on { s: Any => s }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry
+//    aggregate [String]{ s => s }.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
     // AGGREGATE ON/UNTIL
 
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }
+    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
+    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry
+//    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+//    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry
+//    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion
+//    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+//    aggregate [String]{ s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
 
     // AGGRGATE with ON/UNTIL
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
-    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.
-      expireGroupsOnCompletion.
-      keepReleasedMessages.
-      additionalAttributes(name = "foo")
+    aggregate { s:Iterable[String] => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }
+//    aggregate { s:Iterable[String] => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
+    aggregate { s:Iterable[String] => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
+//    aggregate { s:Iterable[String] => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.
+//      expireGroupsOnCompletion.
+//      keepReleasedMessages.
+//      additionalAttributes(name = "foo")
 
   }
 

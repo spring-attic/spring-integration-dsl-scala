@@ -46,32 +46,20 @@ object aggregate {
   /**
    *
    */
-  def apply() = new SendingEndpointComposition(null,
-    new Aggregator) with On with Until with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages
+  def apply() = doApply(new Aggregator)
   /**
    *
    */
-  def apply[O: Manifest](aggregationFunction: Function1[Iterable[_], Iterable[O]]) = new SendingEndpointComposition(null,
-    new Aggregator(aggregationFunction = aggregationFunction)) with On with Until with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages
+  def apply[I: Manifest](aggregationFunction: Function1[Iterable[I], Iterable[_]]) = doApply(new Aggregator(aggregationFunction = new SingleMessageScalaFunctionWrapper(aggregationFunction)))
 
   /**
    *
    */
-  def on[T, R: NotUnitType](correlationFunction: Function1[_, R]) = new SendingEndpointComposition(null,
-    new Aggregator(correlationFunction = correlationFunction)) with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages {
-
-    def until[T](releaseFunction: Function1[Iterable[T], Boolean]) = new SendingEndpointComposition(null,
-      new Aggregator(correlationFunction = correlationFunction, releaseFunction = new ReleaseFunctionWrapper(releaseFunction))) with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages
-  }
+  def on[T, R: NotUnitType](correlationFunction: Function1[_, R]) = doOnTrait(new Aggregator, correlationFunction)
   /**
    *
    */
-  def until[T: Manifest](releaseFunction: Function1[Iterable[T], Boolean]) = {
-    val v = manifest.erasure
-    new SendingEndpointComposition(null,
-        new Aggregator(releaseFunction = new ReleaseFunctionWrapper(releaseFunction))) with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages {
-    }
-  }
+  def until[T: Manifest](releaseFunction: Function1[Iterable[T], Boolean]) = doUntilTrait(new Aggregator, releaseFunction)
 
   def additionalAttributes(name: String = null,
     keepReleasedMessages: java.lang.Boolean = null,
@@ -79,13 +67,117 @@ object aggregate {
     sendPartialResultsOnExpiry: java.lang.Boolean = null,
     expireGroupsUponCompletion: java.lang.Boolean = null) =
     new SendingEndpointComposition(null, new Aggregator)
+
+  //===================
+
+  private def doOnTrait[T: Manifest, R: NotUnitType](currentAggregator: Aggregator, correlationFunction: Function1[_, R]) = {
+    require(currentAggregator != null, "Trait 'On' can only be applied on composition with existing Aggregator instance")
+    val enrichedAggregator = currentAggregator.copy(correlationFunction = correlationFunction)
+    new SendingEndpointComposition(null, enrichedAggregator) {
+      def until[T: Manifest](releaseFunction: Function1[Iterable[T], Boolean]) = doUntilTrait(enrichedAggregator, releaseFunction)
+
+      def keepReleasedMessages = doKeepReleasedMessages(enrichedAggregator)
+
+      def sendPartialResultOnExpiry = doSendPartialResultsOnExpiry(enrichedAggregator)
+
+      def expireGroupsOnCompletion = doExpireGroupsOnCompletion(enrichedAggregator)
+    }
+  }
+
+  private def doUntilTrait[T: Manifest](currentAggregator: Aggregator, releaseFunction: Function1[Iterable[T], Boolean]) = {
+    require(currentAggregator != null, "Trait 'Until' can only be applied on composition with existing Aggregator instance")
+    val enrichedAggregator = currentAggregator.copy(releaseFunction = new ReleaseFunctionWrapper(releaseFunction))
+    new SendingEndpointComposition(null, enrichedAggregator) {
+
+      def keepReleasedMessages = doKeepReleasedMessages(enrichedAggregator)
+
+      def sendPartialResultOnExpiry = doSendPartialResultsOnExpiry(enrichedAggregator)
+
+      def expireGroupsOnCompletion = doExpireGroupsOnCompletion(enrichedAggregator)
+
+    }
+  }
+
+  private def doKeepReleasedMessages(currentAggregator: Aggregator) = {
+    val enrichedAggregator = currentAggregator.copy(keepReleasedMessages = true)
+    new SendingEndpointComposition(null, enrichedAggregator) {
+
+      def sendPartialResultOnExpiry = {
+        val enrichedAggregator = currentAggregator.copy(sendPartialResultOnExpiry = true)
+        new SendingEndpointComposition(null, enrichedAggregator)
+      }
+
+      def expireGroupsOnCompletion = {
+        val enrichedAggregator = currentAggregator.copy(expireGroupsOnCompletion = true)
+        new SendingEndpointComposition(null, enrichedAggregator)
+      }
+
+    }
+  }
+
+  private def doExpireGroupsOnCompletion(currentAggregator: Aggregator) = {
+    val enrichedAggregator = currentAggregator.copy(expireGroupsOnCompletion = true)
+    new SendingEndpointComposition(null, enrichedAggregator) {
+
+      def sendPartialResultOnExpiry = {
+        val enrichedAggregator = currentAggregator.copy(sendPartialResultOnExpiry = true)
+        new SendingEndpointComposition(null, enrichedAggregator)
+      }
+
+      def keepReleasedMessages = {
+        val enrichedAggregator = currentAggregator.copy(keepReleasedMessages = true)
+        new SendingEndpointComposition(null, enrichedAggregator) {
+
+          def sendPartialResultOnExpiry = {
+            val enrichedAggregator = currentAggregator.copy(sendPartialResultOnExpiry = true)
+            new SendingEndpointComposition(null, enrichedAggregator)
+          }
+        }
+      }
+
+    }
+  }
+
+  private def doSendPartialResultsOnExpiry(currentAggregator: Aggregator) = {
+    val enrichedAggregator = currentAggregator.copy(sendPartialResultOnExpiry = true)
+    new SendingEndpointComposition(null, enrichedAggregator) {
+
+      def keepReleasedMessages = {
+        val enrichedAggregator = currentAggregator.copy(keepReleasedMessages = true)
+        new SendingEndpointComposition(null, enrichedAggregator) {
+
+          def expireGroupsOnCompletion = {
+            val enrichedAggregator = currentAggregator.copy(expireGroupsOnCompletion = true)
+            new SendingEndpointComposition(null, enrichedAggregator)
+          }
+        }
+      }
+
+      def expireGroupsOnCompletion = {
+        val enrichedAggregator = currentAggregator.copy(expireGroupsOnCompletion = true)
+        new SendingEndpointComposition(null, enrichedAggregator)
+      }
+
+    }
+  }
+
+  private def doApply(currentAggregator: Aggregator) = {
+    new SendingEndpointComposition(null, currentAggregator) {
+
+      def on[T, R: NotUnitType](correlationFunction: Function1[_, R]) = doOnTrait(currentAggregator, correlationFunction)
+
+      def until[T: Manifest](releaseFunction: Function1[Iterable[T], Boolean]) = doUntilTrait(currentAggregator, releaseFunction)
+
+      def keepReleasedMessages = doKeepReleasedMessages(currentAggregator)
+    }
+  }
 }
 
 private[dsl] case class Aggregator(override val name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
   val keepReleasedMessages: java.lang.Boolean = null,
   val sendPartialResultOnExpiry: java.lang.Boolean = null,
   val expireGroupsOnCompletion: java.lang.Boolean = null,
-  val aggregationFunction: Function1[Iterable[_], Iterable[_]] = null,
+  val aggregationFunction: SingleMessageScalaFunctionWrapper[_, _] = null,
   val correlationFunction: Function1[_, _] = null,
   val releaseFunction: ReleaseFunctionWrapper[_] = null,
   val additionalAttributes: Map[String, _] = null) extends SimpleEndpoint(name, null) {
@@ -116,29 +208,24 @@ private[dsl] case class Aggregator(override val name: String = "$aggr_" + UUID.r
 
     if (aggregationFunction != null) {
       val aggregationFunctionDefinition = targetDefinitionFunction(aggregationFunction)
-      val aggregationFunctionDefinitionParam =
-        if (aggregationFunctionDefinition._2.startsWith("sendMessage")) "#this"
-        else if (aggregationFunctionDefinition._2.startsWith("sendPayloadAndHeaders")) "payload, headers"
-        else if (aggregationFunctionDefinition._2.startsWith("sendPayload")) "payload"
-
       element.setAttribute("expression", "@" + aggregationFunctionDefinition._1 + "." +
         aggregationFunctionDefinition._2 + "(#this)")
     }
 
     if (releaseFunction != null) {
       val releaseFunctionDefinition = targetDefinitionFunction(releaseFunction)
-      val releaseFunctionDefinitionParam =
-        if (releaseFunctionDefinition._2.startsWith("sendMessage")) "#this"
-        else if (releaseFunctionDefinition._2.startsWith("sendPayloadAndHeaders")) "payload, headers"
-        else if (releaseFunctionDefinition._2.startsWith("sendPayload")) "payload"
-
       element.setAttribute("release-strategy-expression", "@" + releaseFunctionDefinition._1 + "." +
         releaseFunctionDefinition._2 + "(#this)")
     }
 
     if (correlationFunction != null) {
-      val correlationFunctionName = targetDefinitionFunction(Some(correlationFunction))._1
-      element.setAttribute("correlation-strategy-expression", correlationFunctionName)
+      val correlationFunctionDefinition = targetDefinitionFunction(correlationFunction)
+
+      //      element.setAttribute("correlation-strategy-expression", "@" + correlationFunctionDefinition._1 + "." +
+      //        correlationFunctionDefinition._2 + "(#this)")
+
+      element.setAttribute("correlation-strategy", correlationFunctionDefinition._1)
+      element.setAttribute("correlation-strategy-method", correlationFunctionDefinition._2)
     }
 
     if (additionalAttributes != null) {
@@ -148,64 +235,50 @@ private[dsl] case class Aggregator(override val name: String = "$aggr_" + UUID.r
   }
 }
 
-private[dsl] trait On {
-
-  import aggregate._
-
-  def on[T, R: NotUnitType](correlationFunction: Function1[_, R]) = new SendingEndpointComposition(null,
-    new Aggregator) with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages with Until {
-
-    val currentAggregator = DslUtils.getTarget[Aggregator](this)
-    require(currentAggregator != null, "Trait 'On' can only be applied on composition with existing Aggregator instance")
-    val enrichedAggregator = currentAggregator.copy(correlationFunction = correlationFunction)
-    new SendingEndpointComposition(null, enrichedAggregator)
-
-  }
-}
-
-private[dsl] trait Until {
-  /**
-   *
-   */
-  def until[T](releaseFunction: Function1[Iterable[T], Boolean]) = new SendingEndpointComposition(null,
-    new Aggregator) with ExpireGroupsOnCompletion with SendPartialResultOnExpiry with AggregatorAttributes {
-
-    val currentAggregator = DslUtils.getTarget[Aggregator](this)
-    require(currentAggregator != null, "Trait 'Until' can only be applied on composition with existing Aggregator instance")
-    val enrichedAggregator = currentAggregator.copy(releaseFunction = new ReleaseFunctionWrapper(releaseFunction))
-    new SendingEndpointComposition(null, enrichedAggregator)
-
-  }
-}
+//private[dsl] trait On {
+//
+//  import aggregate._
+//
+//  def on[T, R: NotUnitType](correlationFunction: Function1[_, R]): SendingEndpointComposition with ExpireGroupsOnCompletion with AggregatorAttributes with SendPartialResultOnExpiry with KeepReleasedMessages with Until //{
+//
+//}
+//
+//private[dsl] trait Until {
+//  /**
+//   *
+//   */
+//  def until[T](releaseFunction: Function1[Iterable[T], Boolean]): SendingEndpointComposition with ExpireGroupsOnCompletion with SendPartialResultOnExpiry with AggregatorAttributes
+//
+//}
 
 private[dsl] trait ExpireGroupsOnCompletion {
-  def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+  def expireGroupsOnCompletion = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
     val currentAggregator = DslUtils.getTarget[Aggregator](this)
     require(currentAggregator != null, "Trait 'ExpireGroupsOnCompletion' can only be applied on composition with existing Aggregator instance")
     val enrichedAggregator = currentAggregator.copy(expireGroupsOnCompletion = true)
     new SendingEndpointComposition(null, enrichedAggregator)
 
-    def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+    def sendPartialResultOnExpiry = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
       val currentAggregator = DslUtils.getTarget[Aggregator](this)
       val enrichedAggregator = currentAggregator.copy(sendPartialResultOnExpiry = true)
       new SendingEndpointComposition(null, enrichedAggregator)
 
-      def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+      def keepReleasedMessages = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
         val currentAggregator = DslUtils.getTarget[Aggregator](this)
         val enrichedAggregator = currentAggregator.copy(keepReleasedMessages = true)
         new SendingEndpointComposition(null, enrichedAggregator)
       }
     }
 
-    def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+    def keepReleasedMessages = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
       val currentAggregator = DslUtils.getTarget[Aggregator](this)
       val enrichedAggregator = currentAggregator.copy(keepReleasedMessages = true)
       new SendingEndpointComposition(null, enrichedAggregator)
 
-      def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+      def sendPartialResultOnExpiry = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
         val currentAggregator = DslUtils.getTarget[Aggregator](this)
         val enrichedAggregator = currentAggregator.copy(sendPartialResultOnExpiry = true)
         new SendingEndpointComposition(null, enrichedAggregator)
@@ -215,20 +288,20 @@ private[dsl] trait ExpireGroupsOnCompletion {
 }
 
 private[dsl] trait SendPartialResultOnExpiry {
-  def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+  def sendPartialResultOnExpiry = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
     val currentAggregator = DslUtils.getTarget[Aggregator](this)
     require(currentAggregator != null, "Trait 'SendPartialResultOnExpiry' can only be applied on composition with existing Aggregator instance")
     val enrichedAggregator = currentAggregator.copy(sendPartialResultOnExpiry = true)
     new SendingEndpointComposition(null, enrichedAggregator)
 
-    def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+    def expireGroupsOnCompletion = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
       val currentAggregator = DslUtils.getTarget[Aggregator](this)
       val enrichedAggregator = currentAggregator.copy(expireGroupsOnCompletion = true)
       new SendingEndpointComposition(null, enrichedAggregator)
 
-      def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+      def keepReleasedMessages = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
         val currentAggregator = DslUtils.getTarget[Aggregator](this)
         val enrichedAggregator = currentAggregator.copy(keepReleasedMessages = true)
@@ -237,13 +310,13 @@ private[dsl] trait SendPartialResultOnExpiry {
       }
     }
 
-    def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+    def keepReleasedMessages = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
       val currentAggregator = DslUtils.getTarget[Aggregator](this)
       val enrichedAggregator = currentAggregator.copy(keepReleasedMessages = true)
       new SendingEndpointComposition(null, enrichedAggregator)
 
-      def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+      def expireGroupsOnCompletion = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
         val currentAggregator = DslUtils.getTarget[Aggregator](this)
         val enrichedAggregator = currentAggregator.copy(expireGroupsOnCompletion = true)
@@ -256,20 +329,20 @@ private[dsl] trait SendPartialResultOnExpiry {
 
 private[dsl] trait KeepReleasedMessages {
 
-  def keepReleasedMessages = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+  def keepReleasedMessages = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
     val currentAggregator = DslUtils.getTarget[Aggregator](this)
     require(currentAggregator != null, "Trait 'KeepReleasedMessages' can only be applied on composition with existing Aggregator instance")
     val enrichedAggregator = currentAggregator.copy(keepReleasedMessages = true)
     new SendingEndpointComposition(null, enrichedAggregator)
 
-    def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+    def expireGroupsOnCompletion = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
       val currentAggregator = DslUtils.getTarget[Aggregator](this)
       val enrichedAggregator = currentAggregator.copy(expireGroupsOnCompletion = true)
       new SendingEndpointComposition(null, enrichedAggregator)
 
-      def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+      def sendPartialResultOnExpiry = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
         val currentAggregator = DslUtils.getTarget[Aggregator](this)
         val enrichedAggregator = currentAggregator.copy(sendPartialResultOnExpiry = true)
@@ -278,13 +351,13 @@ private[dsl] trait KeepReleasedMessages {
       }
     }
 
-    def sendPartialResultOnExpiry = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+    def sendPartialResultOnExpiry = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
       val currentAggregator = DslUtils.getTarget[Aggregator](this)
       val enrichedAggregator = currentAggregator.copy(sendPartialResultOnExpiry = true)
       new SendingEndpointComposition(null, enrichedAggregator)
 
-      def expireGroupsOnCompletion = new SendingEndpointComposition(null, new Aggregator) with AggregatorAttributes {
+      def expireGroupsOnCompletion = new SendingEndpointComposition(null, DslUtils.getTarget[Aggregator](this)) with AggregatorAttributes {
 
         val currentAggregator = DslUtils.getTarget[Aggregator](this)
         val enrichedAggregator = currentAggregator.copy(expireGroupsOnCompletion = true)
@@ -306,25 +379,5 @@ private class ReleaseFunctionWrapper[T](val releaseFunction: Function1[Iterable[
 
   def apply(messages: java.util.Collection[T]): Boolean = {
     releaseFunction(JavaConversions.asIterable[T](messages))
-  }
-}
-
-private class AggregationFunctionWrapper[O: Manifest](val aggregationFunction: Function1[Iterable[_], Iterable[O]]) extends Function1[java.util.Collection[_], Iterable[O]] {
-
-  def apply(messages: java.util.Collection[_]): Iterable[O] = {
-    val collectionType = manifest.erasure
-//    if (classOf[Message[_]].isAssignableFrom(collectionType)){
-//
-//    }
-    println
-//    val aggregatedMessages:Iterable[T] =
-//      if (aggregationFunction == null) {
-//        JavaConversions.asIterable[T](messages)
-//      } else {
-//        null
-//        //aggregationFunction(JavaConversions.asIterable[T](messages))
-//      }
-//    aggregatedMessages
-    null
   }
 }
