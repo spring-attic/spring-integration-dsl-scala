@@ -28,17 +28,17 @@ import org.springframework.integration.MessageHeaders
 
 class MessageAggregatorTests {
 
-//  @Test
-//  def validateDefaultAggregatorConfiguration() {
-//
-//    val aggregator = aggregate()
-//    Assert.assertNotNull(aggregator.target.name)
-//
-//    val namedAggregator = aggregate().additionalAttributes(name = "myAggregator")
-//    Assert.assertEquals("myAggregator", namedAggregator.target.name)
-//    val aggr = namedAggregator.target.asInstanceOf[Aggregator]
-//    Assert.assertNull(aggr.keepReleasedMessages)
-//  }
+  @Test
+  def validateDefaultAggregatorConfiguration() {
+
+    val aggregator = aggregate()
+    Assert.assertNotNull(aggregator.target.name)
+
+    val namedAggregator = aggregate().additionalAttributes(name = "myAggregator")
+    Assert.assertEquals("myAggregator", namedAggregator.target.name)
+    val aggr = namedAggregator.target.asInstanceOf[Aggregator]
+    Assert.assertNull(aggr.keepReleasedMessages)
+  }
 
   @Test
   def validateAggregatorWithCustomCorrelationAndReleaseStrategy() {
@@ -226,7 +226,41 @@ class MessageAggregatorTests {
 
     aggregate()
     aggregate.additionalAttributes(name = "foo")
-//    aggregate().additionalAttributes(name = "foo")
+
+    aggregate.sendPartialResultOnExpiry
+    aggregate.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate.sendPartialResultOnExpiry.keepReleasedMessages.additionalAttributes(name = "foo")
+    aggregate.sendPartialResultOnExpiry.keepReleasedMessages.expireGroupsOnCompletion
+    aggregate.sendPartialResultOnExpiry.keepReleasedMessages.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.sendPartialResultOnExpiry.expireGroupsOnCompletion.keepReleasedMessages
+    aggregate.sendPartialResultOnExpiry.expireGroupsOnCompletion.keepReleasedMessages.additionalAttributes(name = "foo")
+
+    aggregate.keepReleasedMessages
+    aggregate.keepReleasedMessages.additionalAttributes(name = "foo")
+    aggregate.keepReleasedMessages.sendPartialResultOnExpiry
+    aggregate.keepReleasedMessages.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate.keepReleasedMessages.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate.keepReleasedMessages.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.keepReleasedMessages.expireGroupsOnCompletion
+    aggregate.keepReleasedMessages.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.keepReleasedMessages.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate.keepReleasedMessages.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+
+    aggregate.expireGroupsOnCompletion
+    aggregate.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate.expireGroupsOnCompletion.sendPartialResultOnExpiry.keepReleasedMessages
+    aggregate.expireGroupsOnCompletion.sendPartialResultOnExpiry.keepReleasedMessages.additionalAttributes(name = "foo")
+    aggregate.expireGroupsOnCompletion.keepReleasedMessages
+    aggregate.expireGroupsOnCompletion.keepReleasedMessages.additionalAttributes(name = "foo")
+    aggregate.expireGroupsOnCompletion.keepReleasedMessages.sendPartialResultOnExpiry
+    aggregate.expireGroupsOnCompletion.keepReleasedMessages.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+
+    aggregate().additionalAttributes(name = "foo")
+    aggregate().sendPartialResultOnExpiry
 
     //ON
 
