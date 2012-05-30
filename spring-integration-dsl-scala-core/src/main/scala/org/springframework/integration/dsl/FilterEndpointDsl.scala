@@ -27,17 +27,17 @@ import org.w3c.dom.Document
  */
 object filter {
 
-  def apply(function: Function1[_, Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
+  def apply[I:Manifest](function: Function1[I, Boolean]) = new SendingEndpointComposition(null, new MessageFilter(target = new SingleMessageScalaFunctionWrapper(function))) {
     def additionalAttributes(name: String = "$flt_" + UUID.randomUUID().toString.substring(0, 8), exceptionOnRejection: Boolean = false) = {
-      new SendingEndpointComposition(null, new MessageFilter(name = name, target = function, exceptionOnRejection = exceptionOnRejection))
+      new SendingEndpointComposition(null, new MessageFilter(name = name, target = new SingleMessageScalaFunctionWrapper(function), exceptionOnRejection = exceptionOnRejection))
     }
   }
 
-  def apply(function: (_, Map[String, _]) => Boolean) = new SendingEndpointComposition(null, new MessageFilter(target = function)) {
+  def apply[I:Manifest](function: (I, Map[String, _]) => Boolean) = new SendingEndpointComposition(null, new MessageFilter(target = new ParsedMessageScalaFunctionWrapper(function))) {
     def additionalAttributes(name: String) = {
 
       require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new MessageFilter(name = name, target = function))
+      new SendingEndpointComposition(null, new MessageFilter(name = name, target = new ParsedMessageScalaFunctionWrapper(function)))
     }
   }
 }

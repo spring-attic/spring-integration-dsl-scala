@@ -88,7 +88,12 @@ private final class FunctionInvoker(f: => Any) {
 
     val methodBuffer = new ListBuffer[Method]
 
-    val methods = f.getClass().getDeclaredMethods()
+    val methods =
+      f match {
+        case sWrapper: SingleMessageScalaFunctionWrapper[_, _] => sWrapper.f.getClass().getDeclaredMethods()
+        case pWrapper: ParsedMessageScalaFunctionWrapper[_, _] => pWrapper.f.getClass().getDeclaredMethods()
+        case _ => f.getClass().getDeclaredMethods()
+      }
 
     for (method <- methods) // TODO change to yield
       if (method.getName == APPLY_METHOD) methodBuffer += method
@@ -113,7 +118,6 @@ private final class FunctionInvoker(f: => Any) {
   private def invokeMethod[T](value: Object): T = {
     var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any])
     method.setAccessible(true)
-    //method.invoke(f, value).asInstanceOf[T]
     this.normalizeResult[T](method.invoke(f, value))
   }
 
@@ -121,7 +125,6 @@ private final class FunctionInvoker(f: => Any) {
     val declaredMethods = f.getClass().getDeclaredMethods()
     var method = f.getClass.getDeclaredMethod(APPLY_METHOD, classOf[Any], classOf[Any])
     method.setAccessible(true)
-   // method.invoke(f, value, headers.toMap).asInstanceOf[T]
     this.normalizeResult[T](method.invoke(f, value, headers.toMap))
   }
 
@@ -129,6 +132,7 @@ private final class FunctionInvoker(f: => Any) {
    *
    */
   private def normalizeResult[T](result: Any): T = {
+    println
     val normalizedResponse =
       result match {
         case message: Message[_] => {
@@ -136,8 +140,8 @@ private final class FunctionInvoker(f: => Any) {
             case m: Map[_, _] =>
               val javaMap = JavaConversions.asJavaMap(m)
               val javaMapMessage =
-              MessageBuilder.withPayload(javaMap).copyHeaders(message.getHeaders).build()
-                println
+                MessageBuilder.withPayload(javaMap).copyHeaders(message.getHeaders).build()
+              println
               javaMapMessage
             case it: Iterable[_] =>
               MessageBuilder.withPayload(JavaConversions.asJavaCollection(it)).

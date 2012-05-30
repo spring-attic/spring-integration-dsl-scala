@@ -21,26 +21,26 @@ import java.util.UUID
 import scala.collection.immutable.WrappedString
 import org.w3c.dom.Element
 import org.w3c.dom.Document
+import org.springframework.integration.Message
 
 /**
  * This class provides DSL and related components to support "Service Activator" pattern
  *
  * @author Oleg Zhurakousky
  */
-
 object handle {
 
   private trait In[I, O] {
-    def apply(function: _ => I): O
-    def apply(function: (_, Map[String, _]) => I): O
+    def apply(function: SingleMessageScalaFunctionWrapper[_,_]): O
+    def apply(function: ParsedMessageScalaFunctionWrapper[_,_]): O
   }
 
   private trait InOut {
     implicit def anySendingEndpointComposition[I] = new In[I, SendingEndpointComposition with WithAttributesContinued] {
-      def apply(function: _ => I) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode ,target = function)) with WithAttributesContinued{
+      def apply(function: SingleMessageScalaFunctionWrapper[_,_]) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode ,target = function)) with WithAttributesContinued{
         def additionalAttributes(name: String) = doWithAttributesWithContinuity(name, function)
       }
-      def apply(function: (_, Map[String, _]) => I) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributesContinued{
+      def apply(function: ParsedMessageScalaFunctionWrapper[_,_]) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributesContinued{
         def additionalAttributes(name: String) = doWithAttributesWithContinuity(name, function)
       }
     }
@@ -48,10 +48,10 @@ object handle {
 
   private object In extends InOut {
     implicit object UnitUnit extends In[Unit, SendingIntegrationComposition with WithAttributes] {
-      def apply(function: _ => Unit) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributes{
+      def apply(function: SingleMessageScalaFunctionWrapper[_,_]) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributes{
         def additionalAttributes(name: String) = doWithAttributesWithoutContinuity(name, function)
       }
-      def apply(function: (_, Map[String, _]) => Unit) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributes{
+      def apply(function: ParsedMessageScalaFunctionWrapper[_,_]) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributes{
         def additionalAttributes(name: String) = doWithAttributesWithoutContinuity(name, function)
       }
     }
@@ -73,9 +73,11 @@ object handle {
     def additionalAttributes(name: String):SendingEndpointComposition
   }
 
-  def apply[F, R](function: _ => F)(implicit ab: In[F, R]): R = ab.apply(function)
+  def apply[F, R, I](function: I => F)(implicit ab: In[F, R], manifestI:Manifest[I], manifestF:Manifest[F]): R =
+    ab.apply{new SingleMessageScalaFunctionWrapper(function)}
 
-  def apply[F, R](function: (_, Map[String, _]) => F)(implicit ab: In[F, R]): R = ab.apply(function)
+  def apply[F, R, I](function: (I, Map[String, _]) => F)(implicit ab: In[F, R], manifestI:Manifest[I]): R =
+    ab.apply(new ParsedMessageScalaFunctionWrapper(function))
 
 }
 

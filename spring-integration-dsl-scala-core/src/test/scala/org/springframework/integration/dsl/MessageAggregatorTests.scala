@@ -15,12 +15,12 @@
  */
 package org.springframework.integration.dsl
 
-import org.junit.{Assert, Test}
+import org.junit.{ Assert, Test }
+import org.junit.Assert._
 import org.springframework.integration.Message
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import scala.collection.immutable.List
 import org.springframework.integration.MessageHeaders
-
 
 /**
  * @author Oleg Zhurakousky
@@ -29,7 +29,7 @@ import org.springframework.integration.MessageHeaders
 class MessageAggregatorTests {
 
   @Test
-  def validateDefaultAggregatorConfiguration(){
+  def validateDefaultAggregatorConfiguration() {
 
     val aggregator = aggregate()
     Assert.assertNotNull(aggregator.target.name)
@@ -37,123 +37,255 @@ class MessageAggregatorTests {
     val namedAggregator = aggregate().additionalAttributes(name = "myAggregator")
     Assert.assertEquals("myAggregator", namedAggregator.target.name)
     val aggr = namedAggregator.target.asInstanceOf[Aggregator]
-    Assert.assertNull	(aggr.keepReleasedMessages)
+    Assert.assertNull(aggr.keepReleasedMessages)
   }
 
   @Test
-  def validateAggregatorWithCustomReleaseStartegy(){
+  def validateAggregatorWithCustomReleaseStartegyAndScalaTypeOutput() {
 
     val aggregatorFlow =
-      aggregate.until[Message[String]]{messages => messages.size == 2} -->
-      handle{s:java.util.Collection[String] => println(s)}
+      aggregate.until[String] { messages => messages.size == 2 } -->
+        handle { s: Iterable[String] => assertEquals(2, s.size); s.foreach(println _) }
 
-    aggregatorFlow.send("1", headers=Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers=Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("3", headers=Map(MessageHeaders.CORRELATION_ID -> 1))
-    Thread.sleep(1000)
-    aggregatorFlow.send("4", headers=Map(MessageHeaders.CORRELATION_ID -> 1))
-    Thread.sleep(1000)
-    aggregatorFlow.send("5", headers=Map(MessageHeaders.CORRELATION_ID -> 1))
-    Thread.sleep(1000)
-    aggregatorFlow.send("6", headers=Map(MessageHeaders.CORRELATION_ID -> 1))
   }
 
-  // commented syntax is dues to be implemented in 1.0.0.M2
   @Test
-  def validateAggregatorConfiguration(){
+  def validateAggregatorWithCustomReleaseStartegyAndJavaTypeOutput() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+        handle { s: java.util.Collection[String] => assertEquals(2, s.size); println(s) }
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateDefaultAggregatorWithParsedOutputMessageAndJavaType() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+        handle { (s: java.util.Collection[String], headers:Map[String, _])  => assertEquals(2, s.size); println(s) }
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateDefaultAggregatorWithParsedOutputMessageAndScalaType() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+      handle { (s: Iterable[String], headers:Map[String, _])  => assertEquals(2, s.size); println(s) }
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+  }
+
+  @Test
+  def validateAggregatorWithTransformerAndScalaTypeOutput() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+      transform{s: Iterable[String] => s} -->
+      handle { s: Iterable[String] => assertEquals(2, s.size); s.foreach(println _) }
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateAggregatorWithTransformerParsedMessageAndScalaTypeOutput() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+      transform{s: Iterable[String] => s} -->
+      handle { (s: Iterable[String], headers:Map[String, _]) => assertEquals(2, s.size); s.foreach(println _) }
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateAggregatorWithFilterAndScalaTypeOutput() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+      filter{s: Iterable[String] => s.size == 2} -->
+      handle { s: Iterable[String] => assertEquals(2, s.size); s.foreach(println _) }
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateAggregatorWithFilterParsedMessageAndScalaTypeOutput() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+      filter{(s: Iterable[String], headers:Map[String, _])  => s.size == 2} -->
+      handle { (s: Iterable[String], headers:Map[String, _]) => assertEquals(2, s.size); s.foreach(println _) }
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateAggregatorWithRouterAndScalaTypeOutput() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+      route{s: Iterable[String] => (if (s.size == 2) "foo" else "bar")}(
+        when("foo") then
+            handle{m:Message[_] => println("In two: " + m)},
+        when("bar") then
+            handle{m:Message[_] => println("In else: " + m)}
+      )
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateAggregatorWithSplitterSingleMessageAndScalaTypeOutput() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+      split{s: Iterable[String]  => s}.additionalAttributes(name = "foo") -->
+      handle { m:Message[_] => println(m) }
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateAggregatorWithSplitterParsedMessageAndScalaTypeOutput() {
+
+    val aggregatorFlow =
+      aggregate.until[String] { messages => messages.size == 2 } -->
+      split{(s: Iterable[String], headers:Map[String, _])  => s} -->
+      handle { m:Message[_] => println(m) }
+
+    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    Thread.sleep(1000)
+  }
+
+  @Test
+  def validateAggregatorConfiguration() {
 
     // additionalAttributes(name="foo") is always the last one
 
     aggregate()
-    aggregate.additionalAttributes(name="foo")
-    aggregate().additionalAttributes(name="foo")
+    aggregate.additionalAttributes(name = "foo")
+    aggregate().additionalAttributes(name = "foo")
 
     //ON
 
-    aggregate.on{s:Any => s}
-    aggregate.on{s:Any => s}.keepReleasedMessages
-    aggregate.on{s:Any => s}.keepReleasedMessages.additionalAttributes(name="foo")
-    aggregate.on{s:Any => s}.keepReleasedMessages.expireGroupsOnCompletion
-    aggregate.on{s:Any => s}.keepReleasedMessages.expireGroupsOnCompletion.additionalAttributes(name="foo")
-    aggregate.on{s:Any => s}.keepReleasedMessages.sendPartialResultOnExpiry
-    aggregate.on{s:Any => s}.keepReleasedMessages.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate.on { s: Any => s }
+    aggregate.on { s: Any => s }.keepReleasedMessages
+    aggregate.on { s: Any => s }.keepReleasedMessages.additionalAttributes(name = "foo")
+    aggregate.on { s: Any => s }.keepReleasedMessages.expireGroupsOnCompletion
+    aggregate.on { s: Any => s }.keepReleasedMessages.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.on { s: Any => s }.keepReleasedMessages.sendPartialResultOnExpiry
+    aggregate.on { s: Any => s }.keepReleasedMessages.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
-    aggregate.on{s:Any => s}.sendPartialResultOnExpiry
-    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.keepReleasedMessages
-    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.keepReleasedMessages.expireGroupsOnCompletion
-    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
-    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.expireGroupsOnCompletion
-    aggregate.on{s:Any => s}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
-    aggregate.on{s:Any => s}.additionalAttributes(name="foo")
-    aggregate.on{s:Any => s}.expireGroupsOnCompletion
-    aggregate.on{s:Any => s}.expireGroupsOnCompletion.keepReleasedMessages
-    aggregate.on{s:Any => s}.expireGroupsOnCompletion.keepReleasedMessages.sendPartialResultOnExpiry
-    aggregate.on{s:Any => s}.expireGroupsOnCompletion.additionalAttributes(name="foo")
-    aggregate.on{s:Any => s}.expireGroupsOnCompletion.sendPartialResultOnExpiry
-    aggregate.on{s:Any => s}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate.on { s: Any => s }.sendPartialResultOnExpiry
+    aggregate.on { s: Any => s }.sendPartialResultOnExpiry.keepReleasedMessages
+    aggregate.on { s: Any => s }.sendPartialResultOnExpiry.keepReleasedMessages.expireGroupsOnCompletion
+    aggregate.on { s: Any => s }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.on { s: Any => s }.additionalAttributes(name = "foo")
+    aggregate.on { s: Any => s }.expireGroupsOnCompletion
+    aggregate.on { s: Any => s }.expireGroupsOnCompletion.keepReleasedMessages
+    aggregate.on { s: Any => s }.expireGroupsOnCompletion.keepReleasedMessages.sendPartialResultOnExpiry
+    aggregate.on { s: Any => s }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
     //UNTIL
 
-//    aggregate.until{payload:String => payload == "foo"}
-//    aggregate.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry
-//    aggregate.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
-//    aggregate.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion
-//    aggregate.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
-//    aggregate.until{payload:String => payload == "foo"}.additionalAttributes(name="foo")
-//    aggregate.until{payload:String => payload == "foo"}.expireGroupsOnCompletion
-//    aggregate.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.additionalAttributes(name="foo")
-//    aggregate.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry
-//    aggregate.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate.until[String] { messages => messages.size == 3 }
+    aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry
+    aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
+    aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
+    aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
     // AGGREGATE UNTIL
 
-//    aggregate{s => s}.until{payload:String => payload == "foo"}
-//    aggregate{s => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry
-//    aggregate{s => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
-//    aggregate{s => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion
-//    aggregate{s => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
-//    aggregate{s => s}.until{payload:String => payload == "foo"}.additionalAttributes(name="foo")
-//    aggregate{s => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion
-//    aggregate{s => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.additionalAttributes(name="foo")
-//    aggregate{s => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry
-//    aggregate{s => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate { s => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
     // AGGREGATE ON
 
-    aggregate{s => s}.on{s:Any => s}
-    aggregate{s => s}.on{s:Any => s}.sendPartialResultOnExpiry
-    aggregate{s => s}.on{s:Any => s}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
-    aggregate{s => s}.on{s:Any => s}.sendPartialResultOnExpiry.expireGroupsOnCompletion
-    aggregate{s => s}.on{s:Any => s}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
-    aggregate{s => s}.on{s:Any => s}.additionalAttributes(name="foo")
-    aggregate{s => s}.on{s:Any => s}.expireGroupsOnCompletion
-    aggregate{s => s}.on{s:Any => s}.expireGroupsOnCompletion.additionalAttributes(name="foo")
-    aggregate{s => s}.on{s:Any => s}.expireGroupsOnCompletion.sendPartialResultOnExpiry
-    aggregate{s => s}.on{s:Any => s}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
+    aggregate { s => s }.on { s: Any => s }
+    aggregate { s => s }.on { s: Any => s }.sendPartialResultOnExpiry
+    aggregate { s => s }.on { s: Any => s }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate { s => s }.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate { s => s }.on { s: Any => s }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate { s => s }.on { s: Any => s }.additionalAttributes(name = "foo")
+    aggregate { s => s }.on { s: Any => s }.expireGroupsOnCompletion
+    aggregate { s => s }.on { s: Any => s }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate { s => s }.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate { s => s }.on { s: Any => s }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
 
     // AGGREGATE ON/UNTIL
 
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name="foo")
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.additionalAttributes(name="foo")
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.additionalAttributes(name="foo")
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name="foo")
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion.additionalAttributes(name="foo")
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.additionalAttributes(name = "foo")
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.sendPartialResultOnExpiry.expireGroupsOnCompletion.additionalAttributes(name = "foo")
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion.additionalAttributes(name = "foo")
 
     // AGGRGATE with ON/UNTIL
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.additionalAttributes(name="foo")
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.expireGroupsOnCompletion
-//    aggregate{s => s}.on{s:Any => s}.until{payload:String => payload == "foo"}.
-//    			expireGroupsOnCompletion.
-//    			keepReleasedMessages.
-//    			additionalAttributes(name="foo")
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.additionalAttributes(name = "foo")
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.expireGroupsOnCompletion
+    aggregate { s => s }.on { s: Any => s }.until[String] { messages => messages.size == 3 }.
+      expireGroupsOnCompletion.
+      keepReleasedMessages.
+      additionalAttributes(name = "foo")
 
   }
 

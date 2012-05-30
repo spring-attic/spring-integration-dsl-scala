@@ -370,7 +370,7 @@ class IntegrationDomTreeBuilderTests {
   def generateSplitter = {
 
     val messageFlow =
-      split { s: String => s.toTraversable }.additionalAttributes(name = "splitter")
+      split { s: String => s.toIterable }.additionalAttributes(name = "splitter")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
     val transformers = document.getElementsByTagName("int:splitter")

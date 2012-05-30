@@ -51,9 +51,9 @@ object route {
       def additionalAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
     }
 
-  def apply(target: Function1[_, String])(conditions: ValueCondition*) =
-    new SendingEndpointComposition(null, new Router(target = target)(conditions: _*)) {
-      def additionalAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = target)(conditions: _*))
+  def apply[I:Manifest](function: Function1[I, String])(conditions: ValueCondition*) =
+    new SendingEndpointComposition(null, new Router(target = new SingleMessageScalaFunctionWrapper(function))(conditions: _*)) {
+      def additionalAttributes(name: String) = new SendingEndpointComposition(null, new Router(name = name, target = new SingleMessageScalaFunctionWrapper(function))(conditions: _*))
     }
 }
 /**

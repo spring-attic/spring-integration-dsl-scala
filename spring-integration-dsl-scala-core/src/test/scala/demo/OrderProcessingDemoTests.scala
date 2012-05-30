@@ -58,11 +58,13 @@ class OrderProcessingDemoTests {
             bikeFlow
       )
 
-    val resultValid = orderProcessingFlow.sendAndReceive[Any](validOrder, errorFlow = errorFlow)
+
+    val resultValid = orderProcessingFlow.sendAndReceive[Any](validOrder, timeout=2000, errorFlow = errorFlow)
+
     println("Result: " + resultValid)
 
-    val resultInvalid = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = errorFlow)
-    println("Result: " + resultInvalid)
+//    val resultInvalid = orderProcessingFlow.sendAndReceive[Any](invalidOrder, errorFlow = errorFlow)
+//    println("Result: " + resultInvalid)
 
   }
 

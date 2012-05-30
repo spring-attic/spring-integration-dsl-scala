@@ -36,32 +36,34 @@ object transform {
   implicit def nsubAmbig1[A, B >: A]: RestrictiveFunction[A, B] = null
   implicit def nsubAmbig2[A, B >: A]: RestrictiveFunction[A, B] = null
 
-  def apply[T, R: NotUnitType](function: Function1[_, R]) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def additionalAttributes(name: String) = {
-      require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new Transformer(name = name, target = function))
+  def apply[T, R: NotUnitType, I: Manifest](function: Function1[I, R]) =
+    new SendingEndpointComposition(null, new Transformer(target = new SingleMessageScalaFunctionWrapper(function))) {
+      def additionalAttributes(name: String) = {
+        require(StringUtils.hasText(name), "'name' must not be empty")
+        new SendingEndpointComposition(null, new Transformer(name = name, target = new SingleMessageScalaFunctionWrapper(function)))
+      }
     }
-  }
 
-  def apply[T, R: NotUnitType](function: (_, Map[String, _]) => R) = new SendingEndpointComposition(null, new Transformer(target = function)) {
-    def additionalAttributes(name: String) = {
+  def apply[T, R: NotUnitType, I: Manifest](function: (I, Map[String, _]) => R) =
+    new SendingEndpointComposition(null, new Transformer(target = new ParsedMessageScalaFunctionWrapper(function))) {
+      def additionalAttributes(name: String) = {
 
-      require(StringUtils.hasText(name), "'name' must not be empty")
-      new SendingEndpointComposition(null, new Transformer(name = name, target = function))
+        require(StringUtils.hasText(name), "'name' must not be empty")
+        new SendingEndpointComposition(null, new Transformer(name = name, target = new ParsedMessageScalaFunctionWrapper(function)))
+      }
     }
-  }
 }
 
 private[dsl] class Transformer(name: String = "$xfmr_" + UUID.randomUUID().toString.substring(0, 8), target: Any)
-  									extends SimpleEndpoint(name, target) {
+  extends SimpleEndpoint(name, target) {
 
-  override def toMapOfProperties:Map[String, _] = super.toMapOfProperties + ("eipName" -> "TRANSFORMER")
+  override def toMapOfProperties: Map[String, _] = super.toMapOfProperties + ("eipName" -> "TRANSFORMER")
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,
-    inputChannel:AbstractChannel,
-    outputChannel:AbstractChannel): Element = {
+    inputChannel: AbstractChannel,
+    outputChannel: AbstractChannel): Element = {
 
     require(inputChannel != null, "'inputChannel' must be provided")
 
@@ -71,7 +73,7 @@ private[dsl] class Transformer(name: String = "$xfmr_" + UUID.randomUUID().toStr
     element.setAttribute("ref", targetDefinnition._1);
     element.setAttribute("method", targetDefinnition._2);
     element.setAttribute("input-channel", inputChannel.name);
-    if (outputChannel != null){
+    if (outputChannel != null) {
       element.setAttribute("output-channel", outputChannel.name);
     }
     element
