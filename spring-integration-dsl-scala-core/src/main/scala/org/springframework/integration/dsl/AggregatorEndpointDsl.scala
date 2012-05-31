@@ -55,7 +55,7 @@ object aggregate {
   /**
    *
    */
-  def on[T, R: NotUnitType](correlationFunction: Function1[_, R]) = doOnTrait(new Aggregator, correlationFunction)
+  def on[T, R: NotUnitType](correlationFunction: Function1[T, R]) = doOnTrait(new Aggregator, correlationFunction)
   /**
    *
    */

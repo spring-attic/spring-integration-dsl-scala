@@ -120,7 +120,6 @@ private[dsl] class Channel(name: String = "$ch_" + UUID.randomUUID().toString.su
   val failover: Boolean = true,
   val loadBalancer: String = null,
   val taskExecutor: Executor = null) extends AbstractChannel(name){
-  println("")
 }
 
 /**

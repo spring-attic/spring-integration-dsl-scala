@@ -132,17 +132,13 @@ private final class FunctionInvoker(f: => Any) {
    *
    */
   private def normalizeResult[T](result: Any): T = {
-    println
     val normalizedResponse =
       result match {
         case message: Message[_] => {
           message.getPayload match {
             case m: Map[_, _] =>
               val javaMap = JavaConversions.asJavaMap(m)
-              val javaMapMessage =
-                MessageBuilder.withPayload(javaMap).copyHeaders(message.getHeaders).build()
-              println
-              javaMapMessage
+              MessageBuilder.withPayload(javaMap).copyHeaders(message.getHeaders).build()
             case it: Iterable[_] =>
               MessageBuilder.withPayload(JavaConversions.asJavaCollection(it)).
                 copyHeaders(message.getHeaders).build()

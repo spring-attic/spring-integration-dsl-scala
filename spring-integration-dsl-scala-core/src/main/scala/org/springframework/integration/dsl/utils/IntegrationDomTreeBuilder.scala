@@ -204,8 +204,6 @@ class IntegrationDomTreeBuilder {
   }
 
   private def buildChannelElement(channelDefinition: AbstractChannel): Unit = {
-    println("building channel " + channelDefinition.name)
-//    println
     if (!this.integrationComponents.contains(channelDefinition.name)) {
       channelDefinition match {
         case ch: Channel =>

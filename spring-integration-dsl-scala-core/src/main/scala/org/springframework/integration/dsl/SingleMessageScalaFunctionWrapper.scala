@@ -23,8 +23,7 @@ import scala.collection.JavaConversions
 private[dsl] class SingleMessageScalaFunctionWrapper[I,F](val f: Function1[I, F])(implicit manifestI:Manifest[I]) extends Function1[I, F] {
 
   val iErasure = manifestI.erasure
- println(iErasure)
-  println
+
   def apply(message: I):F = {
 
     val reply =

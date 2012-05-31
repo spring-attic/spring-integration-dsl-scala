@@ -15,11 +15,11 @@
  */
 package demo
 import org.springframework.integration.dsl._
-
 import org.springframework.integration.Message
 import java.util.Random
 import org.junit._
 import java.util.concurrent.Executors
+import org.springframework.integration.MessageHeaders
 
 
 /**
@@ -53,7 +53,7 @@ class OrderProcessingDemoTests {
       route{pi:PurchaseOrderItem => pi.itemType}(
         when("books") then
             handle{m:Message[_] => println("Processing books order: " + m); m} -->
-        	    aggregationFlow,
+        	aggregationFlow,
         when("bikes") then
             bikeFlow
       )
