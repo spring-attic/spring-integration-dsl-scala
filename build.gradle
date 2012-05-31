@@ -1,6 +1,7 @@
 description = 'Spring Integration Scala DSL'
 
 apply plugin: 'base'
+apply plugin: 'idea'
 
 allprojects {
   group = 'org.springframework.integration'
