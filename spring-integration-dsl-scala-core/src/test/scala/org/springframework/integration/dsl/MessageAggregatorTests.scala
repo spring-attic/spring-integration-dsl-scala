@@ -85,24 +85,24 @@ class MessageAggregatorTests {
     Thread.sleep(1000)
   }
 
-//  @Test
-//  def validateAggregatorWithDiscardFlow() {
-//
-//    val discard = handle{m:Message[_] => println("DISCARDED: " + m)}
-//
-//    val aggregatorFlow =
-//      aggregate.additionalAttributes(discardFlow = discard) -->
-//      handle { s: Iterable[String] => . . . }
-//
-//    aggregatorFlow.send("1")
-//    Thread.sleep(1000)
-//    aggregatorFlow.send("1")
-//    Thread.sleep(1000)
-//    aggregatorFlow.send("1")
-//    Thread.sleep(1000)
-//    aggregatorFlow.send("1")
-//    Thread.sleep(1000)
-//  }
+  @Test
+  def validateAggregatorWithDiscardFlow() {
+
+    val discard = handle{m:Message[_] => println("DISCARDED: " + m)}
+
+    val aggregatorFlow =
+      aggregate.on{payload:String => payload}.until[String]{messages => messages.size == 2}.additionalAttributes(discardFlow = discard) -->
+      handle { s: Iterable[String] => s.foreach(println _) }
+
+    aggregatorFlow.send("1")
+    Thread.sleep(1000)
+    aggregatorFlow.send("1")
+    Thread.sleep(1000)
+    aggregatorFlow.send("1")
+    Thread.sleep(1000)
+    aggregatorFlow.send("1")
+    Thread.sleep(1000)
+  }
 
   @Test
   def validateAggregatorWithCustomReleaseStrategyAndScalaTypeOutput() {

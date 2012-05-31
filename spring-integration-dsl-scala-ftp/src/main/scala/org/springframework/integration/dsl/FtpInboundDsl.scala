@@ -64,7 +64,7 @@ private[dsl] class FtpInboundAdapterConfig(name: String = "$ftp_in_" + UUID.rand
     element.setAttribute("auto-startup", "false")
     pollerDefinitionFunction(this, poller, element)
     if (additionalAttributes != null){
-      DslUtils.setAdditionalAttributes(element, additionalAttributes)
+      DslUtils.setAdditionalAttributes(element, additionalAttributes, null)
     }
     element
   }

@@ -28,6 +28,11 @@ import org.springframework.integration.dsl.IntegrationComponent
 import org.springframework.integration.dsl.IntegrationComponent
 import org.w3c.dom.Element
 import org.springframework.util.StringUtils
+import org.springframework.integration.dsl.AbstractChannel
+import org.springframework.integration.dsl.BaseIntegrationComposition
+import org.springframework.integration.dsl.SendingChannelComposition
+import java.util.UUID
+import org.springframework.integration.dsl.Channel
 
 /**
  * @author Oleg Zhurakousky
@@ -70,7 +75,7 @@ object DslUtils {
     field.set(rootComposition, parentComposition)
   }
 
-  private[dsl] def setAdditionalAttributes(element: Element, attributeMap: Map[String, Any]): Unit = {
+  private[dsl] def setAdditionalAttributes(element: Element, attributeMap: Map[String, Any], compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): Unit = {
     attributeMap.keys.foreach { key: String =>
       val propertyValue: Any = attributeMap.get(key).elements.next()
       val attributeName = Conventions.propertyNameToAttributeName(key)
@@ -78,6 +83,14 @@ object DslUtils {
         if (propertyValue != null) {
           propertyValue match {
             case str: String => if (StringUtils.hasText(str)) str else null
+            case composition:BaseIntegrationComposition => {
+              require(compositionInitFunction != null, "'compositionInitFunction' must not be null")
+              val channelName = "$ch_" + UUID.randomUUID().toString.substring(0, 8)
+              val channelComposition = Channel(channelName)
+              DslUtils.injectParentComposition(composition, channelComposition)
+              compositionInitFunction(composition, null)
+              channelName
+            }
             case _ => propertyValue.toString()
           }
         } else {

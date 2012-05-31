@@ -63,7 +63,7 @@ private[dsl] class SftpInboundAdapterConfig(name: String = "$sftp_in_" + UUID.ra
     element.setAttribute("auto-startup", "false")
     pollerDefinitionFunction(this, poller, element)
     if (additionalAttributes != null){
-      DslUtils.setAdditionalAttributes(element, additionalAttributes)
+      DslUtils.setAdditionalAttributes(element, additionalAttributes, null)
     }
     element
   }

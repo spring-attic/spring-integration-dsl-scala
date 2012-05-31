@@ -88,7 +88,7 @@ private[dsl] class FtpOutboundGatewayConfig(name: String = "$ftp_out_" + UUID.ra
     element.setAttribute("session-factory", sessionFactoryName)
 
     if (additionalAttributes != null){
-      DslUtils.setAdditionalAttributes(element, additionalAttributes)
+      DslUtils.setAdditionalAttributes(element, additionalAttributes, null)
     }
     element
   }

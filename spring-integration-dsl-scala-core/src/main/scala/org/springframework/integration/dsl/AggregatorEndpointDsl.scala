@@ -65,9 +65,9 @@ object aggregate {
 
   def expireGroupsUponCompletion = doExpireGroupsUponCompletion(new Aggregator)
 
-  def additionalAttributes[T <: BaseIntegrationComposition](name: String = null,
+  def additionalAttributes[T <: BaseIntegrationComposition](name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
       					   messageStore: MessageStore = null,
-      					   discardFlow: T = null) = doAdditionalAttributes(new Aggregator, name, messageStore)
+      					   discardFlow: T = null) = doAdditionalAttributes(new Aggregator, name, messageStore, discardFlow)
 
   //===================
 
@@ -91,7 +91,7 @@ object aggregate {
 
       def additionalAttributes[T <: BaseIntegrationComposition](name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
                                messageStore: MessageStore = null,
-                               discardFlow: T = null) = doAdditionalAttributes(enrichedAggregator, name, messageStore)
+                               discardFlow: T = null) = doAdditionalAttributes(enrichedAggregator, name, messageStore, discardFlow)
     }
   }
 
@@ -120,14 +120,14 @@ object aggregate {
 
           def additionalAttributes[T <: BaseIntegrationComposition](name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
                                    messageStore: MessageStore = null,
-                                   discardFlow: T = null) = doAdditionalAttributes(enrichedAggregatorA, name, messageStore)
+                                   discardFlow: T = null) = doAdditionalAttributes(enrichedAggregatorA, name, messageStore, discardFlow)
 
         }
       }
 
       def additionalAttributes[T <: BaseIntegrationComposition](name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
                                messageStore: MessageStore = null,
-                               discardFlow: T = null) = doAdditionalAttributes(enrichedAggregator, name, messageStore)
+                               discardFlow: T = null) = doAdditionalAttributes(enrichedAggregator, name, messageStore, discardFlow)
 
     }
   }
@@ -138,7 +138,7 @@ object aggregate {
 
       def additionalAttributes[T <: BaseIntegrationComposition](name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
                                messageStore: MessageStore = null,
-                               discardFlow: T = null) = doAdditionalAttributes(enrichedAggregator, name, messageStore)
+                               discardFlow: T = null) = doAdditionalAttributes(enrichedAggregator, name, messageStore, discardFlow)
 
       def expireGroupsUponCompletion = {
         val enrichedAggregatorA = enrichedAggregator.copy(expireGroupsUponCompletion = true)
@@ -146,7 +146,7 @@ object aggregate {
 
           def additionalAttributes[T <: BaseIntegrationComposition](name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
                                    messageStore: MessageStore = null,
-                                   discardFlow: T = null) = doAdditionalAttributes(enrichedAggregatorA, name, messageStore)
+                                   discardFlow: T = null) = doAdditionalAttributes(enrichedAggregatorA, name, messageStore, discardFlow)
         }
       }
 
@@ -166,7 +166,7 @@ object aggregate {
 
       def additionalAttributes[T <: BaseIntegrationComposition](name: String = "$aggr_" + UUID.randomUUID().toString.substring(0, 8),
                                messageStore: MessageStore = null,
-                               discardFlow: T = null) = doAdditionalAttributes(currentAggregator, name, messageStore)
+                               discardFlow: T = null) = doAdditionalAttributes(currentAggregator, name, messageStore, discardFlow)
     }
   }
 }
@@ -223,7 +223,7 @@ private[dsl] case class Aggregator(override val name: String = "$aggr_" + UUID.r
     }
 
     if (additionalAttributes != null) {
-      DslUtils.setAdditionalAttributes(element, additionalAttributes)
+      DslUtils.setAdditionalAttributes(element, additionalAttributes, compositionInitFunction)
     }
     element
   }

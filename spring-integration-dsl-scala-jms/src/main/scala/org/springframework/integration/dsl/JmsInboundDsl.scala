@@ -51,7 +51,7 @@ private[dsl] class JmsInboundGatewayConfig(name: String = "$jms_in_" + UUID.rand
     element.setAttribute("connection-factory", connectionFactoryName)
     element.setAttribute("auto-startup", "false")
     if (additionalAttributes != null){
-      DslUtils.setAdditionalAttributes(element, additionalAttributes)
+      DslUtils.setAdditionalAttributes(element, additionalAttributes, null)
     }
     element
   }
