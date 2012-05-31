@@ -56,24 +56,24 @@ object jdbc {
 
     }*/
 
-    def withFixedDelay(delay: Int) = {
+    def withFixedDelay(query: String, delay: Int) = {
       val poller = new Poller(fixedDelay = delay)
-      new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(poller = poller, dataSource = dataSource)) {
+      new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target= query, poller = poller, dataSource = dataSource)) {
 
         def withMaxMessagesPerPoll(maxMessagesPerPoll: Int): ListeningIntegrationComposition = {
           val poller = new Poller(fixedDelay = delay, maxMessagesPerPoll = maxMessagesPerPoll)
-          new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(poller = poller, dataSource = dataSource)) {
+          new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target= query, poller = poller, dataSource = dataSource)) {
 
             def withTaskExecutor(taskExecutor: Executor): ListeningIntegrationComposition = {
               val poller = new Poller(fixedDelay = delay, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor)
-              new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(poller = poller, dataSource = dataSource))
+              new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target= query, poller = poller, dataSource = dataSource))
             }
           }
         }
 
         def withTaskExecutor(taskExecutor: Executor): ListeningIntegrationComposition = {
           val poller = new Poller(fixedDelay = delay, taskExecutor = taskExecutor)
-          new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(poller = poller, dataSource = dataSource))
+          new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target= query, poller = poller, dataSource = dataSource))
         }
 
       }

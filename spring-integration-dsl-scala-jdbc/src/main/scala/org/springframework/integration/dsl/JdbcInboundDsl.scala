@@ -23,7 +23,8 @@ import javax.sql.DataSource
 /**
  * @author Ewan Benfield
  */
-private[dsl] class JdbcInboundAdapterConfig(name: String = "$jdbc_in_" + UUID.randomUUID().toString.substring(0, 8), poller: Poller, dataSource: DataSource) extends InboundMessageSource(name) {
+private[dsl] class JdbcInboundAdapterConfig(name: String = "$jdbc_in_" + UUID.randomUUID().toString.substring(0, 8),
+  target: String, poller: Poller, dataSource: DataSource) extends InboundMessageSource(name) {
 
   private val logger = LogFactory.getLog(this.getClass());
 
@@ -44,11 +45,11 @@ private[dsl] class JdbcInboundAdapterConfig(name: String = "$jdbc_in_" + UUID.ra
     val element = document.createElement("int-jdbc:inbound-channel-adapter")
     element.setAttribute("id", this.name)
     element.setAttribute("channel", requestChannelName)
-    element.setAttribute("query", "select MQ_ID, DATA_DATE, CONSUMER_ROW_COUNT from O_MQ_NOTIFY_CONTROL where (READY_TO_PROCESS_IND = 'Y') and (CONSUMER_STATUS != 'D') and (OBJECT_NAME = 'V_O_BD_STB_INSTRUMENT')")
+    element.setAttribute("query", target)
 
     val dataSourceName = targetDefinitionFunction(Some(this.dataSource))._1
     element.setAttribute("data-source", dataSourceName)
-    element.setAttribute("auto-startup", "false")
+    element.setAttribute("auto-startup", "true")
     pollerDefinitionFunction(this, poller, element)
     element
   }
