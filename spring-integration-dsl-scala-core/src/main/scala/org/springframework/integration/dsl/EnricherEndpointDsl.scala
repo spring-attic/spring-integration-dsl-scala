@@ -65,7 +65,7 @@ object enrich {
     }
   }
 
-  def header(headerMap: Tuple2[String, AnyRef]) = new SendingEndpointComposition(null, new Enricher(target = headerMap)) {
+  def header(headerMap: Tuple2[String, Any]) = new SendingEndpointComposition(null, new Enricher(target = headerMap)) {
     def additionalAttributes(name: String) = {
       require(StringUtils.hasText(name), "'name' must not be empty")
       new SendingEndpointComposition(null, new Enricher(name = name, target = headerMap))

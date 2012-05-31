@@ -206,9 +206,11 @@ private[dsl] class ListeningIntegrationComposition(parentComposition: BaseIntegr
    * Lifecycle method that starts this IntegrationComposition
    */
   def start(parentContext:ApplicationContext = null) = this.getContext(parentContext).start
+  
+  def start = this.getContext(null).start
 
-  def stop(parentContext:ApplicationContext = null) = this.getContext(parentContext).stop
-
+  def stop = this.getContext(null).stop
+ 
   def -->[T <: BaseIntegrationComposition](a: T) = {
     if (this.logger.isDebugEnabled()) this.logger.debug("Adding " + a.target + " to " + this.target)
     val composed = this.compose(this, a)

@@ -146,6 +146,8 @@ private final class FunctionInvoker(f: => Any) {
             case _ => message
           }
         }
+        case map: Map[_,_] =>
+          JavaConversions.asJavaMap(map)
         case it: Iterable[_] =>
           JavaConversions.asJavaCollection(it)
         case _ =>

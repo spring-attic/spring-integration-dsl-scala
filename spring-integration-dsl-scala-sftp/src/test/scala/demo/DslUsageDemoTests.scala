@@ -81,7 +81,7 @@ class DSLUsageDemoTests {
         handle { f: File => f.getAbsolutePath() }
 
     messageFlow.start()
-    messageFlow.stop()
+    messageFlow.stop
 
     println("done")
   }
@@ -97,7 +97,7 @@ class DSLUsageDemoTests {
         handle { p: File => println("File: " + p.getAbsolutePath()) }
 
     messageFlow.start()
-    messageFlow.stop()
+    messageFlow.stop
 
     println("done")
   }
