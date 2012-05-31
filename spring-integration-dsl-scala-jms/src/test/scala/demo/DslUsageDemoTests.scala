@@ -46,7 +46,7 @@ class DslUsageDemoTests {
         handle { m: Message[_] => println("logging existing message and passing through " + m); m } -->
         transform { value: String => value.toUpperCase() }
 
-    flow.start()
+    flow.start
 
     val jmsTemplate = new JmsTemplate(connectionFactory);
     val request = new org.apache.activemq.command.ActiveMQQueue("myQueue")
@@ -64,7 +64,7 @@ class DslUsageDemoTests {
     assertNotNull(replyMessage)
     println("Reply Message: " + replyMessage.asInstanceOf[TextMessage].getText())
 
-    flow.stop()
+    flow.stop
     println("done")
   }
 
@@ -79,10 +79,10 @@ class DslUsageDemoTests {
       jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
         handle { p: String => println("received " + p); "REPLY: " + p }
 
-    receivingMessageFlow.start()
+    receivingMessageFlow.start
     val reply = sendingMessageFlow.sendAndReceive[String]("Hello JMS!")
     assertNotNull(reply)
-    receivingMessageFlow.stop()
+    receivingMessageFlow.stop
     println("Received reply: " + reply)
   }
 
@@ -97,10 +97,10 @@ class DslUsageDemoTests {
       jms.listen(requestDestinationName = "myQueue", connectionFactory = connectionFactory) -->
       	handle { p: String => println("received " + p) }
 
-    receivingMessageFlow.start()
+    receivingMessageFlow.start
     sendingMessageFlow.send("Hello JMS!")
     Thread.sleep(2000)
-    receivingMessageFlow.stop()
+    receivingMessageFlow.stop
     println("Done")
   }
 
@@ -116,8 +116,8 @@ class DslUsageDemoTests {
       					    requestPubSubDomain = true) -->
     handle{s:String => println(s)}
 
-    messageFlow.start()
-    messageFlow.stop()
+    messageFlow.start
+    messageFlow.stop
   }
 
   @Before
