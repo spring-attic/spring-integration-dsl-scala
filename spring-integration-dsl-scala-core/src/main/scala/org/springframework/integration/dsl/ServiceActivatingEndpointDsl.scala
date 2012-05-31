@@ -48,7 +48,6 @@ object handle {
 
   private object In extends InOut {
     implicit object UnitUnit extends In[Unit, SendingIntegrationComposition with WithAttributes] {
-//    implicit def anySendingEndpointCompositionA[Unit] = new In[Unit, SendingEndpointComposition with WithAttributes] {
       def apply(function: SingleMessageScalaFunctionWrapper[_,_]) = new SendingEndpointComposition(null, new ServiceActivator(name = "$sa_" + function.hashCode, target = function)) with WithAttributes{
         def additionalAttributes(name: String) = doWithAttributesWithoutContinuity(name, function)
       }
@@ -74,7 +73,7 @@ object handle {
     def additionalAttributes(name: String):SendingEndpointComposition
   }
 
-  def apply[F, R, I](function: I => F)(implicit ab: In[F, R], manifestI:Manifest[I], manifestF:Manifest[F]): R =
+  def apply[F, R, I](function: I => F)(implicit ab: In[F, R], manifestI:Manifest[I]): R =
     ab.apply{new SingleMessageScalaFunctionWrapper(function)}
 
   def apply[F, R, I](function: (I, Map[String, _]) => F)(implicit ab: In[F, R], manifestI:Manifest[I]): R =
