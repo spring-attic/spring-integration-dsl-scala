@@ -223,19 +223,21 @@ class DslUsageDemoTests {
       route.onValueOfHeader("someHeaderName")(
 
         when(true) then
-          handle { m: Message[_] => println("Header is 'foo': " + m) },
+          handle { m: Message[_] => println("Header is 'true': " + m) },
+        when(false) then
+          handle { m: Message[_] => println("Header is 'false': " + m) },
         when("bar") then
           handle { m: Message[_] => println("Header is 'bar': " + m) }
       ) -->
       handle { m: Message[_] => println("Header is not set: " + m) }
 
-    messageFlow.send("FOO header", headers = Map("someHeaderName" -> true))
+    messageFlow.send("TRUE header", headers = Map("someHeaderName" -> true))
 
-    messageFlow.send("BAR header", headers = Map("someHeaderName" -> false))
-    
+    messageFlow.send("FALS header", headers = Map("someHeaderName" -> false))
+
     messageFlow.send("BAR header", headers = Map("someHeaderName" -> "bar"))
 
-    //messageFlow.send("Hello")
+    messageFlow.send("Hello")
 
     println("done")
   }
