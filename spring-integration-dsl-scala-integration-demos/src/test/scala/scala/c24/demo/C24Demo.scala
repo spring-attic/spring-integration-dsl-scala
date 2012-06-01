@@ -87,7 +87,7 @@ class C24Demo {
 
     inboundJmsFlow.start
 
-    val validSwiftDoc = C24DemoUtils.getDocumentAsString(new ClassPathResource("scala/c24/demo/valid-swift.xml"))
+    val validSwiftDoc = C24DemoUtils.getDocumentAsString(new ClassPathResource("valid-swift.xml"))
 
     val jmsTemplate = new JmsTemplate(connectionFactory);
     val request = new org.apache.activemq.command.ActiveMQQueue("c24Queue")
