@@ -29,7 +29,7 @@ subprojects { subproject ->
   junitVersion = '4.8.2'
   log4jVersion = '1.2.12'
   mockitoVersion = '1.9.0'
-  springintegrationVersion = '2.2.0.BUILD-SNAPSHOT'
+  springintegrationVersion = '2.2.0.M2'
   springGemfireVersion = '1.1.0.RELEASE'
 
   install {
