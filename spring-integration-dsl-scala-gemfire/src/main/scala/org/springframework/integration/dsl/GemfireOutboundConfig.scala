@@ -29,28 +29,7 @@ import scala.collection.JavaConversions
  * @author Oleg Zhurakousky
  *
  */
-class GemfireRegion(val region: Region[_, _], private var cache: Cache) {
-
-  require(region != null, "'region' must be provided")
-  require(cache != null, "'cache' must be provided")
-
-  def read(key: Any): Any = {
-    val result = region.get(key)
-    result
-  }
-
-  def store = new SendingIntegrationComposition(null, new GemfireOutboundAdapter(target = null, region = region, cache = cache))
-
-  def store(function: Function1[_, Map[_, _]]) = new SendingIntegrationComposition(null, new GemfireOutboundAdapter(target = function, region = region, cache = cache))
-
-  def store(function: (_, Map[String, _]) => Map[_, _]) = new SendingIntegrationComposition(null, new GemfireOutboundAdapter(target = function, region = region, cache = cache))
-
-  private def convertToJavaMap(function: Function1[_, Map[_, _]]) {
-
-  }
-}
-
-private[dsl] class GemfireOutboundAdapter(name: String = "$gfe_out" + UUID.randomUUID().toString.substring(0, 8),
+private[dsl] class GemfireOutboundConfig(name: String = "$gfe_out" + UUID.randomUUID().toString.substring(0, 8),
   target: Any,
   private var cache: Cache,
   region: Region[_, _])
@@ -65,14 +44,10 @@ private[dsl] class GemfireOutboundAdapter(name: String = "$gfe_out" + UUID.rando
     require(inputChannel != null, "'inputChannel' must be provided")
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
-
     if (!beansElement.hasAttribute("xmlns:int-gfe")){
        beansElement.setAttribute("xmlns:int-gfe", "http://www.springframework.org/schema/integration/gemfire")
        val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
-       val mergedLocation = schemaLocation +
-       		" http://www.springframework.org/schema/integration/gemfire " +
-       		"http://www.springframework.org/schema/integration/gemfire/spring-integration-gemfire.xsd"
-       beansElement.setAttribute("xsi:schemaLocation", mergedLocation)
+       beansElement.setAttribute("xsi:schemaLocation", schemaLocation + GemfireDsl.gemfireSchema);
     }
 
     def transformerFunction = {
