@@ -233,11 +233,11 @@ class DslUsageDemoTests {
 
     messageFlow.send("TRUE header", headers = Map("someHeaderName" -> true))
 
-    messageFlow.send("FALS header", headers = Map("someHeaderName" -> false))
+    messageFlow.send("FALSE header", headers = Map("someHeaderName" -> false))
 
     messageFlow.send("BAR header", headers = Map("someHeaderName" -> "bar"))
 
-    messageFlow.send("Hello")
+    messageFlow.send("No headers")
 
     println("done")
   }

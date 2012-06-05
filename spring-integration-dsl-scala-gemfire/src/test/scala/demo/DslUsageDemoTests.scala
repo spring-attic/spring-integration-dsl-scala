@@ -18,11 +18,13 @@ package demo
 import org.junit.Test
 import org.mockito.Mockito
 import org.springframework.data.gemfire.CacheFactoryBean
+import org.springframework.integration.dsl.GemfireEvents
 import org.springframework.integration.dsl.GemfireRegion
+import org.springframework.integration.dsl.GemfireRegion
+import org.springframework.integration.dsl.handle
+
 import com.gemstone.gemfire.cache.Cache
-import org.springframework.integration.dsl.filter
-import org.springframework.integration.Message
-import scala.collection.JavaConversions
+import com.gemstone.gemfire.cache.EntryEvent
 
 /**
  * @author Oleg Zhurakousky
@@ -33,53 +35,146 @@ class DSLUsageDemoTests {
   def compilationTest = {
 
     val region = Mockito.mock(classOf[GemfireRegion])
-    
+
     region.store
-    
-    region.store{p:Any => Map()}
-    
-    region.store{p:Map[_,_] => p}
-    
-    region.store{(p:Any, h:Map[_,_]) => Map()}
-    
+
+    region.store { p: Any => Map() }
+
+    region.store { p: Map[_, _] => p }
+
+    region.store { (p: Any, h: Map[_, _]) => Map() }
+
     println
-    
+
   }
-  
+
   @Test
   def storeScalaMapMessage = {
-    println("hello")
+
     val region = this.createDefaultGemfireRegion
-    
+
     val messageFlow = region.store
-      
+
     messageFlow.send(Map("foo" -> "FOO", "bar" -> "BAR"))
-    
-    println("Result: " + region.read("foo"));
+
+    println("done");
   }
-  
+
   @Test
   def storeJavaMapMessage = {
-    println("hello")
+
     val region = this.createDefaultGemfireRegion
-    
+
     val messageFlow = region.store
-    
+
     val map = new java.util.HashMap[String, String]()
     map.put("foo", "FOO")
     map.put("bar", "Bar")
-      
+
     messageFlow.send(map)
+
+    println("done");
+  }
+
+  @Test
+  def defaultReceiveCompilation = {
+    val region = this.createDefaultGemfireRegion
+
+    region.receive -->
+      handle { e: EntryEvent[_, _] => println(e.getNewValue()) }
+    println
+  }
+
+//  @Test
+//  def receiveWithExtractionCompilation = {
+//    val region = this.createDefaultGemfireRegion
+//
+//    region.receive[String](_.getNewValue()) -->
+//      handle { s: String => println(s) }
+//    println
+//  }
+
+  @Test
+  def simpleReceiveOnEventCompilation = {
+    val region = this.createDefaultGemfireRegion
+
+    region.receive.on(GemfireEvents.CREATED, GemfireEvents.UPDATED) -->
+      handle { s: String => println(s) }
+    println
+  }
+
+//  @Test
+//  def receiveWithExtractionOnEventCompilation = {
+//    val region = this.createDefaultGemfireRegion
+//
+//    region.receive[String] { _.getNewValue }.on(GemfireEvents.CREATED, GemfireEvents.UPDATED) -->
+//      handle { s: String => println(s) }
+//    println
+//  }
+
+  @Test
+  def defaultSendReceive = {
+    val region = this.createDefaultGemfireRegion
+
+    val receivingFlow =
+      region.receive -->
+      handle { e: EntryEvent[_, _] => println("RECEIVING: " + e.getNewValue) }
+      
+    receivingFlow.start
     
-    println("Result: " + region.read("foo"));
+    val messageFlow = region.store
+
+    messageFlow.send(Map("foo" -> "FOO", "bar" -> "BAR"))
+    
+    Thread.sleep(2000)
+
+    println
   }
   
-  private def createDefaultGemfireRegion:GemfireRegion = {
+//  @Test see INT-2602 and INTSCALA-45
+//  def sendReceiveWithExtraction = {
+//    val region = this.createDefaultGemfireRegion
+//
+//	    val receivingFlow =
+//	      region.receive[String](_.getNewValue()) -->
+//	      handle { v: String => println("RECEIVING: " + v) }
+//      
+//    receivingFlow.start
+//    
+//    val messageFlow = region.store
+//
+//    messageFlow.send(Map("foo" -> "FOO", "bar" -> "BAR"))
+//    
+//    Thread.sleep(2000)
+//
+//    println
+//  }
+  
+  @Test
+  def sendReceiveWithEvents = {
+    val region = this.createDefaultGemfireRegion
+
+    val receivingFlow =
+      region.receive.on(GemfireEvents.CREATED, GemfireEvents.UPDATED) -->
+      handle { e: EntryEvent[_, _] => println("RECEIVING: " + e.getNewValue) }
+      
+    receivingFlow.start
+    
+    val messageFlow = region.store
+
+    messageFlow.send(Map("foo" -> "FOO", "bar" -> "BAR"))
+    
+    Thread.sleep(2000)
+
+    println
+  }
+
+  private def createDefaultGemfireRegion: GemfireRegion = {
     val cacheFactoryBean = new CacheFactoryBean
     cacheFactoryBean.afterPropertiesSet
     val cache = cacheFactoryBean.getObject.asInstanceOf[Cache]
-    val region = if (cache.getRegion("$") == null) 
-    	cache.createRegionFactory[String, String]().create("$") else  cache.getRegion("$")
+    val region = if (cache.getRegion("$") == null)
+      cache.createRegionFactory[String, String]().create("$") else cache.getRegion("$")
     new GemfireRegion(region, cache)
-  } 
+  }
 }
