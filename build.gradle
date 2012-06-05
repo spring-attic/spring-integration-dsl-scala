@@ -206,9 +206,9 @@ def customizePom(def pom, def gradleProject) {
                 }
             }
             scm {
-                url = 'https://github.com/SpringSource/spring-integration-scala'
-                connection = 'scm:git:git://github.com/SpringSource/spring-integration-scala'
-                developerConnection = 'scm:git:git://github.com/SpringSource/spring-integration-scala'
+                url = 'https://github.com/SpringSource/spring-integration-dsl-scala'
+                connection = 'scm:git:git://github.com/SpringSource/spring-integration-dsl-scala'
+                developerConnection = 'scm:git:git://github.com/SpringSource/spring-integration-dsl-scala'
             }
             developers {
                 developer {
