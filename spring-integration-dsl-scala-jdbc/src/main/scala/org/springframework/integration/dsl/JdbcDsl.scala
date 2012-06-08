@@ -81,17 +81,10 @@ object jdbc {
     }
   }
 
-  def write(directory: String) =
-    new SendingEndpointComposition(null, new JdbcOutboundGatewayConfig(target = directory, oneway = true, fileNameGenerationFunction = null)) {
+  def write(query:String, dataSource: DataSource) =
+    new SendingEndpointComposition(null, new JdbcOutboundAdapterConfig(target = query, dataSource = dataSource)) {
 
-      def asFileName(fileNameGenerationFunction: _ => String) =
-      new SendingEndpointComposition(null, new JdbcOutboundGatewayConfig(target = directory, oneway = true, fileNameGenerationFunction = fileNameGenerationFunction))
+      /*def asFileName(fileNameGenerationFunction: _ => String) =
+      new SendingEndpointComposition(null, new JdbcOutboundGatewayConfig(target = query, dataSource = dataSource))*/
     }
-
-  def write = new SendingEndpointComposition(null, new JdbcOutboundGatewayConfig(target = "", oneway = true, fileNameGenerationFunction = null)) {
-
-    def asFileName(fileNameGenerationFunction: _ => String) =
-    new SendingEndpointComposition(null, new JdbcOutboundGatewayConfig(target = "", oneway = true, fileNameGenerationFunction = fileNameGenerationFunction))
-  }
-
 }

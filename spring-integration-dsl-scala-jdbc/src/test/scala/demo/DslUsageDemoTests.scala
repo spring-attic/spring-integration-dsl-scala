@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2011 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package demo;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.integration.Message;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map
-import org.springframework.integration.dsl.handle._
-import org.springframework.integration.dsl.{handle, Channel, jdbc}
+package demo
 
 import org.junit.Test
 import org.junit.Assert._
 import org.springframework.integration.Message
+import java.io.File
 import org.junit.Before
 import org.junit.After
 import org.apache.commons.logging.LogFactory
@@ -50,7 +30,7 @@ import org.springframework.integration.dsl._
 /**
  * @author Ewan Benfield
  */
-class JdbcPollingChannelAdapterTests {
+class DslUsageDemoTests {
 
   val logger = LogFactory.getLog(this.getClass())
 
@@ -76,8 +56,9 @@ class JdbcPollingChannelAdapterTests {
     embeddedDatabase.shutdown()
   }
 
+  //TODO  Get rid of Utils
   @Test
-  def validateInboundGateway = {
+  def jdbcInboundGateway = {
 
     val inboundFlow =
       jdbc.poll(jdbcTemplate getDataSource).withFixedDelay("select * from item", 10) -->
@@ -95,17 +76,15 @@ class JdbcPollingChannelAdapterTests {
     inboundFlow.stop()
 
     assertNotNull(message)
-    assertEquals(1, Utils.get(message, "ID"))
-    assertEquals(2, Utils.get(message, "STATUS"))
+
+    Utils.print(message)
   }
 
-  /**
-   * ToDo: Get rid of Utils
-   * Sort out constructors
-   * Fix other test etc
-   */
+
+  //TODO  Get rid of Utils
+  //TODO Actually use Message
   @Test
-  def validateOutboundGatewayWithReply = {
+  def jdbcOutboundGatewayWithReply = {
 
     val query = "insert into item (id, status) values (3, 4)"
 
@@ -125,7 +104,7 @@ class JdbcPollingChannelAdapterTests {
     inboundFlow.stop()
 
     assertNotNull(message)
-    assertEquals(3, Utils.get(message, "ID"))
-    assertEquals(4, Utils.get(message, "STATUS"))
+
+    Utils.print(message)
   }
 }

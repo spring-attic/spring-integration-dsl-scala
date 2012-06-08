@@ -33,7 +33,7 @@ private[dsl] class JdbcInboundAdapterConfig(name: String = "$jdbc_in_" + UUID.ra
             pollerDefinitionFunction: Function3[IntegrationComponent, Poller, Element, Unit],
             requestChannelName: String): Element = {
 
-    require(requestChannelName != null, "JDBC Inbound Channel Adapter requires query")
+      require(requestChannelName != null, "JDBC Inbound Channel Adapter requires query")     // TODO
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
     if (!beansElement.hasAttribute("xmlns:int-jdbc")){
