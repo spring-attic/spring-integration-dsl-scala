@@ -32,29 +32,29 @@ private[dsl] object JdbcDsl {
 object jdbc {
   def poll(dataSource: DataSource) = new {
 
-    /*def atFixedRate(rate: Int): ListeningIntegrationComposition = {
+    def atFixedRate(query: String, rate: Int): ListeningIntegrationComposition = {
       val poller = new Poller(fixedRate = rate)
-      new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target = directory, poller = poller)) {
+      new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target = query, poller = poller, dataSource = dataSource)) {
 
         def withMaxMessagesPerPoll(maxMessagesPerPoll: Int): ListeningIntegrationComposition = {
           val poller = new Poller(fixedRate = rate, maxMessagesPerPoll = maxMessagesPerPoll)
-          new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target = directory, poller = poller)) {
+          new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target = query, poller = poller, dataSource = dataSource)) {
 
             def withTaskExecutor(taskExecutor: Executor): ListeningIntegrationComposition = {
               val poller = new Poller(fixedRate = rate, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor)
-              new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target = directory, poller = poller))
+              new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target = query, poller = poller, dataSource = dataSource))
             }
           }
         }
 
         def withTaskExecutor(taskExecutor: Executor): ListeningIntegrationComposition = {
           val poller = new Poller(fixedRate = rate, taskExecutor = taskExecutor)
-          new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target = directory, poller = poller))
+          new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target = query, poller = poller, dataSource = dataSource))
         }
 
       }
 
-    }*/
+    }
 
     def withFixedDelay(query: String, delay: Int) = {
       val poller = new Poller(fixedDelay = delay)
@@ -81,8 +81,8 @@ object jdbc {
     }
   }
 
-  def write(query:String, dataSource: DataSource) =
-    new SendingEndpointComposition(null, new JdbcOutboundAdapterConfig(target = query, dataSource = dataSource)) {
+  def store(query:String, dataSource: DataSource) =
+    new SendingEndpointComposition(null, new JdbcOutboundAdapterConfig(target = query, oneway = true, dataSource = dataSource)) {
 
       /*def asFileName(fileNameGenerationFunction: _ => String) =
       new SendingEndpointComposition(null, new JdbcOutboundGatewayConfig(target = query, dataSource = dataSource))*/

@@ -114,7 +114,7 @@ class JdbcPollingChannelAdapterTests {
         m: Message[_] => this.message = m
       }
 
-    val outboundFlow = transform{p:String => p.toUpperCase()} --> jdbc.write(query, jdbcTemplate getDataSource)
+    val outboundFlow = transform{p:String => p.toUpperCase()} --> jdbc.store(query, jdbcTemplate getDataSource)
 
     inboundFlow.start()
 

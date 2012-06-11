@@ -18,13 +18,11 @@ package demo
 import org.junit.Test
 import org.junit.Assert._
 import org.springframework.integration.Message
-import java.io.File
 import org.junit.Before
 import org.junit.After
 import org.apache.commons.logging.LogFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.embedded.{EmbeddedDatabaseType, EmbeddedDatabaseBuilder, EmbeddedDatabase}
-import org.springframework.integration.dsl.Utils
 import org.springframework.integration.dsl._
 
 /**
@@ -80,6 +78,30 @@ class DslUsageDemoTests {
     Utils.print(message)
   }
 
+  //TODO  Get rid of Utils
+  @Test
+  def jdbcInboundGateway2 = {
+
+    val inboundFlow =
+      jdbc.poll(jdbcTemplate getDataSource).atFixedRate("select * from item", 10) -->
+        Channel("foo") -->
+        handle {
+          m: Message[_] => this.message = m
+        }
+
+    inboundFlow.start()
+
+    jdbcTemplate.update("insert into item (id, status) values(1,2)")
+
+    Thread.sleep(200)
+
+    inboundFlow.stop()
+
+    assertNotNull(message)
+
+    Utils.print(message)
+  }
+
 
   //TODO  Get rid of Utils
   //TODO Actually use Message
@@ -93,7 +115,7 @@ class DslUsageDemoTests {
         m: Message[_] => this.message = m
       }
 
-    val outboundFlow = transform{p:String => p.toUpperCase()} --> jdbc.write(query, jdbcTemplate getDataSource)
+    val outboundFlow = transform{p:String => p.toUpperCase()} --> jdbc.store(query, jdbcTemplate getDataSource)
 
     inboundFlow.start()
 

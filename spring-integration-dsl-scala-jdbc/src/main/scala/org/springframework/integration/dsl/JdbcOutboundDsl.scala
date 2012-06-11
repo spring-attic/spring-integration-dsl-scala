@@ -25,19 +25,16 @@ import javax.sql.DataSource
  */
 private[dsl] class JdbcOutboundAdapterConfig(name: String = "$file_out_" + UUID.randomUUID().toString.substring(0, 8),
   target: String,
+  oneway: Boolean,
   dataSource: DataSource) extends SimpleEndpoint(name, target) with OutboundAdapterEndpoint {
-
-/*<int-jdbc:outbound-channel-adapter
-query="insert into foos (id, status, name) values (:headers[id], 0, :payload[foo])"
-data-source="dataSource"
-channel="input"/>*/
 
   override def build(document: Document = null,
     targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
     compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit] = null,
     inputChannel: AbstractChannel,
     outputChannel: AbstractChannel): Element = {
-    require(inputChannel != null, "'inputChannel' must be provided")    // TODO
+
+    require(inputChannel != null, "'inputChannel' must be provided")
 
     val beansElement = document.getElementsByTagName("beans").item(0).asInstanceOf[Element]
     if (!beansElement.hasAttribute("xmlns:int-jdbc")){
@@ -46,12 +43,29 @@ channel="input"/>*/
       beansElement.setAttribute("xsi:schemaLocation", schemaLocation + JdbcDsl.jdbcSchema);
     }
 
-    val element = document.createElement("int-jdbc:outbound-channel-adapter")
+    /*WORKING val element = document.createElement("int-jdbc:outbound-channel-adapter")
     element.setAttribute("id", this.name)
     val dataSourceName = targetDefinitionFunction(Some(this.dataSource))._1
     element.setAttribute("data-source", dataSourceName)
     element.setAttribute("channel", inputChannel.name)
     element.setAttribute("query", target)
+    element*/
+
+    val element: Element =
+      if (oneway) {
+        val outboundAdapterElement = document.createElement("int-jdbc:outbound-channel-adapter")
+        outboundAdapterElement.setAttribute("channel", inputChannel.name)
+        val dataSourceName = targetDefinitionFunction(Some(this.dataSource))._1
+        outboundAdapterElement.setAttribute("data-source", dataSourceName)
+        outboundAdapterElement.setAttribute("channel", inputChannel.name)
+        outboundAdapterElement.setAttribute("query", target)
+
+        outboundAdapterElement
+      } else {
+
+        throw new UnsupportedOperationException("int-jdbc:outbound-gateway is not currently supported")
+      }
+    element.setAttribute("id", this.name)
     element
   }
 
