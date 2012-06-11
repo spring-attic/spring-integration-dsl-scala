@@ -56,7 +56,30 @@ class DslUsageDemoTests {
 
   //TODO  Get rid of Utils
   @Test
-  def jdbcInboundGateway = {
+  def jdbcInboundAdapterTest = {
+
+    val inboundFlow =
+      jdbc.poll(jdbcTemplate getDataSource).withFixedDelay("select * from item", 10) -->
+        handle {
+          m: Message[_] => this.message = m
+        }
+
+    inboundFlow start
+
+    jdbcTemplate.update("insert into item (id, status) values(1,2)")
+
+    Thread.sleep(200)
+
+    inboundFlow stop
+
+    assertNotNull(message)
+
+    Utils.print(message)
+  }
+
+  //TODO  Get rid of Utils
+  @Test
+  def jdbcInboundAdapterWithExplicitChannelTest = {
 
     val inboundFlow =
       jdbc.poll(jdbcTemplate getDataSource).withFixedDelay("select * from item", 10) -->
@@ -80,7 +103,7 @@ class DslUsageDemoTests {
 
   //TODO  Get rid of Utils
   @Test
-  def jdbcInboundGateway2 = {
+  def jdbcInboundAdapterWithFixedRateTest = {
 
     val inboundFlow =
       jdbc.poll(jdbcTemplate getDataSource).atFixedRate("select * from item", 10) -->
@@ -106,7 +129,7 @@ class DslUsageDemoTests {
   //TODO  Get rid of Utils
   //TODO Actually use Message
   @Test
-  def jdbcOutboundGatewayWithReply = {
+  def jdbcOutboundAdapterWithReply = {
 
     val query = "insert into item (id, status) values (3, 4)"
 
