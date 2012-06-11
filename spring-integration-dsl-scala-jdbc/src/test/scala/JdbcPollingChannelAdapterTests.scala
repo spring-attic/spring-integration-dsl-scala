@@ -86,13 +86,13 @@ class JdbcPollingChannelAdapterTests {
           m: Message[_] => this.message = m
         }
 
-    inboundFlow.start()
+    inboundFlow start
 
     jdbcTemplate.update("insert into item (id, status) values(1,2)")
 
     Thread.sleep(200)
 
-    inboundFlow.stop()
+    inboundFlow stop
 
     assertNotNull(message)
     assertEquals(1, Utils.get(message, "ID"))
@@ -116,13 +116,13 @@ class JdbcPollingChannelAdapterTests {
 
     val outboundFlow = transform{p:String => p.toUpperCase()} --> jdbc.store(query, jdbcTemplate getDataSource)
 
-    inboundFlow.start()
+    inboundFlow start
 
     outboundFlow.send("")
 
     Thread.sleep(200)
 
-    inboundFlow.stop()
+    inboundFlow stop
 
     assertNotNull(message)
     assertEquals(3, Utils.get(message, "ID"))
