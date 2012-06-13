@@ -16,7 +16,6 @@
 package demo
 
 import org.junit.Test
-import org.junit.Assert._
 import org.springframework.integration.Message
 import org.junit.Before
 import org.junit.After
@@ -29,6 +28,8 @@ import org.springframework.integration.dsl._
  * @author Ewan Benfield
  */
 class DslUsageDemoTests {
+
+  private final val MAX_PROCESSING_TIME = 10000
 
   val logger = LogFactory.getLog(this.getClass())
 
@@ -54,31 +55,28 @@ class DslUsageDemoTests {
     embeddedDatabase.shutdown()
   }
 
-  //TODO  Get rid of Utils
-  @Test
+  @Test(timeout = MAX_PROCESSING_TIME)
   def jdbcInboundAdapterTest = {
 
     val inboundFlow =
       jdbc.poll(jdbcTemplate getDataSource).withFixedDelay("select * from item", 10) -->
         handle {
-          m: Message[_] => this.message = m
+          m: Message[_] => message = m
         }
 
     inboundFlow start
 
     jdbcTemplate.update("insert into item (id, status) values(1,2)")
 
-    Thread.sleep(200)
+    while(message == null)
+      Thread.sleep(50)
+
+    println("Received payload: " + message.getPayload)
 
     inboundFlow stop
-
-    assertNotNull(message)
-
-    Utils.print(message)
   }
 
-  //TODO  Get rid of Utils
-  @Test
+  @Test(timeout = MAX_PROCESSING_TIME)
   def jdbcInboundAdapterWithExplicitChannelTest = {
 
     val inboundFlow =
@@ -92,17 +90,16 @@ class DslUsageDemoTests {
 
     jdbcTemplate.update("insert into item (id, status) values(1,2)")
 
-    Thread.sleep(200)
+    while(message == null)
+      Thread.sleep(50)
+
+    println("Received payload: " + message.getPayload)
 
     inboundFlow stop
 
-    assertNotNull(message)
-
-    Utils.print(message)
   }
 
-  //TODO  Get rid of Utils
-  @Test
+  @Test(timeout = MAX_PROCESSING_TIME)
   def jdbcInboundAdapterWithFixedRateTest = {
 
     val inboundFlow =
@@ -116,19 +113,16 @@ class DslUsageDemoTests {
 
     jdbcTemplate.update("insert into item (id, status) values(1,2)")
 
-    Thread.sleep(200)
+    while(message == null)
+      Thread.sleep(50)
+
+    println("Received payload: " + message.getPayload)
 
     inboundFlow stop
-
-    assertNotNull(message)
-
-    Utils.print(message)
   }
 
-
-  //TODO  Get rid of Utils
   //TODO Actually use Message
-  @Test
+  @Test(timeout = MAX_PROCESSING_TIME)
   def jdbcOutboundAdapterWithReply = {
 
     val query = "insert into item (id, status) values (3, 4)"
@@ -144,12 +138,11 @@ class DslUsageDemoTests {
 
     outboundFlow.send("")
 
-    Thread.sleep(200)
+    while(message == null)
+      Thread.sleep(50)
+
+    println("Received payload: " + message.getPayload)
 
     inboundFlow stop
-
-    assertNotNull(message)
-
-    Utils.print(message)
   }
 }

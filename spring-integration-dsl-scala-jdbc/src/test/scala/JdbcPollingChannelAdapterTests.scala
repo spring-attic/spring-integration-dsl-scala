@@ -16,25 +16,6 @@
 
 package demo;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.integration.Message;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map
-import org.springframework.integration.dsl.handle._
-import org.springframework.integration.dsl.{handle, Channel, jdbc}
 
 import org.junit.Test
 import org.junit.Assert._
@@ -44,8 +25,8 @@ import org.junit.After
 import org.apache.commons.logging.LogFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.embedded.{EmbeddedDatabaseType, EmbeddedDatabaseBuilder, EmbeddedDatabase}
-import org.springframework.integration.dsl.Utils
 import org.springframework.integration.dsl._
+import java.util.{ArrayList, Map}
 
 /**
  * @author Ewan Benfield
@@ -76,6 +57,13 @@ class JdbcPollingChannelAdapterTests {
     embeddedDatabase.shutdown()
   }
 
+  def get(mm: Message[_], key: String): AnyRef = {
+    val message: Message[ArrayList[Map[String, String]]] = mm.asInstanceOf[Message[ArrayList[Map[String, String]]]]
+    val payload: ArrayList[Map[String, String]] = message.getPayload
+    val map: Map[String, String] = payload.get(0)
+    return map.get(key)
+  }
+
   @Test
   def validateInboundGateway = {
 
@@ -95,15 +83,10 @@ class JdbcPollingChannelAdapterTests {
     inboundFlow stop
 
     assertNotNull(message)
-    assertEquals(1, Utils.get(message, "ID"))
-    assertEquals(2, Utils.get(message, "STATUS"))
+    assertEquals(1, get(message, "ID"))
+    assertEquals(2, get(message, "STATUS"))
   }
 
-  /**
-   * ToDo: Get rid of Utils
-   * Sort out constructors
-   * Fix other test etc
-   */
   @Test
   def validateOutboundGatewayWithReply = {
 
@@ -125,7 +108,7 @@ class JdbcPollingChannelAdapterTests {
     inboundFlow stop
 
     assertNotNull(message)
-    assertEquals(3, Utils.get(message, "ID"))
-    assertEquals(4, Utils.get(message, "STATUS"))
+    assertEquals(3, get(message, "ID"))
+    assertEquals(4, get(message, "STATUS"))
   }
 }
