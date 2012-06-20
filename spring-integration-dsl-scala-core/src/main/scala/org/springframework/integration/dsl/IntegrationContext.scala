@@ -23,14 +23,14 @@ import scala.collection.JavaConversions
 import org.apache.commons.logging.LogFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.integration.channel.QueueChannel
-import org.springframework.integration.dsl.utils.DslUtils
+import utils.{IntegrationDomTreeBuilder, DslUtils}
 import org.springframework.integration.support.MessageBuilder
 import org.springframework.integration.Message
 import org.springframework.integration.MessageChannel
 import org.springframework.integration.MessagingException
 import org.springframework.util.CollectionUtils
 import org.springframework.util.StringUtils
-import org.springframework.integration.dsl.utils.IntegrationDomTreeBuilder
+import org.springframework.context.support.GenericApplicationContext
 
 /**
  * @author Oleg Zhurakousky
@@ -66,7 +66,7 @@ private[dsl] class IntegrationContext(parentContext: ApplicationContext, composi
 
 //  val applicationContext = ApplicationContextBuilder.build(parentContext, normalizedComposition)
   
-  val applicationContext = IntegrationDomTreeBuilder.buildApplicationContext(normalizedComposition)
+  val applicationContext = IntegrationDomTreeBuilder.buildApplicationContext(parentContext, normalizedComposition)
 
   def start() = this.applicationContext.start()
 
