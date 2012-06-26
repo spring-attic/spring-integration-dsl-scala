@@ -17,18 +17,33 @@ package org.springframework.integration.dsl
 import org.junit.Test
 import org.springframework.context.support.ClassPathXmlApplicationContext
 import org.junit.Assert
+import org.springframework.beans.factory.BeanFactoryAware
+
 /**
- * @author Oleg Zhurakousky
+ * @author Oleg Zhurakousky / Ewan Benfield
  */
 class ParentApplicationContextTests {
     
   @Test
   def validateInitializationOfParentAc = {
-//    val context = new ClassPathXmlApplicationContext("parent-config.xml")
-//    
-//    val messageFlow = handle.using(context.getBean("simpleService"))
-//   
-//    Assert.assertEquals(context.getBean("simpleService"), messageFlow.getContext(context).applicationContext.getBean("simpleService"))
-  }
+    val context = new ClassPathXmlApplicationContext("parent-config.xml")
 
+    val messageFlow:BaseIntegrationComposition = context.getBean("messageFlow")  match {
+      case elt:BaseIntegrationComposition => elt
+      case _ => throw new ClassCastException
+    }
+    Assert.assertEquals(context.getBean("messageFlow"), messageFlow.getContext(context).applicationContext.getBean("messageFlow"))
+  }
+  object scalaDslFlowFactory {
+
+    def createFlow(): BaseIntegrationComposition = {
+
+      val messageFlow =
+        filter {payload: String => payload == "World"} -->
+          transform { payload: String => "Hello " + payload} -->
+          handle { payload: String => println(payload) }
+
+      messageFlow
+    }
+  }
 }

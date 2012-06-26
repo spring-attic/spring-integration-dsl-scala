@@ -16,20 +16,16 @@
 package org.springframework.integration.dsl
 import java.util.UUID
 import org.apache.commons.logging.LogFactory
-import org.springframework.beans.factory.support.BeanDefinitionBuilder
 import org.springframework.integration.dsl.utils.DslUtils
-import org.springframework.beans.factory.support.BeanDefinitionRegistry
-import org.springframework.context.ApplicationContext
+import org.springframework.context.{ApplicationContextAware, ApplicationContext}
 import org.w3c.dom.Element
 import org.w3c.dom.Document
-import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.beans.factory.config.ConfigurableBeanFactory
 
 /**
  * @author Oleg Zhurakousky
  */
 private[dsl] case class BaseIntegrationComposition(private[dsl] val parentComposition: BaseIntegrationComposition,
-                                                   private[dsl] val target: IntegrationComponent) {
+                                                   private[dsl] val target: IntegrationComponent) extends AnyRef with ApplicationContextAware {
 
   val logger = LogFactory.getLog(this.getClass());
 
@@ -138,6 +134,17 @@ private[dsl] case class BaseIntegrationComposition(private[dsl] val parentCompos
       }
     }
   }
+
+  /**
+   * Lifecycle method
+   */
+  def setApplicationContext(applicationContext: ApplicationContext)  {
+
+    if (this.logger.isDebugEnabled())
+      this.logger.debug("Getting IntegrationContext for: " + this)
+
+    this.getContext(applicationContext).start()
+  }
 }
 
 /**
@@ -207,7 +214,7 @@ private[dsl] class ListeningIntegrationComposition(parentComposition: BaseIntegr
    */
   def start(parentContext:ApplicationContext = null) = this.getContext(parentContext).start
   
-  def start = this.getContext(null).start
+  def start = this.getContext(null)
 
   def stop = this.getContext(null).stop
  

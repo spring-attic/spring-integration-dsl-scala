@@ -17,14 +17,12 @@ package org.springframework.integration.dsl.utils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.StringWriter
-import java.util.HashMap
 import java.util.UUID
 import org.apache.commons.logging.LogFactory
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader
 import org.springframework.context.support.GenericApplicationContext
 import org.springframework.context.ApplicationContext
 import org.springframework.core.io.InputStreamResource
-import org.springframework.integration.dsl.AbstractChannel
 import org.springframework.integration.dsl.BaseIntegrationComposition
 import org.springframework.integration.dsl.Channel
 import org.springframework.integration.dsl.FunctionInvoker
@@ -44,10 +42,9 @@ import javax.xml.transform.stream.StreamResult
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
 import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.integration.dsl.Router
-import org.springframework.integration.dsl.OutboundAdapterEndpoint
 import org.springframework.beans.factory.BeanFactoryAware
 import org.springframework.integration.dsl.AbstractChannel
+
 /**
  * @author Oleg Zhurakousky
  */
@@ -57,7 +54,10 @@ object IntegrationDomTreeBuilder {
   }
 
   def buildApplicationContext[T <: BaseIntegrationComposition](integrationComposition: T) =
-    new IntegrationDomTreeBuilder().buildApplicationContext(integrationComposition)
+    new IntegrationDomTreeBuilder().buildApplicationContext(null, integrationComposition)
+
+  def buildApplicationContext[T <: BaseIntegrationComposition](applicationContext: ApplicationContext = null, integrationComposition: T) =
+    new IntegrationDomTreeBuilder().buildApplicationContext(applicationContext, integrationComposition)
 }
 /**
  *
@@ -90,9 +90,10 @@ class IntegrationDomTreeBuilder {
   /**
    *
    */
-  def buildApplicationContext[T <: BaseIntegrationComposition](integrationComposition: T): ConfigurableApplicationContext = {
+  def buildApplicationContext[T <: BaseIntegrationComposition](parentContext: ApplicationContext, integrationComposition: T): ConfigurableApplicationContext = {
     this.toDocument(integrationComposition)
-    val applicationContext = new GenericApplicationContext()
+
+    val applicationContext = new GenericApplicationContext(parentContext)
 
     this.supportingBeans.foreach { element: Tuple2[String, Any] =>
       applicationContext.getBeanFactory().registerSingleton(element._1, element._2)
