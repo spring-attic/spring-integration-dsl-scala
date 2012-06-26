@@ -123,10 +123,8 @@ project('spring-integration-dsl-scala-jdbc') {
     dependencies {
         compile project(":spring-integration-dsl-scala-core")
         compile "org.springframework.integration:spring-integration-jdbc:$springintegrationVersion"
-
-        // libraries only needed for test
-        testCompile "commons-dbcp:commons-dbcp:1.4"
-        testCompile "commons-pool:commons-dbcp:1.5.4"
+        compile "commons-dbcp:commons-dbcp:1.4"
+        compile "commons-pool:commons-dbcp:1.5.4"
     }
 }
 
