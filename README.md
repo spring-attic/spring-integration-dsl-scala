@@ -1,4 +1,4 @@
-## Welcome to Spring Integration Scala SL project
+## Welcome to Spring Integration Scala DSL project
 
 _**The Spring Integration Scala DSL is a Scala-based [EIP] (http://www.eaipatterns.com/) DSL that sits on top of the Java-based 
 [Spring Integration] (http://www.springsource.org/spring-integration) framework.**_
