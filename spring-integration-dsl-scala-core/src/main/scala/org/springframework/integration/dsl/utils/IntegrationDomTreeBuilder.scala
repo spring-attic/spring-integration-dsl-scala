@@ -390,6 +390,6 @@ class IntegrationDomTreeBuilder {
     val source = new DOMSource(document);
     transformer.transform(source, result);
 
-    //println(sw.toString())
+    println(sw.toString())
   }
 }

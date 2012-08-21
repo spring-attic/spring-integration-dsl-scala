@@ -28,11 +28,10 @@ private[dsl] object JdbcDsl {
 
 }
 
-//TODO Decide on appropriate API here
-object jdbc {
-  def poll(dataSource: DataSource) = new {
+class Jdbc(val dataSource: DataSource) {
+  def poll(query: String) = new {
 
-    def atFixedRate(query: String, rate: Int): ListeningIntegrationComposition = {
+    def atFixedRate(rate: Int): ListeningIntegrationComposition = {
       val poller = new Poller(fixedRate = rate)
       new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target = query, poller = poller, dataSource = dataSource)) {
 
@@ -56,7 +55,7 @@ object jdbc {
 
     }
 
-    def withFixedDelay(query: String, delay: Int) = {
+    def withFixedDelay(delay: Int) = {
       val poller = new Poller(fixedDelay = delay)
       new ListeningIntegrationComposition(null, new JdbcInboundAdapterConfig(target= query, poller = poller, dataSource = dataSource)) {
 
@@ -80,11 +79,7 @@ object jdbc {
 
     }
   }
-
-  def store(query:String, dataSource: DataSource) =
-    new SendingEndpointComposition(null, new JdbcOutboundAdapterConfig(target = query, oneway = true, dataSource = dataSource)) {
-
-      /*def asFileName(fileNameGenerationFunction: _ => String) =
-      new SendingEndpointComposition(null, new JdbcOutboundGatewayConfig(target = query, dataSource = dataSource))*/
-    }
+  // needs more thinking
+//  def store(sql:String) =
+//    new SendingEndpointComposition(null, new JdbcOutboundAdapterConfig(target = sql, oneway = true, dataSource = dataSource)) 
 }

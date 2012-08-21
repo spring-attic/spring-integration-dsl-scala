@@ -10,7 +10,6 @@ allprojects {
  
   repositories {
     mavenCentral()
-    maven { url 'https://repo.springsource.org/libs-staging-local'}
     maven { url 'http://repo.springsource.org/libs-milestone' }
     maven { url 'https://repo.springsource.org/libs-snapshot'}
     maven { url 'https://repo.springsource.org/libs-release'}
@@ -126,7 +125,7 @@ project('spring-integration-dsl-scala-jdbc') {
 
         // libraries only needed for test
         testCompile "commons-dbcp:commons-dbcp:1.4"
-        testCompile "commons-pool:commons-dbcp:1.5.4"
+        testCompile "org.apache.derby:derby:10.9.1.0"
     }
 }
 

@@ -122,19 +122,6 @@ class DslUsageDemoTests {
 
   @Before
   def before = {
-    val activeMqTempDir = new File("activemq-data")
-    deleteDir(activeMqTempDir)
-
-    def deleteDir(directory: File): Unit = {
-      if (directory.exists) {
-        val children = directory.list();
-
-        if (children != null) {
-          for (child <- children) deleteDir(new File(directory, child))
-        }
-      }
-      directory.delete();
-    }
     connectionFactory = JmsDslTestUtils.localConnectionFactory
   }
   @After

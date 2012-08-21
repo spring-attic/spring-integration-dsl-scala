@@ -49,7 +49,7 @@ private[dsl] class JdbcInboundAdapterConfig(name: String = "$jdbc_in_" + UUID.ra
 
     val dataSourceName = targetDefinitionFunction(Some(this.dataSource))._1
     element.setAttribute("data-source", dataSourceName)
-    element.setAttribute("auto-startup", "true")
+    element.setAttribute("auto-startup", "false")
     pollerDefinitionFunction(this, poller, element)
     element
   }

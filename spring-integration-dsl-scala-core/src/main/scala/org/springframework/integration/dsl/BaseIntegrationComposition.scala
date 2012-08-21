@@ -20,6 +20,7 @@ import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.context.{ApplicationContextAware, ApplicationContext}
 import org.w3c.dom.Element
 import org.w3c.dom.Document
+import org.springframework.integration.dsl.IntegrationContext
 
 /**
  * @author Oleg Zhurakousky
@@ -214,7 +215,7 @@ private[dsl] class ListeningIntegrationComposition(parentComposition: BaseIntegr
    */
   def start(parentContext:ApplicationContext = null) = this.getContext(parentContext).start
   
-  def start = this.getContext(null)
+  def start = this.getContext(null).start
 
   def stop = this.getContext(null).stop
  

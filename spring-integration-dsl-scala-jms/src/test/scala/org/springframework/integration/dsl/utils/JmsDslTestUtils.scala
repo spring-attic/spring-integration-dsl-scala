@@ -23,32 +23,12 @@ object JmsDslTestUtils {
 
   def localConnectionFactory = {
     val taretConnectionFactory = new org.apache.activemq.ActiveMQConnectionFactory
-    taretConnectionFactory.setBrokerURL("vm://localhost")
+    taretConnectionFactory.setBrokerURL("vm://localhost?broker.persistent=false")
     val connectionFactory = new CachingConnectionFactory
     connectionFactory.setTargetConnectionFactory(taretConnectionFactory)
     connectionFactory.setSessionCacheSize(10)
     connectionFactory.setCacheProducers(false)
     connectionFactory.setCacheConsumers(false)
     connectionFactory
-  }
-
-  def before = {
-    val activeMqTempDir = new File("activemq-data")
-    deleteDir(activeMqTempDir)
-
-    def deleteDir(directory: File): Unit = {
-      if (directory.exists) {
-        val children = directory.list();
-
-        if (children != null) {
-          for (child <- children) deleteDir(new File(directory, child))
-        }
-      }
-      directory.delete();
-    }
-  }
-
-  def after = {
-    Thread.sleep(1000)
   }
 }

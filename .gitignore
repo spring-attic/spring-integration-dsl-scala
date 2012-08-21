@@ -27,3 +27,5 @@ out
 activemq-data
 vf.gf.*
 *.txt
+derby.log
+.springBeans

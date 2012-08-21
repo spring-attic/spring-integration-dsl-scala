@@ -26,7 +26,7 @@ private[dsl] object GemfireDsl {
     "http://www.springframework.org/schema/integration/gemfire/spring-integration-gemfire.xsd"
 }
 
-class GemfireRegion(val region: Region[_, _], private var cache: Cache) {
+class GemfireRegion(val region: Region[_, _], private val cache: Cache) {
 
   require(region != null, "'region' must be provided")
   require(cache != null, "'cache' must be provided")
