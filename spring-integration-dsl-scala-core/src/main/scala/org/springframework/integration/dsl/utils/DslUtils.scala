@@ -77,7 +77,7 @@ object DslUtils {
 
   private[dsl] def setAdditionalAttributes(element: Element, attributeMap: Map[String, Any], compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): Unit = {
     attributeMap.keys.foreach { key: String =>
-      val propertyValue: Any = attributeMap.get(key).elements.next()
+      val propertyValue: Any = attributeMap.get(key).productIterator.next()
       val attributeName = Conventions.propertyNameToAttributeName(key)
       val propertyValueToSet =
         if (propertyValue != null) {
