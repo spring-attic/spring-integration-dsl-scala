@@ -30,7 +30,7 @@ private[dsl] class SingleMessageScalaFunctionWrapper[I,F](val f: Function1[I, F]
       if (classOf[Iterable[I]].isAssignableFrom(iErasure)) {
         message match {
           case javaCollection: java.util.Collection[I] => {
-            f(JavaConversions.asIterable(javaCollection).asInstanceOf[I])
+            f(JavaConversions.collectionAsScalaIterable(javaCollection).asInstanceOf[I])
           }
           case _ => f(message)
         }

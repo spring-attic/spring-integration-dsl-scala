@@ -232,6 +232,6 @@ private[dsl] case class Aggregator(override val name: String = "$aggr_" + UUID.r
 private class ReleaseFunctionWrapper[T](val releaseFunction: Function1[Iterable[T], Boolean]) extends Function1[java.util.Collection[T], Boolean] {
 
   def apply(messages: java.util.Collection[T]): Boolean = {
-    releaseFunction(JavaConversions.asIterable[T](messages))
+    releaseFunction(JavaConversions.collectionAsScalaIterable[T](messages))
   }
 }
