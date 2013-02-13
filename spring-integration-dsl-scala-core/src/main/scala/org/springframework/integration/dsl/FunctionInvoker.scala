@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.springframework.integration.support.MessageBuilder
 import org.springframework.integration.Message
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 private final class FunctionInvoker(f: => Any) {
   private val logger = LogFactory.getLog(this.getClass());
@@ -137,7 +138,7 @@ private final class FunctionInvoker(f: => Any) {
         case message: Message[_] => {
           message.getPayload match {
             case m: Map[_, _] =>
-              val javaMap = JavaConversions.asJavaMap(m)
+              val javaMap = JavaConversions.mapAsJavaMap(m)
               MessageBuilder.withPayload(javaMap).copyHeaders(message.getHeaders).build()
             case it: Iterable[_] =>
               MessageBuilder.withPayload(JavaConversions.asJavaCollection(it)).
@@ -147,7 +148,7 @@ private final class FunctionInvoker(f: => Any) {
           }
         }
         case map: Map[_,_] =>
-          JavaConversions.asJavaMap(map)
+          JavaConversions.mapAsJavaMap(map)
         case it: Iterable[_] =>
           JavaConversions.asJavaCollection(it)
         case _ =>

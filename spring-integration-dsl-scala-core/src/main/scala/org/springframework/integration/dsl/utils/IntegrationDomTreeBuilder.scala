@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import org.springframework.integration.dsl.AbstractChannel
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 object IntegrationDomTreeBuilder {
   def toDocument[T <: BaseIntegrationComposition](integrationComposition: T): Document = {
@@ -154,8 +155,9 @@ class IntegrationDomTreeBuilder {
       case ims: InboundMessageSource =>
         this.processInboundMessageSource(ims, outputChannel)
 
-      case listComp: ListOfCompositions[BaseIntegrationComposition] =>
-        this.processListOfCompositions(listComp, composition.parentComposition, outputChannel)
+      case listComp: ListOfCompositions[_] =>
+        this.processListOfCompositions(listComp.asInstanceOf[ListOfCompositions[BaseIntegrationComposition]],
+          composition.parentComposition, outputChannel)
 
       case endpoint: SimpleEndpoint =>
         this.processEndpoint(endpoint, inputChannel, outputChannel, this.getPollerIfAvailable(composition))

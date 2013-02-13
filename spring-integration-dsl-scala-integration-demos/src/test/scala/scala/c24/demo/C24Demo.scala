@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import scala.c24.demo.java.C24Object
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 class C24Demo {
 
@@ -56,23 +57,23 @@ class C24Demo {
   val commonFlow =
       enrich.header{"VALID" -> {payload:C24Object => if (c24Validator.isValid(payload)) true else false}} --> // inject some header value based on valid or not
       route.onValueOfHeader("VALID")(
-        when(true) then
+        when(true) andThen
           transform { m: Message[C24Object] => println("Storing valid C24 Message in Gemfire"); Map("c24_" + m.getHeaders.getId -> m.getPayload) } -->
           region.store,
-        when(false) then
+        when(false) andThen
           handle { m: Message[C24Object] => println("Invalid C24 object: " + m) }
       )
 
 
   val processingFlow =
       route{payload:String => xpathParsingFunction(payload, "//transaction/@type")}(
-        when("swift") then
+        when("swift") andThen
           handle { payload: String => println("Routing as SWIFT transaction"); c24SwiftUnmarshallingTransformer parse payload } -->
           commonFlow,
-        when("fix") then
+        when("fix") andThen
           handle { payload: String => println("Routing as FIX transaction"); c24FixUnmarshallingTransformer parse payload } -->
           commonFlow,
-        when("iso20022") then
+        when("iso20022") andThen
           handle { payload: String => println("Routing as ISO20022 transaction"); c24Iso20022UnmarshallingTransformer parse payload} -->
           commonFlow
       )

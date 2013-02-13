@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,17 @@ import org.springframework.core.task.SimpleAsyncTaskExecutor
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 class MessageRouterTests {
 
   @Test
   def validateConditionComposition(){
 
-    val typeCondition = when(classOf[String]).then(Channel("hello"))
+    val typeCondition = when(classOf[String]).andThen(Channel("hello"))
     Assert.assertTrue(typeCondition.isInstanceOf[PayloadTypeCondition])
 
-    val valueCondition = when("foo").then(Channel("hello"))
+    val valueCondition = when("foo").andThen(Channel("hello"))
     Assert.assertTrue(valueCondition.isInstanceOf[ValueCondition])
   }
 
@@ -42,8 +43,8 @@ class MessageRouterTests {
 
     val routerA =  route.onPayloadType(
 
-      when(classOf[String]) then Channel("StringChannel"),
-      when(classOf[Int]) then Channel("IntChannel")
+      when(classOf[String]) andThen Channel("StringChannel"),
+      when(classOf[Int]) andThen Channel("IntChannel")
 
     ).additionalAttributes(name = "myRouter")
 
@@ -52,7 +53,7 @@ class MessageRouterTests {
     // infix notation
     route onPayloadType(
 
-      when(classOf[String]) then Channel("StringChannel")
+      when(classOf[String]) andThen Channel("StringChannel")
 
 
     ) additionalAttributes(name = "myRouter")
@@ -69,8 +70,8 @@ class MessageRouterTests {
     Channel("A") -->
     route.onValueOfHeader("someHeaderName") (
 
-      when("foo") then Channel("stringChannel"),
-      when("bar") then Channel("intChannel")
+      when("foo") andThen Channel("stringChannel"),
+      when("bar") andThen Channel("intChannel")
     )
   }
 
@@ -83,13 +84,13 @@ class MessageRouterTests {
     route("'someChannelName'")_ // if no condition
 
     route("'someChannelName'")(
-      when(1) then Channel("1"),
-      when(2) then Channel("2")
+      when(1) andThen Channel("1"),
+      when(2) andThen Channel("2")
     ) additionalAttributes(name = "myRouter")
 
     (route ("'someChannelName'"))(
-      when(1) then Channel("1"),
-      when(2) then Channel("2")
+      when(1) andThen Channel("1"),
+      when(2) andThen Channel("2")
     ) additionalAttributes(name = "myRouter")
 
 
@@ -102,8 +103,8 @@ class MessageRouterTests {
   def validateFunctionRouterConfig(){
 
     route{m:Message[String] => m.getHeaders.get("routeToChannel").asInstanceOf[String]}(
-      when(1) then Channel("1"),
-      when(2) then Channel("2")
+      when(1) andThen Channel("1"),
+      when(2) andThen Channel("2")
     ) additionalAttributes(name = "myRouter")
   }
 }
