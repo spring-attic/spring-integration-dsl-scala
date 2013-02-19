@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import scala.collection.JavaConversions
 
 /**
  * @author Oleg Zhurakousky
- *
+ * @author Soby Chacko
  */
 private[dsl] class GemfireOutboundConfig(name: String = "$gfe_out" + UUID.randomUUID().toString.substring(0, 8),
   target: Any,
@@ -53,7 +53,7 @@ private[dsl] class GemfireOutboundConfig(name: String = "$gfe_out" + UUID.random
     def transformerFunction = {
       payload:Any =>
         payload match {
-          case scalaMapPayload:Map[_,_] => JavaConversions.asJavaMap(scalaMapPayload)
+          case scalaMapPayload:Map[_,_] => JavaConversions.mapAsJavaMap(scalaMapPayload)
           case _ => payload
         }
     }

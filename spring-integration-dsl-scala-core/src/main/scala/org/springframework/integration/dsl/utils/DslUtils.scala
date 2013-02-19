@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.springframework.integration.dsl.Channel
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 object DslUtils {
 
@@ -49,7 +50,7 @@ object DslUtils {
         product match {
           case composition: BaseIntegrationComposition =>
             this.toProductTraversble(composition)
-          case lc: ListOfCompositions[BaseIntegrationComposition] =>
+          case lc: ListOfCompositions[_] =>
             List(for (element <- lc.compositions) yield this.toProductTraversble(element))
           case _ =>
             List(product.asInstanceOf[IntegrationComponent].toMapOfProperties)
@@ -77,7 +78,7 @@ object DslUtils {
 
   private[dsl] def setAdditionalAttributes(element: Element, attributeMap: Map[String, Any], compositionInitFunction: Function2[BaseIntegrationComposition, AbstractChannel, Unit]): Unit = {
     attributeMap.keys.foreach { key: String =>
-      val propertyValue: Any = attributeMap.get(key).elements.next()
+      val propertyValue: Any = attributeMap.get(key).iterator.next()
       val attributeName = Conventions.propertyNameToAttributeName(key)
       val propertyValueToSet =
         if (propertyValue != null) {
