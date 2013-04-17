@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,102 +25,103 @@ import org.springframework.integration.channel.DirectChannel
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 object http {
   def GET[T](httpUrl: String)(implicit m: scala.reflect.Manifest[T]) =
     new SendingEndpointComposition(null, new HttpOutboundGateway(target = httpUrl,
       httpMethod = HttpMethod.GET,
-      expectedResponseType = m.erasure)) {
+      expectedResponseType = m.runtimeClass)) {
       def where(name: String, requestTimeout: Int) =
         new SendingEndpointComposition(null, new HttpOutboundGateway(name = name,
           target = httpUrl,
           requestTimeout = requestTimeout,
           httpMethod = HttpMethod.GET,
-          expectedResponseType = m.erasure))
+          expectedResponseType = m.runtimeClass))
     }
 
   def GET[T](function: Function[_, String])(implicit m: scala.reflect.Manifest[T]) =
     new SendingEndpointComposition(null, new HttpOutboundGateway(target = function,
       httpMethod = HttpMethod.GET,
-      expectedResponseType = m.erasure)) {
+      expectedResponseType = m.runtimeClass)) {
       def where(name: String, requestTimeout: Int) =
         new SendingEndpointComposition(null, new HttpOutboundGateway(name = name,
           target = function,
           requestTimeout = requestTimeout,
           httpMethod = HttpMethod.GET,
-          expectedResponseType = m.erasure))
+          expectedResponseType = m.runtimeClass))
     }
 
   def POST[T](httpUrl: String)(implicit m: scala.reflect.Manifest[T]) =
     new SendingEndpointComposition(null, new HttpOutboundGateway(target = httpUrl,
       httpMethod = HttpMethod.POST,
-      expectedResponseType = m.erasure)) {
+      expectedResponseType = m.runtimeClass)) {
       def where(name: String, requestTimeout: Int) =
         new SendingEndpointComposition(null, new HttpOutboundGateway(name = name,
           target = httpUrl,
           requestTimeout = requestTimeout,
           httpMethod = HttpMethod.POST,
-          expectedResponseType = m.erasure))
+          expectedResponseType = m.runtimeClass))
     }
 
   def POST[T](function: Function[_, String])(implicit m: scala.reflect.Manifest[T]) =
     new SendingEndpointComposition(null, new HttpOutboundGateway(target = function,
       httpMethod = HttpMethod.POST,
-      expectedResponseType = m.erasure)) {
+      expectedResponseType = m.runtimeClass)) {
       def where(name: String, requestTimeout: Int) =
         new SendingEndpointComposition(null, new HttpOutboundGateway(name = name,
           target = function,
           requestTimeout = requestTimeout,
           httpMethod = HttpMethod.POST,
-          expectedResponseType = m.erasure))
+          expectedResponseType = m.runtimeClass))
     }
 
   def PUT[T](httpUrl: String)(implicit m: scala.reflect.Manifest[T]) =
     new SendingEndpointComposition(null, new HttpOutboundGateway(target = httpUrl,
       httpMethod = HttpMethod.PUT,
-      expectedResponseType = m.erasure)) {
+      expectedResponseType = m.runtimeClass)) {
       def where(name: String, requestTimeout: Int) =
         new SendingEndpointComposition(null, new HttpOutboundGateway(name = name,
           target = httpUrl,
           requestTimeout = requestTimeout,
           httpMethod = HttpMethod.PUT,
-          expectedResponseType = m.erasure))
+          expectedResponseType = m.runtimeClass))
     }
 
   def PUT[T](function: Function[_, String])(implicit m: scala.reflect.Manifest[T]) =
     new SendingEndpointComposition(null, new HttpOutboundGateway(target = function,
       httpMethod = HttpMethod.PUT,
-      expectedResponseType = m.erasure)) {
+      expectedResponseType = m.runtimeClass)) {
       def where(name: String, requestTimeout: Int) =
         new SendingEndpointComposition(null, new HttpOutboundGateway(name = name,
           target = function,
           requestTimeout = requestTimeout,
           httpMethod = HttpMethod.PUT,
-          expectedResponseType = m.erasure))
+          expectedResponseType = m.runtimeClass))
     }
 
   def DELETE[T](httpUrl: String)(implicit m: scala.reflect.Manifest[T]) =
     new SendingEndpointComposition(null, new HttpOutboundGateway(target = httpUrl,
       httpMethod = HttpMethod.DELETE,
-      expectedResponseType = m.erasure)) {
+      expectedResponseType = m.runtimeClass)) {
       def where(name: String, requestTimeout: Int) =
         new SendingEndpointComposition(null, new HttpOutboundGateway(name = name,
           target = httpUrl,
           requestTimeout = requestTimeout,
           httpMethod = HttpMethod.DELETE,
-          expectedResponseType = m.erasure))
+          expectedResponseType = m.runtimeClass))
     }
 
   def DELETE[T](function: Function[_, String])(implicit m: scala.reflect.Manifest[T]) =
     new SendingEndpointComposition(null, new HttpOutboundGateway(target = function,
       httpMethod = HttpMethod.DELETE,
-      expectedResponseType = m.erasure)) {
+      expectedResponseType = m.runtimeClass)) {
       def where(name: String, requestTimeout: Int) =
         new SendingEndpointComposition(null, new HttpOutboundGateway(name = name,
           target = function,
           requestTimeout = requestTimeout,
           httpMethod = HttpMethod.DELETE,
-          expectedResponseType = m.erasure))
+          expectedResponseType = m.runtimeClass))
     }
 }
 

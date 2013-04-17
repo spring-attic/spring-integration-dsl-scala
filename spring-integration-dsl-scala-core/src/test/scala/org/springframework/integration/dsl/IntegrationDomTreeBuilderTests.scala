@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 class IntegrationDomTreeBuilderTests {
 
@@ -471,9 +472,9 @@ class IntegrationDomTreeBuilderTests {
 
     val messageFlow =
       route.onValueOfHeader("someHeaderName")(
-        when("foo") then
+        when("foo") andThen
           handle { m: Message[_] => println("Header is 'foo': " + m) },
-        when("bar") then
+        when("bar") andThen
           handle { m: Message[_] => println("Header is 'bar': " + m) })
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
@@ -484,9 +485,9 @@ class IntegrationDomTreeBuilderTests {
 
     val messageFlow =
       route.onPayloadType(
-        when(classOf[String]) then
+        when(classOf[String]) andThen
           handle { m: Message[_] => println("Payload is String: " + m) },
-        when(classOf[Int]) then
+        when(classOf[Int]) andThen
           handle { m: Message[_] => println("Payload is Int: " + m) })
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
@@ -498,9 +499,9 @@ class IntegrationDomTreeBuilderTests {
     val messageFlow =
       route { m: Message[String] => m.getPayload }(
 
-        when("Hello") then
+        when("Hello") andThen
           handle { m: Message[_] => println("Payload is Hello: " + m) },
-        when("Bye") then
+        when("Bye") andThen
           handle { m: Message[_] => println("Payload is Bye: " + m) })
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)

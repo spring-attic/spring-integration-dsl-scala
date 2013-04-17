@@ -86,16 +86,16 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
 
     val headerValueTargetDefinitions: Map[String, _] =
       this.target match {
-        case tp: Tuple2[String, _] => {
+        case tp @ (t1: String, _)  => {
           val targetDefinition =
             tp._2 match {
               case fn: Function[_, _] => targetDefinitionFunction.apply(fn)
 
-              case s:Some[Function[_, _]] => "@" + targetDefinitionFunction.apply(s)._1
+              case s @ Some(_: Function[_, _]) => "@" + targetDefinitionFunction.apply(s)._1
 
               case _ => tp._2
             }
-          Map(tp._1 -> targetDefinition)
+          Map(t1 -> targetDefinition)
         }
         case wa: WrappedArray[Tuple2[String, _]] => {
           val result =
@@ -104,7 +104,7 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
                 element._2 match {
                   case fn: Function[_, _] => targetDefinitionFunction.apply(fn)
 
-                  case s:Some[Function[_, _]] => "@" + targetDefinitionFunction.apply(s)._1
+                  case s @ Some(_: Function[_, _]) => "@" + targetDefinitionFunction.apply(s)._1
 
                   case _ => element._2
                 }
@@ -132,9 +132,9 @@ private[dsl] class Enricher(name: String = "$enr_" + UUID.randomUUID().toString.
           val headerElement = document.createElement("int:header")
           headerElement.setAttribute("name", s._1)
           s._2 match {
-            case fn: Tuple2[String, String] => {
-              headerElement.setAttribute("ref", fn._1)
-              headerElement.setAttribute("method", fn._2)
+            case fn @  (t1: String, t2: String) => {
+              headerElement.setAttribute("ref", t1)
+              headerElement.setAttribute("method", t2)
             }
             case _ =>
               headerElement.setAttribute("value", s._2.toString())

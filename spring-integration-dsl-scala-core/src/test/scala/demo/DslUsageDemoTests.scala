@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import scala.collection.immutable.WrappedString
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 class DslUsageDemoTests {
 
@@ -222,11 +223,11 @@ class DslUsageDemoTests {
     val messageFlow =
       route.onValueOfHeader("someHeaderName")(
 
-        when(true) then
+        when(true) andThen
           handle { m: Message[_] => println("Header is 'true': " + m) },
-        when(false) then
+        when(false) andThen
           handle { m: Message[_] => println("Header is 'false': " + m) },
-        when("bar") then
+        when("bar") andThen
           handle { m: Message[_] => println("Header is 'bar': " + m) }
       ) -->
       handle { m: Message[_] => println("Header is not set: " + m) }
@@ -248,9 +249,9 @@ class DslUsageDemoTests {
     val messageFlow =
       route.onPayloadType(
 
-        when(classOf[String]) then
+        when(classOf[String]) andThen
           handle { m: Message[_] => println("Payload is String: " + m) },
-        when(classOf[Int]) then
+        when(classOf[Int]) andThen
           handle { m: Message[_] => println("Payload is Int: " + m) }) -->
         handle { m: Message[_] => println("Payload is: " + m.getPayload()) }
 
@@ -269,9 +270,9 @@ class DslUsageDemoTests {
     val messageFlow =
       route { m: Message[String] => m.getPayload }(
 
-        when("Hello") then
+        when("Hello") andThen
           handle { m: Message[_] => println("Payload is Hello: " + m) },
-        when("Bye") then
+        when("Bye") andThen
           handle { m: Message[_] => println("Payload is Bye: " + m) }) -->
         Channel("Hi") -->
         handle { m: Message[_] => println("Payload is: " + m.getPayload()) }

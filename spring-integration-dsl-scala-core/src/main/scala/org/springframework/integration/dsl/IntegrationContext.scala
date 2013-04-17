@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.springframework.context.support.GenericApplicationContext
 
 /**
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 private[dsl] class IntegrationContext(parentContext: ApplicationContext, composition: BaseIntegrationComposition) {
 
@@ -124,7 +125,7 @@ private[dsl] class IntegrationContext(parentContext: ApplicationContext, composi
 
   private def convertReply[T: Manifest](replyMessage: Message[_]): Any = {
 
-    if (manifest.erasure.isAssignableFrom(classOf[Message[_]]))
+    if (manifest.runtimeClass.isAssignableFrom(classOf[Message[_]]))
       replyMessage
     else {
       val reply = if (replyMessage == null) null else replyMessage.getPayload
