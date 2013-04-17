@@ -4,245 +4,175 @@ apply plugin: 'base'
 apply plugin: 'idea'
 
 allprojects {
-  group = 'org.springframework.integration'
+	group = 'org.springframework.integration'
 
- logging.captureStandardOutput LogLevel.DEBUG
- 
-  repositories {
-    mavenCentral()
-    maven { url 'http://repo.springsource.org/libs-milestone' }
-    maven { url 'https://repo.springsource.org/libs-snapshot'}
-    maven { url 'https://repo.springsource.org/libs-release'}
-    maven { url 'https://repo.springsource.org/libs-milestone'}
-  }
+	logging.captureStandardOutput LogLevel.DEBUG
+
+	repositories {
+		mavenCentral()
+		maven { url 'http://repo.springsource.org/libs-milestone' }
+		maven { url 'https://repo.springsource.org/libs-snapshot'}
+		maven { url 'https://repo.springsource.org/libs-release'}
+		maven { url 'https://repo.springsource.org/libs-milestone'}
+	}
 }
 
 subprojects { subproject ->
-   
-  apply plugin: 'scala'
-  apply plugin: 'maven'
-  apply plugin: 'eclipse'
-  apply plugin: 'idea'
 
-  sourceCompatibility=1.5
-  targetCompatibility=1.5
+	apply plugin: 'scala'
+	apply from:   "${rootProject.projectDir}/publish-maven.gradle"
+	apply plugin: 'eclipse'
+	apply plugin: 'idea'
 
-  junitVersion = '4.8.2'
-  log4jVersion = '1.2.12'
-  mockitoVersion = '1.9.0'
-  springintegrationVersion = '2.2.1.RELEASE'
-  springGemfireVersion = '1.1.0.RELEASE'
+	sourceCompatibility=1.6
+	targetCompatibility=1.6
 
-  compileScala {
-    compileScala.scalaCompileOptions.additionalParameters= ['-feature']
-    compileScala.scalaCompileOptions.additionalParameters= ['-language:existentials']
-  }
+	ext {
+		junitVersion = '4.8.2'
+		log4jVersion = '1.2.12'
+		mockitoVersion = '1.9.0'
+		springintegrationVersion = '2.2.1.RELEASE'
+		springGemfireVersion = '1.1.0.RELEASE'
+	}
 
-  compileTestScala {
-    compileTestScala.scalaCompileOptions.additionalParameters= ['-feature']
-    compileTestScala.scalaCompileOptions.additionalParameters= ['-language:reflectiveCalls']
-  }
+	compileScala {
+		compileScala.scalaCompileOptions.additionalParameters= ['-feature']
+		compileScala.scalaCompileOptions.additionalParameters= ['-language:existentials']
+	}
 
-  install {
-      repositories.mavenInstaller {
-          customizePom(pom, subproject)
-      }
-  }
+	compileTestScala {
+		compileTestScala.scalaCompileOptions.additionalParameters= ['-feature']
+		compileTestScala.scalaCompileOptions.additionalParameters= ['-language:reflectiveCalls']
+	}
 
-  task sourcesJar(type: Jar, dependsOn: scaladoc) {
-    classifier = 'sources'
-  }
+	task sourcesJar(type: Jar, dependsOn: scaladoc) {
+		classifier = 'sources'
+	}
 
-  artifacts {
-    archives sourcesJar
-  }
+	artifacts {
+		archives sourcesJar
+	}
 
-  // dependencies that are common across all java projects
-  dependencies {
+	// dependencies that are common across all java projects
+	dependencies {
 
-	// Libraries needed for scala api
-    compile 'org.scala-lang:scala-library:2.10.0'
+		// Libraries needed for scala api
+		compile 'org.scala-lang:scala-library:2.10.0'
 
-	// Libraries needed to run the scala tools
-    scalaTools 'org.scala-lang:scala-compiler:2.10.0'
-    scalaTools 'org.scala-lang:scala-library:2.10.0'
+		// Libraries needed to run the scala tools
+		scalaTools 'org.scala-lang:scala-compiler:2.10.0'
+		scalaTools 'org.scala-lang:scala-library:2.10.0'
 
-	compile 'org.scala-lang:scala-compiler:2.10.0'
-    compile 'org.scala-lang:scala-library:2.10.0'
+		compile 'org.scala-lang:scala-compiler:2.10.0'
+		compile 'org.scala-lang:scala-library:2.10.0'
 
-    testCompile "junit:junit-dep:$junitVersion"
-    testCompile "log4j:log4j:$log4jVersion"
-    testCompile "org.mockito:mockito-all:$mockitoVersion"
-    testCompile 'com.novocode:junit-interface:0.7'
-  }
+		testCompile "junit:junit-dep:$junitVersion"
+		testCompile "log4j:log4j:$log4jVersion"
+		testCompile "org.mockito:mockito-all:$mockitoVersion"
+		testCompile 'com.novocode:junit-interface:0.7'
+	}
 }
 
 project('spring-integration-dsl-scala-core') {
-  description = 'Spring Integration Scala Core'
-  dependencies {
-    // dependent libraries
-    compile "org.springframework.integration:spring-integration-core:$springintegrationVersion"
-    compile("org.codehaus.jackson:jackson-mapper-asl:1.9.2") { optional = true }
-  }
+	description = 'Spring Integration Scala Core'
+	dependencies {
+		// dependent libraries
+		compile "org.springframework.integration:spring-integration-core:$springintegrationVersion"
+		compile("org.codehaus.jackson:jackson-mapper-asl:1.9.2", optional)
+	}
 }
 
 project('spring-integration-dsl-scala-jms') {
-  description = 'Spring Integration Scala JMS'
-  dependencies {
-    compile project(":spring-integration-dsl-scala-core")
-    compile "org.springframework.integration:spring-integration-jms:$springintegrationVersion"
-    compile ("org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1") 
-  
-    // libraries only needed for test
-    testCompile ("org.apache.activemq:activemq-core:5.3.0") {
-         exclude group: 'org.springframework', module: 'spring-context'
-    }
-  }
+	description = 'Spring Integration Scala JMS'
+	dependencies {
+		compile project(":spring-integration-dsl-scala-core")
+		compile "org.springframework.integration:spring-integration-jms:$springintegrationVersion"
+		compile ("org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1")
+
+		// libraries only needed for test
+		testCompile ("org.apache.activemq:activemq-core:5.3.0") {
+			exclude group: 'org.springframework', module: 'spring-context'
+		}
+	}
 }
 
 project('spring-integration-dsl-scala-gemfire') {
-    description = 'Spring Integration Scala GemFire'
-    test {
-        forkEvery = 1
-        systemProperties['gemfire.disableShutdownHook'] = 'true'
-    }
-    dependencies {
-        compile project(":spring-integration-dsl-scala-core")
-        compile "org.springframework.integration:spring-integration-gemfire:$springintegrationVersion"
-    }
+	description = 'Spring Integration Scala GemFire'
+	test {
+		forkEvery = 1
+		systemProperties['gemfire.disableShutdownHook'] = 'true'
+	}
+	dependencies {
+		compile project(":spring-integration-dsl-scala-core")
+		compile "org.springframework.integration:spring-integration-gemfire:$springintegrationVersion"
+	}
 }
 
 project('spring-integration-dsl-scala-http') {
-  description = 'Spring Integration Scala HTTP'
-  dependencies {
-    compile project(":spring-integration-dsl-scala-core")
-    compile "org.springframework.integration:spring-integration-http:$springintegrationVersion"
-  }
+	description = 'Spring Integration Scala HTTP'
+	dependencies {
+		compile project(":spring-integration-dsl-scala-core")
+		compile "org.springframework.integration:spring-integration-http:$springintegrationVersion"
+	}
 }
 
 project('spring-integration-dsl-scala-file') {
-  description = 'Spring Integration Scala File'
-  dependencies {
-    compile project(":spring-integration-dsl-scala-core")
-    compile "org.springframework.integration:spring-integration-file:$springintegrationVersion"
-  }
+	description = 'Spring Integration Scala File'
+	dependencies {
+		compile project(":spring-integration-dsl-scala-core")
+		compile "org.springframework.integration:spring-integration-file:$springintegrationVersion"
+	}
 }
 
 project('spring-integration-dsl-scala-jdbc') {
-    description = 'Spring Integration Scala Jdbc'
-    dependencies {
-        compile project(":spring-integration-dsl-scala-core")
-        compile "org.springframework.integration:spring-integration-jdbc:$springintegrationVersion"
+	description = 'Spring Integration Scala Jdbc'
+	dependencies {
+		compile project(":spring-integration-dsl-scala-core")
+		compile "org.springframework.integration:spring-integration-jdbc:$springintegrationVersion"
 
-        // libraries only needed for test
-        testCompile "commons-dbcp:commons-dbcp:1.4"
-        testCompile "org.apache.derby:derby:10.9.1.0"
-    }
+		// libraries only needed for test
+		testCompile "commons-dbcp:commons-dbcp:1.4"
+		testCompile "org.apache.derby:derby:10.9.1.0"
+	}
 }
 
 project('spring-integration-dsl-scala-ftp') {
-  description = 'Spring Integration Scala FTP'
-  dependencies {
-    compile project(":spring-integration-dsl-scala-core")
-    compile "org.springframework.integration:spring-integration-ftp:$springintegrationVersion"
-  }
+	description = 'Spring Integration Scala FTP'
+	dependencies {
+		compile project(":spring-integration-dsl-scala-core")
+		compile "org.springframework.integration:spring-integration-ftp:$springintegrationVersion"
+	}
 }
 
 project('spring-integration-dsl-scala-sftp') {
-  description = 'Spring Integration Scala SFTP'
-  dependencies {
-    compile project(":spring-integration-dsl-scala-core")
-    compile "org.springframework.integration:spring-integration-sftp:$springintegrationVersion"
-  }
+	description = 'Spring Integration Scala SFTP'
+	dependencies {
+		compile project(":spring-integration-dsl-scala-core")
+		compile "org.springframework.integration:spring-integration-sftp:$springintegrationVersion"
+	}
 }
 
 project('spring-integration-dsl-scala-integration-demos') {
-  description = 'Spring Integration Scala Integration Demos'
-  dependencies {
-    compile project(":spring-integration-dsl-scala-core")
-    compile project(":spring-integration-dsl-scala-jms")
-    compile project(":spring-integration-dsl-scala-gemfire")
-    compile project(":spring-integration-dsl-scala-file")
-    compile project(":spring-integration-dsl-scala-jdbc")
-    compile project(":spring-integration-dsl-scala-http")
-	compile ("org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1") 
-  
-    // libraries only needed for test
-    testCompile ("org.apache.activemq:activemq-core:5.3.0") {
-         exclude group: 'org.springframework', module: 'spring-context'
-    }
-  }
-}
+	description = 'Spring Integration Scala Integration Demos'
+	dependencies {
+		compile project(":spring-integration-dsl-scala-core")
+		compile project(":spring-integration-dsl-scala-jms")
+		compile project(":spring-integration-dsl-scala-gemfire")
+		compile project(":spring-integration-dsl-scala-file")
+		compile project(":spring-integration-dsl-scala-jdbc")
+		compile project(":spring-integration-dsl-scala-http")
+		compile ("org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1")
 
+		// libraries only needed for test
+		testCompile ("org.apache.activemq:activemq-core:5.3.0") {
+			exclude group: 'org.springframework', module: 'spring-context'
+		}
+	}
+}
 
 task wrapper(type: Wrapper) {
-    description = 'Generates gradlew[.bat] scripts'
-    gradleVersion = '1.0-milestone-8'
-    distributionUrl = 'http://repo.gradle.org/gradle/distributions-snapshots/gradle-1.0-milestone-8-20120112000036+0100-bin.zip'
-    jarFile = '.wrapper/gradle-wrapper.jar'
-}
-
-def customizePom(def pom, def gradleProject) {
-    pom.whenConfigured { generatedPom ->
-        // respect 'optional' and 'provided' dependencies
-        def deps = gradleProject.configurations.runtime.allDependencies
-        def optionalDeps = deps.findAll { dep ->
-            dep.asDynamicObject.hasProperty('optional') && dep.optional
-        }
-        def providedDeps = deps.findAll { dep ->
-            dep.asDynamicObject.hasProperty('provided') && dep.provided
-        }
-        generatedPom.dependencies.each { mavenDep ->
-            mavenDep.optional = optionalDeps.any { optionalDep ->
-                optionalDep.group == mavenDep.groupId &&
-                        optionalDep.name == mavenDep.artifactId &&
-                        optionalDep.version == mavenDep.version
-            }
-            boolean isProvided = providedDeps.any { providedDep ->
-                providedDep.group == mavenDep.groupId &&
-                        providedDep.name == mavenDep.artifactId &&
-                        providedDep.version == mavenDep.version
-            }
-            if (isProvided) {
-                mavenDep.scope = 'provided'
-            }
-        }
-
-        // eliminate test-scoped dependencies (no need in maven central poms)
-        generatedPom.dependencies.removeAll { dep ->
-            dep.scope == 'test'
-        }
-
-        // add all items necessary for maven central publication
-        generatedPom.project {
-            name = gradleProject.description
-            description = gradleProject.description
-            url = 'https://github.com/SpringSource/spring-integration-scala'
-            organization {
-                name = 'SpringSource'
-                url = 'http://springsource.org'
-            }
-            licenses {
-                license {
-                    name 'The Apache Software License, Version 2.0'
-                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    distribution 'repo'
-                }
-            }
-            scm {
-                url = 'https://github.com/SpringSource/spring-integration-dsl-scala'
-                connection = 'scm:git:git://github.com/SpringSource/spring-integration-dsl-scala'
-                developerConnection = 'scm:git:git://github.com/SpringSource/spring-integration-dsl-scala'
-            }
-            developers {
-                developer {
-                    id = 'olegz'
-                    name = 'Oleg Zhurakousky'
-                    email = 'ozhurakousky@vmware.com'
-                }
-            }
-        }
-    }
+	description = 'Generates gradlew[.bat] scripts'
+	gradleVersion = '1.5'
 }
 
 task scaladoc(type: org.gradle.api.tasks.scala.ScalaDoc) {
