@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ import scala.collection.JavaConversions
 /**
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 private[dsl] class SingleMessageScalaFunctionWrapper[I,F](val f: Function1[I, F])(implicit manifestI:Manifest[I]) extends Function1[I, F] {
 
-  val iErasure = manifestI.erasure
+  val iErasure = manifestI.runtimeClass
 
   def apply(message: I):F = {
 
@@ -30,7 +31,7 @@ private[dsl] class SingleMessageScalaFunctionWrapper[I,F](val f: Function1[I, F]
       if (classOf[Iterable[I]].isAssignableFrom(iErasure)) {
         message match {
           case javaCollection: java.util.Collection[I] => {
-            f(JavaConversions.asIterable(javaCollection).asInstanceOf[I])
+            f(JavaConversions.collectionAsScalaIterable(javaCollection).asInstanceOf[I])
           }
           case _ => f(message)
         }

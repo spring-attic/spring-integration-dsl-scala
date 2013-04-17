@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.springframework.integration.Message
  * This class provides DSL and related components to support "Message Aggregator" pattern
  *
  * @author Oleg Zhurakousky
+ * @author Soby Chacko
  */
 object aggregate {
 
@@ -232,6 +233,6 @@ private[dsl] case class Aggregator(override val name: String = "$aggr_" + UUID.r
 private class ReleaseFunctionWrapper[T](val releaseFunction: Function1[Iterable[T], Boolean]) extends Function1[java.util.Collection[T], Boolean] {
 
   def apply(messages: java.util.Collection[T]): Boolean = {
-    releaseFunction(JavaConversions.asIterable[T](messages))
+    releaseFunction(JavaConversions.collectionAsScalaIterable[T](messages))
   }
 }
