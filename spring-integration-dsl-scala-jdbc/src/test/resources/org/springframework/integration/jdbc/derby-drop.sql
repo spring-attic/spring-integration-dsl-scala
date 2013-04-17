@@ -1,2 +1,2 @@
-drop table item true;
-drop table copy true;
+drop table item;
+drop table copy;

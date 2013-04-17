@@ -34,19 +34,19 @@ class DslUsageDemoTests {
   private final val MAX_PROCESSING_TIME = 10000
 
   val logger = LogFactory.getLog(this.getClass())
- 
+
   var message: Message[_] = null
-  
-  var dataSource:DataSource = null; 
-  
+
+  var dataSource:DataSource = null;
+
   var jdbcTemplate:JdbcTemplate = null
-  
+
   var context:ClassPathXmlApplicationContext = null
 
-  
+
   @Test(timeout = MAX_PROCESSING_TIME)
   def jdbcInboundAdapterTest = {
-    
+
     var jdbc = new Jdbc(dataSource)
 
     val inboundFlow =
@@ -69,7 +69,7 @@ class DslUsageDemoTests {
 
   @Test(timeout = MAX_PROCESSING_TIME)
   def jdbcInboundAdapterWithExplicitChannelTest = {
-    
+
     var jdbc = new Jdbc(dataSource)
 
     val inboundFlow =
@@ -96,7 +96,7 @@ class DslUsageDemoTests {
   def jdbcInboundAdapterWithFixedRateTest = {
 
     var jdbc = new Jdbc(dataSource)
-    
+
     val inboundFlow =
       jdbc.poll("select * from item").atFixedRate(10) -->
         Channel("foo") -->
@@ -120,9 +120,9 @@ class DslUsageDemoTests {
 //  @Test(timeout = MAX_PROCESSING_TIME)
 //  def jdbcOutboundAdapterWithReply = {
 //    val jdbc = new Jdbc(dataSource)
-//    
+//
 //    val query = "insert into item (id, status) values (3, 4)"
-//      
+//
 //    val inboundFlow = jdbc.poll("select * from item").withFixedDelay(10) -->
 //      handle {
 //        m: Message[_] => this.message = m
@@ -141,16 +141,16 @@ class DslUsageDemoTests {
 //
 //    inboundFlow stop
 //  }
-  
+
   @Before
   def setUp = {
     context = new ClassPathXmlApplicationContext("derby-config.xml")
     dataSource = context.getBean(classOf[DataSource])
-    jdbcTemplate = new JdbcTemplate(dataSource);   
+    jdbcTemplate = new JdbcTemplate(dataSource);
   }
-  
+
   @After
   def teardown = {
-   context.destroy()
+   context.close();
   }
 }
