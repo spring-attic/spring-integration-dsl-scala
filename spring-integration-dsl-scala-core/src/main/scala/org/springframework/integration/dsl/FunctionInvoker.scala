@@ -69,6 +69,15 @@ private final class FunctionInvoker(f: => Any) {
   /**
    *
    */
+  def invokeAndReceive() = {
+    val result = this.invokeMethod[Object]
+    result
+  }
+
+
+  /**
+   *
+   */
   def sendPayloadAndHeadersAndReceive(payload: Object, headers: java.util.Map[String, _]) = {
     val result = this.invokeMethod[Object](payload, headers)
     result
@@ -129,6 +138,12 @@ private final class FunctionInvoker(f: => Any) {
     this.normalizeResult[T](method.invoke(f, value, headers.toMap))
   }
 
+  private def invokeMethod[T](): T = {
+      var method = f.getClass.getDeclaredMethod(APPLY_METHOD)
+      method.setAccessible(true)
+      this.normalizeResult[T](method.invoke(f))
+    }
+
   /*
    *
    */
@@ -177,7 +192,10 @@ private final class FunctionInvoker(f: => Any) {
           "sendPayload"
         else
           "sendPayloadAndHeaders"
-      } else {
+      } else if(parameter0 == null && parameter1 == null){
+        "invokeAndReceive"
+      }
+      else {
         if (classOf[Message[_]].isAssignableFrom(parameter0) && parameter1 == null)
           "sendMessageAndReceive"
         else if (parameter0 != null && parameter1 == null)

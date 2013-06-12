@@ -35,6 +35,14 @@ class IntegrationDomTreeBuilderTests {
 
   @Test
   def generateDirectChannel = {
+
+//    val fl = inbound.poll{() => java.lang.System.currentTimeMillis}.withFixedDelay(2000).withMaxMessagesPerPoll(2) -->
+//                handle {s :Long => println(s)}
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(2000).withMaxMessagesPerPoll(2) -->
+		                handle {s :Long => println(s)}
+    fl.start
+    Thread.sleep(60000)
     val messageFlow = Channel("foo")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)
