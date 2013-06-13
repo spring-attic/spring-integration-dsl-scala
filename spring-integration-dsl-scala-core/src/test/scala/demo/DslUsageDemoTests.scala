@@ -425,9 +425,9 @@ class DslUsageDemoTests {
 		val fl = inbound.poll {
 			() => java.lang.System.currentTimeMillis
 		}.withFixedDelay(100).withMaxMessagesPerPoll(2).withTaskExecutor(new SyncTaskExecutor) -->
-			handle {
-				s: Long => println(s)
-			}
+			Channel("A") --> handle {
+			s: Long => println(s)
+		}
 
 		fl.start
 		Thread.sleep(500)
@@ -443,6 +443,18 @@ class DslUsageDemoTests {
 			handle {
 				s: Long => println(s)
 			}
+		fl.start
+		Thread.sleep(400)
+
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterToLoggingChannel = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> loggingChannel("logger")
+
 		fl.start
 		Thread.sleep(400)
 
