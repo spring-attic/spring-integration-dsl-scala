@@ -77,16 +77,16 @@ object sftp {
     }
 
     def send(directory: String) =
-      new SendingEndpointComposition(null, new SftpOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = null, sessionFactory = sessionFactory)) with WithOutboundAttributes {
+      new SendingEndpointComposition(null, new SftpOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = null, sessionFactory = sessionFactory)) with WithSftpOutboundAttributes {
 
         def asFileName(fileNameGeneratioinFunction: _ => String) =
-          new SendingEndpointComposition(null, new SftpOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction, sessionFactory = sessionFactory)) with WithOutboundAttributes
+          new SendingEndpointComposition(null, new SftpOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction, sessionFactory = sessionFactory)) with WithSftpOutboundAttributes
       }
 
-    def send(directoryNameGeneratioinFunction: _ => String) = new SendingEndpointComposition(null, new SftpOutboundGatewayConfig(target = directoryNameGeneratioinFunction, oneway = true, fileNameGeneratioinFunction = null, sessionFactory = sessionFactory))  with WithOutboundAttributes {
+    def send(directoryNameGeneratioinFunction: _ => String) = new SendingEndpointComposition(null, new SftpOutboundGatewayConfig(target = directoryNameGeneratioinFunction, oneway = true, fileNameGeneratioinFunction = null, sessionFactory = sessionFactory))  with WithSftpOutboundAttributes {
 
       def asFileName(fileNameGeneratioinFunction: _ => String) =
-        new SendingEndpointComposition(null, new SftpOutboundGatewayConfig(target = directoryNameGeneratioinFunction, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction, sessionFactory = sessionFactory)) with WithOutboundAttributes
+        new SendingEndpointComposition(null, new SftpOutboundGatewayConfig(target = directoryNameGeneratioinFunction, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction, sessionFactory = sessionFactory)) with WithSftpOutboundAttributes
     }
   }
 
@@ -110,7 +110,7 @@ private[dsl] trait WithInboundAttributes {
   }
 }
 
-private[dsl] trait WithOutboundAttributes {
+private[dsl] trait WithSftpOutboundAttributes {
 
   def additionalAttributes(name: String = null,
     autoCreateDirectory: java.lang.Boolean = null,

@@ -34,41 +34,41 @@ object ftp {
 
       def into(localDirectory: String) = new {
         def atFixedRate(rate: Int) =
-          new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = new Poller(fixedRate = rate), sessionFactory = sessionFactory)) with WithInboundAttributes {
+          new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = new Poller(fixedRate = rate), sessionFactory = sessionFactory)) with WithFtpInboundAttributes {
 
             def withMaxMessagesPerPoll(maxMessagesPerPoll: Int) =
-              new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = new Poller(fixedRate = rate, maxMessagesPerPoll = maxMessagesPerPoll), sessionFactory = sessionFactory)) with WithInboundAttributes {
+              new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = new Poller(fixedRate = rate, maxMessagesPerPoll = maxMessagesPerPoll), sessionFactory = sessionFactory)) with WithFtpInboundAttributes {
 
                 def withTaskExecutor(taskExecutor: Executor) = {
                   val poller = new Poller(fixedRate = rate, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor)
-                  new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = poller, sessionFactory = sessionFactory)) with WithInboundAttributes
+                  new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = poller, sessionFactory = sessionFactory)) with WithFtpInboundAttributes
                 }
 
               }
 
             def withTaskExecutor(taskExecutor: Executor) = {
               val poller = new Poller(fixedRate = rate, taskExecutor = taskExecutor)
-              new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = poller, sessionFactory = sessionFactory)) with WithInboundAttributes
+              new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = poller, sessionFactory = sessionFactory)) with WithFtpInboundAttributes
             }
 
           }
 
         def withFixedDelay(delay: Int) =
-          new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = new Poller(fixedDelay = delay), sessionFactory = sessionFactory)) with WithInboundAttributes {
+          new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = new Poller(fixedDelay = delay), sessionFactory = sessionFactory)) with WithFtpInboundAttributes {
 
             def withMaxMessagesPerPoll(maxMessagesPerPoll: Int) =
-              new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory,localDirectory = localDirectory,  poller = new Poller(fixedDelay = delay, maxMessagesPerPoll = maxMessagesPerPoll), sessionFactory = sessionFactory)) with WithInboundAttributes {
+              new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory,localDirectory = localDirectory,  poller = new Poller(fixedDelay = delay, maxMessagesPerPoll = maxMessagesPerPoll), sessionFactory = sessionFactory)) with WithFtpInboundAttributes {
 
                 def withTaskExecutor(taskExecutor: Executor) = {
                   val poller = new Poller(fixedDelay = delay, maxMessagesPerPoll = maxMessagesPerPoll, taskExecutor = taskExecutor)
-                  new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = poller, sessionFactory = sessionFactory)) with WithInboundAttributes
+                  new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = poller, sessionFactory = sessionFactory)) with WithFtpInboundAttributes
                 }
 
               }
 
             def withTaskExecutor(taskExecutor: Executor) = {
               val poller = new Poller(fixedDelay = delay, taskExecutor = taskExecutor)
-              new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = poller, sessionFactory = sessionFactory)) with WithInboundAttributes
+              new ListeningIntegrationComposition(null, new FtpInboundAdapterConfig(target = remoteDirectory, localDirectory = localDirectory, poller = poller, sessionFactory = sessionFactory)) with WithFtpInboundAttributes
             }
 
           }
@@ -78,22 +78,22 @@ object ftp {
     }
 
     def send(directory: String) =
-      new SendingEndpointComposition(null, new FtpOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = null, sessionFactory = sessionFactory)) with WithOutboundAttributes {
+      new SendingEndpointComposition(null, new FtpOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = null, sessionFactory = sessionFactory)) with WithFtpOutboundAttributes {
 
         def asFileName(fileNameGeneratioinFunction: _ => String) =
-          new SendingEndpointComposition(null, new FtpOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction, sessionFactory = sessionFactory)) with WithOutboundAttributes
+          new SendingEndpointComposition(null, new FtpOutboundGatewayConfig(target = directory, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction, sessionFactory = sessionFactory)) with WithFtpOutboundAttributes
       }
 
-    def send(directoryNameGeneratioinFunction: _ => String) = new SendingEndpointComposition(null, new FtpOutboundGatewayConfig(target = directoryNameGeneratioinFunction, oneway = true, fileNameGeneratioinFunction = null, sessionFactory = sessionFactory))  with WithOutboundAttributes {
+    def send(directoryNameGeneratioinFunction: _ => String) = new SendingEndpointComposition(null, new FtpOutboundGatewayConfig(target = directoryNameGeneratioinFunction, oneway = true, fileNameGeneratioinFunction = null, sessionFactory = sessionFactory))  with WithFtpOutboundAttributes {
 
       def asFileName(fileNameGeneratioinFunction: _ => String) =
-        new SendingEndpointComposition(null, new FtpOutboundGatewayConfig(target = directoryNameGeneratioinFunction, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction, sessionFactory = sessionFactory)) with WithOutboundAttributes
+        new SendingEndpointComposition(null, new FtpOutboundGatewayConfig(target = directoryNameGeneratioinFunction, oneway = true, fileNameGeneratioinFunction = fileNameGeneratioinFunction, sessionFactory = sessionFactory)) with WithFtpOutboundAttributes
     }
   }
 
 }
 
-private[dsl] trait WithInboundAttributes {
+private[dsl] trait WithFtpInboundAttributes {
 
   def additionalAttributes(name: String = null,
     localDirectory: String = null,
@@ -111,7 +111,7 @@ private[dsl] trait WithInboundAttributes {
   }
 }
 
-private[dsl] trait WithOutboundAttributes {
+private[dsl] trait WithFtpOutboundAttributes {
 
   def additionalAttributes(name: String = null,
     autoCreateDirectory: java.lang.Boolean = null,
