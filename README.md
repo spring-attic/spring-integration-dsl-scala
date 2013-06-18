@@ -6,7 +6,7 @@ For more information please refer to our [WIKI page] (https://github.com/SpringS
 
 ## Api Documentation
 
-* [ScalaDoc](http://static.springsource.org/spring-integration-dsl-scala/docs/current-SNAPSHOT)
+* [ScalaDoc](http://static.springsource.org/spring-integration-dsl-scala/docs/current-SNAPSHOT/api)
 
 ## Getting support
 
