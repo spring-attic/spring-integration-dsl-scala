@@ -1,4 +1,5 @@
-## Spring Integration Scala DSL
+Spring Integration Scala DSL
+============================
 
 **The Spring Integration Scala DSL** is a [Scala][]-based [EIP][] DSL that sits on top of the Java-based [Spring Integration][] framework.
 
