@@ -14,7 +14,7 @@ object loggingChannel {
 }
 
 private[dsl] class LoggingChannelAdapterEndpoint(name: String = "$logging_ch_" + UUID.randomUUID().toString.substring(0, 8),
-																							 loggerName: String) extends SimpleEndpoint(name, null) with OutboundAdapterEndpoint {
+																							 val loggerName: String) extends SimpleEndpoint(name, null) with OutboundAdapterEndpoint {
 
 	override def build(document: Document = null,
 										 targetDefinitionFunction: Function1[Any, Tuple2[String, String]],
