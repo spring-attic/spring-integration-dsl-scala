@@ -35,6 +35,7 @@ class IntegrationDomTreeBuilderTests {
 
   @Test
   def generateDirectChannel = {
+
     val messageFlow = Channel("foo")
 
     val document = IntegrationDomTreeBuilder.toDocument(messageFlow)

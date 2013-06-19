@@ -21,7 +21,7 @@ import org.springframework.expression.spel.SpelParserConfiguration
 import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.integration.dsl._
 import org.springframework.integration.Message
-import scala.collection.immutable.WrappedString
+import org.springframework.core.task.SyncTaskExecutor
 
 /**
  * @author Oleg Zhurakousky
@@ -152,7 +152,7 @@ class DslUsageDemoTests {
   def headerEnricherWithFunctionAsValue = {
     val enricherB = enrich.header("hello" -> Some({ m: Message[String] => m.getPayload().toUpperCase() })) --> handle { m: Message[_] => println(m) }
     enricherB.send("Hello")
-    println("done")
+		println("done")
   }
 
   @Test
@@ -283,6 +283,65 @@ class DslUsageDemoTests {
 
     messageFlow.send("Hi")
 
-    println("done")
+		println("done")
   }
+
+	@Test
+	def inboundChannelAdapterWithExpressionWithFixedDelay = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(500)
+								.withMaxMessagesPerPoll(2) -->
+								handle { s: Long => println(s) }
+
+		fl.start
+		Thread.sleep(1000)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterWithExpressionWithFixedRate = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").atFixedRate(100)
+										.withMaxMessagesPerPoll(2) -->
+										handle { s: Long => println(s) }
+
+		fl.start
+		Thread.sleep(500)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterWithFunctionDefinition = {
+
+		val fl = inbound.poll { () => java.lang.System.currentTimeMillis }.withFixedDelay(500)
+										.withMaxMessagesPerPoll(2) -->
+										handle { s: Long => println(s) }
+
+		fl.start
+		Thread.sleep(1000)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterWithFunctionDefinitionAndCustomTaskExecutor = {
+
+		val fl = inbound.poll { () => java.lang.System.currentTimeMillis }.withFixedDelay(100)
+									.withMaxMessagesPerPoll(2).withTaskExecutor(new SyncTaskExecutor) -->
+									handle { s: Long => println(s) }
+
+		fl.start
+		Thread.sleep(500)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterWithExpressionAndCustomTaskExecutor = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+										.withMaxMessagesPerPoll(2).withTaskExecutor(new SyncTaskExecutor) -->
+										handle { s: Long => println(s) }
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
 }
