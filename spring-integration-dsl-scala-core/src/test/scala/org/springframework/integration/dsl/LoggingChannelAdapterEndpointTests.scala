@@ -15,6 +15,7 @@
  */
 package org.springframework.integration.dsl
 
+import LogLevel._
 import org.junit.{Test, Assert}
 
 /**
@@ -25,12 +26,96 @@ class LoggingChannelAdapterEndpointTests {
 	@Test
 	def basicLoggingChannelAdpater() {
 
-		val lc = loggingChannel("logger")
+		val lc = log("logger")
 
 		Assert.assertTrue(lc.isInstanceOf[SendingEndpointComposition])
-		Assert.assertTrue(lc.target.isInstanceOf[LoggingChannelAdapterEndpoint])
+		Assert.assertTrue(lc.target.isInstanceOf[Logger])
 
-		val lcae = lc.target.asInstanceOf[LoggingChannelAdapterEndpoint]
+		val lcae = lc.target.asInstanceOf[Logger]
 		Assert.assertEquals(lcae.loggerName, "logger")
+		Assert.assertFalse(lcae.logFullMessage)
+		Assert.assertEquals(lcae.logLevel, INFO)
+	}
+
+	@Test
+	def basicLoggingChannelAdpaterWithoutExplictLoggerName() {
+
+		val lc = log.withFullMessage(true).withLogLevel(TRACE)
+
+		Assert.assertTrue(lc.isInstanceOf[SendingEndpointComposition])
+		Assert.assertTrue(lc.target.isInstanceOf[Logger])
+
+		val lcae = lc.target.asInstanceOf[Logger]
+		Assert.assertNull(lcae.loggerName)
+		Assert.assertTrue(lcae.logFullMessage)
+		Assert.assertEquals(lcae.logLevel, TRACE)
+	}
+
+	@Test
+	def loggingChannelAdpaterWithFullLogMessage() {
+
+		val lc = log("logger").withFullMessage(true)
+
+		Assert.assertTrue(lc.isInstanceOf[SendingEndpointComposition])
+		Assert.assertTrue(lc.target.isInstanceOf[Logger])
+
+		val lcae = lc.target.asInstanceOf[Logger]
+		Assert.assertEquals(lcae.loggerName, "logger")
+		Assert.assertTrue(lcae.logFullMessage)
+	}
+
+	@Test
+	def loggingChannelAdpaterWithFullLogMessageWithLogLevel() {
+
+		val lc = log("logger").withFullMessage(true).withLogLevel(DEBUG)
+
+		Assert.assertTrue(lc.isInstanceOf[SendingEndpointComposition])
+		Assert.assertTrue(lc.target.isInstanceOf[Logger])
+
+		val lcae = lc.target.asInstanceOf[Logger]
+		Assert.assertEquals(lcae.loggerName, "logger")
+		Assert.assertTrue(lcae.logFullMessage)
+		Assert.assertEquals(lcae.logLevel, DEBUG)
+	}
+
+	@Test
+	def loggingChannelAdpaterWithLogLevel() {
+
+		val lc = log("logger").withLogLevel(DEBUG)
+
+		Assert.assertTrue(lc.isInstanceOf[SendingEndpointComposition])
+		Assert.assertTrue(lc.target.isInstanceOf[Logger])
+
+		val lcae = lc.target.asInstanceOf[Logger]
+		Assert.assertEquals(lcae.loggerName, "logger")
+		Assert.assertEquals(lcae.logLevel, DEBUG)
+	}
+
+	@Test
+	def loggingChannelAdpaterWithLogLevelWithFullLogMessage() {
+
+		val lc = log("logger").withLogLevel(DEBUG).withFullMessage(true)
+
+		Assert.assertTrue(lc.isInstanceOf[SendingEndpointComposition])
+		Assert.assertTrue(lc.target.isInstanceOf[Logger])
+
+		val lcae = lc.target.asInstanceOf[Logger]
+		Assert.assertEquals(lcae.loggerName, "logger")
+		Assert.assertTrue(lcae.logFullMessage)
+		Assert.assertEquals(lcae.logLevel, DEBUG)
+	}
+
+	@Test
+	def loggingChannelAdpaterWithExpressionAndLogLevel() {
+
+		val lc = log("logger").withExpression("hello").withLogLevel(DEBUG)
+
+		Assert.assertTrue(lc.isInstanceOf[SendingEndpointComposition])
+		Assert.assertTrue(lc.target.isInstanceOf[Logger])
+
+		val lcae = lc.target.asInstanceOf[Logger]
+		Assert.assertEquals(lcae.loggerName, "logger")
+		Assert.assertEquals(lcae.expression, "hello")
+		Assert.assertEquals(lcae.logLevel, DEBUG)
 	}
 }

@@ -19,6 +19,7 @@ import org.junit.Test
 import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.SpelParserConfiguration
 import org.springframework.integration.dsl.utils.DslUtils
+import org.springframework.integration.dsl.LogLevel._
 import org.springframework.integration.dsl._
 import org.springframework.integration.Message
 import org.springframework.core.task.SyncTaskExecutor
@@ -347,14 +348,104 @@ class DslUsageDemoTests {
 	}
 
 	@Test
-		def inboundChannelAdapterToLoggingChannel = {
+	def inboundChannelAdapterToLoggingChannelWithLogLevelWithFullMessage = {
 
-			val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
-				.withMaxMessagesPerPoll(2) --> loggingChannel("logger")
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> log("logger").withLogLevel(INFO).withFullMessage(true)
 
-			fl.start
-			Thread.sleep(400)
-			println("done")
-	  }
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
 
+	@Test
+	def inboundChannelAdapterToLoggingChannelWithFullMessageWithLogLevel = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> log("logger").withFullMessage(true).withLogLevel(INFO)
+
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterToLoggingChannelWithDefaults = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> log()
+
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterToLoggingChannelWithoutExplicityLoggerName = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> log.withFullMessage(true).withLogLevel(INFO)
+
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterToLoggingChannelWithSpelExpression = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> log("logger").withExpression("'Value of header id: '.concat(headers.id.toString())")
+
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterTologWithExpressionWithLogLevel = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> log("logger").withExpression("'Value of header id: '.concat(headers.id.toString())")
+																			.withLogLevel(INFO)
+
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterTologWithLogLevelWithExpression = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> log("logger").withLogLevel(INFO)
+																		.withExpression("'Value of header id: '.concat(headers.id.toString())")
+
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterTologWithoutNameWithLogLevelWithExpression = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> log.withLogLevel(INFO).withExpression("'Value of header id: '.concat(headers.id.toString())")
+
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
+
+	@Test
+	def inboundChannelAdapterTologWithoutNameWithExpressionWithLogLevel = {
+
+		val fl = inbound.poll("T(java.lang.System).currentTimeMillis()").withFixedDelay(100)
+			.withMaxMessagesPerPoll(2) --> log.withExpression("'Value of header id: '.concat(headers.id.toString())")
+																		.withLogLevel(INFO)
+
+		fl.start
+		Thread.sleep(400)
+		println("done")
+	}
 }
