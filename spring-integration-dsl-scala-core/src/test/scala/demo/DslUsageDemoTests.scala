@@ -20,7 +20,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.SpelParserConfiguration
 import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.integration.dsl._
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 import org.springframework.core.task.SyncTaskExecutor
 
 /**

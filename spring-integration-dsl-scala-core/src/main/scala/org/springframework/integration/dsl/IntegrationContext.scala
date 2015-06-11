@@ -25,9 +25,9 @@ import org.springframework.context.ApplicationContext
 import org.springframework.integration.channel.QueueChannel
 import utils.{IntegrationDomTreeBuilder, DslUtils}
 import org.springframework.integration.support.MessageBuilder
-import org.springframework.integration.Message
-import org.springframework.integration.MessageChannel
-import org.springframework.integration.MessagingException
+import org.springframework.messaging.Message
+import org.springframework.messaging.MessageChannel
+import org.springframework.messaging.MessagingException
 import org.springframework.util.CollectionUtils
 import org.springframework.util.StringUtils
 import org.springframework.context.support.GenericApplicationContext

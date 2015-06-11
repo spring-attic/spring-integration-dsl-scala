@@ -18,61 +18,112 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.springframework.integration.file.remote.session.Session;
 import org.springframework.integration.sftp.session.DefaultSftpSessionFactory;
+import org.springframework.integration.sftp.session.SftpSession;
 
+import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.ChannelSftp.LsEntry;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+
 /**
  * @author Oleg Zhurakousky
  */
 public class TestSessionFactory extends DefaultSftpSessionFactory {
 
-	public TestSessionFactory(){}
+	public TestSessionFactory() {
+	}
 
 	@Override
-	public Session<LsEntry> getSession() {
-		Session<LsEntry> session = new Session<LsEntry>() {
+	public SftpSession getSession() {
+		
+		   JSch jsch = new JSch();
+	       Session session = null;
+		try {
+			session = jsch.getSession("Bertrand Russell", "localhost", 22);
+		} catch (JSchException e) {
+			e.printStackTrace();
+		}
 
+		return new SftpSession(session) {
+
+			@Override
 			public boolean remove(String path) throws IOException {
+				return super.remove(path);
+			}
+
+			@Override
+			public LsEntry[] list(String path) throws IOException {
+				return super.list(path);
+			}
+
+			@Override
+			public String[] listNames(String path) throws IOException {
+				return super.listNames(path);
+			}
+
+			@Override
+			public void read(String source, OutputStream os) throws IOException {
+				super.read(source, os);
+			}
+
+			@Override
+			public InputStream readRaw(String source) throws IOException {
+				return super.readRaw(source);
+			}
+
+			@Override
+			public boolean finalizeRaw() throws IOException {
 				return true;
 			}
 
-			public LsEntry[] list(String path) throws IOException {
-				return new LsEntry[]{};
-			}
-
-			public void read(String source, OutputStream outputStream)
-					throws IOException {
-			}
-
+			@Override
 			public void write(InputStream inputStream, String destination)
 					throws IOException {
 			}
 
-			public boolean mkdir(String directory) throws IOException {
-				return true;
-			}
-
-			public void rename(String pathFrom, String pathTo)
+			@Override
+			public void append(InputStream inputStream, String destination)
 					throws IOException {
 			}
 
+			@Override
 			public void close() {
 			}
 
+			@Override
 			public boolean isOpen() {
 				return true;
 			}
 
-			public boolean exists(String path) throws IOException {
+			@Override
+			public void rename(String pathFrom, String pathTo)
+					throws IOException {
+			}
+
+			@Override
+			public boolean mkdir(String remoteDirectory) throws IOException {
 				return true;
 			}
 
-			public String[] listNames(String path) throws IOException {
-				return new String[]{};
+			@Override
+			public boolean rmdir(String remoteDirectory) throws IOException {
+
+				return true;
 			}
+
+			@Override
+			public boolean exists(String path) {
+				return true;
+			}
+
+			@Override
+			public ChannelSftp getClientInstance() {
+				return super.getClientInstance();
+			}
+
 		};
-		return session;
 	}
 
 }

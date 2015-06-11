@@ -16,7 +16,7 @@
 package org.springframework.integration.dsl
 
 import org.junit.{Assert, Test}
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 
 /**

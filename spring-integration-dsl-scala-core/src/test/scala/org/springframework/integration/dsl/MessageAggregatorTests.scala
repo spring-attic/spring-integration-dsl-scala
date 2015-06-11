@@ -17,10 +17,11 @@ package org.springframework.integration.dsl
 
 import org.junit.{ Assert, Test }
 import org.junit.Assert._
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import scala.collection.immutable.List
-import org.springframework.integration.MessageHeaders
+import org.springframework.messaging.MessageHeaders
+import org.springframework.integration.IntegrationMessageHeaderAccessor
 
 /**
  * @author Oleg Zhurakousky
@@ -112,9 +113,9 @@ class MessageAggregatorTests {
       aggregate.until[String] { messages => messages.size == 2 } -->
         handle { s: Iterable[String] => assertEquals(2, s.size); s.foreach(println _) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 
@@ -125,9 +126,9 @@ class MessageAggregatorTests {
       aggregate.until[String] { messages => messages.size == 2 } -->
         handle { s: java.util.Collection[String] => assertEquals(2, s.size); println(s) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 
@@ -138,9 +139,9 @@ class MessageAggregatorTests {
       aggregate.until[String] { messages => messages.size == 2 } -->
         handle { (s: java.util.Collection[String], headers:Map[String, _])  => assertEquals(2, s.size); println(s) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 
@@ -151,9 +152,9 @@ class MessageAggregatorTests {
       aggregate.until[String] { messages => messages.size == 2 } -->
       handle { (s: Iterable[String], headers:Map[String, _])  => assertEquals(2, s.size); println(s) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
   }
 
   @Test
@@ -164,9 +165,9 @@ class MessageAggregatorTests {
       transform{s: Iterable[String] => s} -->
       handle { s: Iterable[String] => assertEquals(2, s.size); s.foreach(println _) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 
@@ -178,9 +179,9 @@ class MessageAggregatorTests {
       transform{s: Iterable[String] => s} -->
       handle { (s: Iterable[String], headers:Map[String, _]) => assertEquals(2, s.size); s.foreach(println _) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 
@@ -192,9 +193,9 @@ class MessageAggregatorTests {
       filter{s: Iterable[String] => s.size == 2} -->
       handle { s: Iterable[String] => assertEquals(2, s.size); s.foreach(println _) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 
@@ -206,9 +207,9 @@ class MessageAggregatorTests {
       filter{(s: Iterable[String], headers:Map[String, _])  => s.size == 2} -->
       handle { (s: Iterable[String], headers:Map[String, _]) => assertEquals(2, s.size); s.foreach(println _) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 
@@ -224,9 +225,9 @@ class MessageAggregatorTests {
             handle{m:Message[_] => println("In else: " + m)}
       )
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 
@@ -238,9 +239,9 @@ class MessageAggregatorTests {
       split{s: Iterable[String]  => s}.additionalAttributes(name = "foo") -->
       handle { m:Message[_] => println(m) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 
@@ -252,9 +253,9 @@ class MessageAggregatorTests {
       split{(s: Iterable[String], headers:Map[String, _])  => s} -->
       handle { m:Message[_] => println(m) }
 
-    aggregatorFlow.send("1", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("1", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
-    aggregatorFlow.send("2", headers = Map(MessageHeaders.CORRELATION_ID -> 1))
+    aggregatorFlow.send("2", headers = Map(IntegrationMessageHeaderAccessor.CORRELATION_ID -> 1))
     Thread.sleep(1000)
   }
 

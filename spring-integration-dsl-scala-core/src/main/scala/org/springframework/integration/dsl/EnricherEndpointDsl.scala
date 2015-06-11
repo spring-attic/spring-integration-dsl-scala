@@ -17,7 +17,7 @@ package org.springframework.integration.dsl
 import org.springframework.util.StringUtils
 import java.util.UUID
 import org.springframework.beans.factory.support.BeanDefinitionBuilder
-import org.springframework.integration.transformer.HeaderEnricher.HeaderValueMessageProcessor
+import org.springframework.integration.transformer.HeaderEnricher
 import org.springframework.integration.config.TransformerFactoryBean
 import org.springframework.integration.transformer.MessageTransformingHandler
 import org.springframework.integration.transformer.HeaderEnricher

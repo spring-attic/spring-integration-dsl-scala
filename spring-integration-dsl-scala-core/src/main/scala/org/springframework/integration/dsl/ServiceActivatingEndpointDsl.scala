@@ -21,7 +21,7 @@ import java.util.UUID
 import scala.collection.immutable.WrappedString
 import org.w3c.dom.Element
 import org.w3c.dom.Document
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 
 /**
  * This class provides DSL and related components to support "Service Activator" pattern

@@ -16,7 +16,7 @@
 package scala.c24.demo
 
 import org.junit.Test
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 import org.springframework.integration.dsl._
 import org.springframework.data.gemfire.CacheFactoryBean
 import com.gemstone.gemfire.cache.Cache

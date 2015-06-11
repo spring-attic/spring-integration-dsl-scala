@@ -17,7 +17,7 @@ package demo
 
 import org.junit.Test
 import org.springframework.integration.dsl._
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 import org.junit.Ignore
 import java.io.File
 import utils.DslUtils
@@ -134,7 +134,7 @@ class DSLUsageDemoTests {
 
     val messageFlow =
       transform { p: String => p.toUpperCase() } -->
-        ftp(sessionFactory).send("/").asFileName { s: String => "foo.txt" }.additionalAttributes(cacheSessions = false)
+        ftp(sessionFactory).send("/").asFileName { s: String => "foo.txt" }
 
     messageFlow.send("Hello File")
 

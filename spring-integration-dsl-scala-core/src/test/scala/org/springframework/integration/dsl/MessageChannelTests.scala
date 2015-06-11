@@ -19,7 +19,7 @@ import org.junit.Test
 import org.springframework.core.task.SimpleAsyncTaskExecutor
 import org.springframework.integration.store.SimpleMessageStore
 import java.util.concurrent.Executors
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 
 /**
  * @author Oleg Zhurakousky
