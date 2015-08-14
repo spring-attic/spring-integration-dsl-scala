@@ -29,3 +29,5 @@ vf.gf.*
 *.txt
 derby.log
 .springBeans
+*/.cache-main
+*/.cache-tests

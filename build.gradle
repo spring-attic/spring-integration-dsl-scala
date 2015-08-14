@@ -2,6 +2,7 @@ description = 'Spring Integration Scala DSL'
 
 apply plugin: 'base'
 apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 ext {
 	linkHomepage = 'https://github.com/SpringSource/spring-integration-scala'
@@ -40,10 +41,10 @@ subprojects { subproject ->
 
 	dependencies {
 		// Libraries needed for scala api
-		compile 'org.scala-lang:scala-library:2.11.6'
+		compile 'org.scala-lang:scala-library:2.11.7'
 
-		compile 'org.scala-lang:scala-compiler:2.11.6'
-		compile 'org.scala-lang:scala-library:2.11.6'
+		compile 'org.scala-lang:scala-compiler:2.11.7'
+		compile 'org.scala-lang:scala-library:2.11.7'
 
 		testCompile "junit:junit-dep:$junitVersion"
 		testCompile "log4j:log4j:$log4jVersion"
