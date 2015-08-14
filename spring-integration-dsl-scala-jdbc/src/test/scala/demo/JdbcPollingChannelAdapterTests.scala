@@ -19,7 +19,7 @@ package demo;
 
 import org.junit.Test
 import org.junit.Assert._
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 import org.junit.Before
 import org.junit.After
 import org.apache.commons.logging.LogFactory

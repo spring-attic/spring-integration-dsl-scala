@@ -15,7 +15,7 @@
  */
 package org.springframework.integration.dsl
 
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 import java.util.concurrent.Executor
 import org.springframework.integration.store.{ SimpleMessageStore, MessageStore }
 import org.springframework.util.StringUtils

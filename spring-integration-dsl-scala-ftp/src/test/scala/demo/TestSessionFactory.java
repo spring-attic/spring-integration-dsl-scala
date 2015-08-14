@@ -18,61 +18,100 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
-
-import org.springframework.integration.file.remote.session.Session;
 import org.springframework.integration.ftp.session.DefaultFtpSessionFactory;
+import org.springframework.integration.ftp.session.FtpSession;
+
 /**
  * @author Oleg Zhurakousky
  */
 public class TestSessionFactory extends DefaultFtpSessionFactory {
 
-	public TestSessionFactory(){}
+	public TestSessionFactory() {
+	}
 
 	@Override
-	public Session<FTPFile> getSession() {
-		Session<FTPFile> session = new Session<FTPFile>() {
+	public FtpSession getSession() {
 
+		FTPClient ftpClient = new FTPClient();
+		
+		return new FtpSession(ftpClient) {
+
+			@Override
 			public boolean remove(String path) throws IOException {
 				return true;
 			}
 
+			@Override
 			public FTPFile[] list(String path) throws IOException {
-				return new FTPFile[]{};
+				return new FTPFile[] {};
 			}
 
-			public void read(String source, OutputStream outputStream)
-					throws IOException {
+			@Override
+			public String[] listNames(String path) throws IOException {
+				return new String[]{};
 			}
 
-			public void write(InputStream inputStream, String destination)
-					throws IOException {
+			@Override
+			public void read(String path, OutputStream fos) throws IOException {
 			}
 
-			public boolean mkdir(String directory) throws IOException {
+			@Override
+			public InputStream readRaw(String source) throws IOException {
+				return super.readRaw(source);
+			}
+
+			@Override
+			public boolean finalizeRaw() throws IOException {
 				return true;
 			}
 
-			public void rename(String pathFrom, String pathTo)
+			@Override
+			public void write(InputStream inputStream, String path)
 					throws IOException {
 			}
 
+			@Override
+			public void append(InputStream inputStream, String path)
+					throws IOException {
+			}
+
+			@Override
 			public void close() {
 			}
 
+			@Override
 			public boolean isOpen() {
 				return true;
 			}
 
+			@Override
+			public void rename(String pathFrom, String pathTo)
+					throws IOException {
+			}
+
+			@Override
+			public boolean mkdir(String remoteDirectory) throws IOException {
+				return true;
+			}
+
+			@Override
+			public boolean rmdir(String directory) throws IOException {
+				return true;
+			}
+
+			@Override
 			public boolean exists(String path) throws IOException {
 				return true;
 			}
 
-			public String[] listNames(String path) throws IOException {
-				return new String[]{};
+			@Override
+			public FTPClient getClientInstance() {
+				return super.getClientInstance();
 			}
+
 		};
-		return session;
 	}
 
 }

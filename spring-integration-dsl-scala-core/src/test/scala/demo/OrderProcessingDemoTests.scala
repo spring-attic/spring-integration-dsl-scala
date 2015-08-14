@@ -15,11 +15,11 @@
  */
 package demo
 import org.springframework.integration.dsl._
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 import java.util.Random
 import org.junit._
 import java.util.concurrent.Executors
-import org.springframework.integration.MessageHeaders
+import org.springframework.messaging.MessageHeaders
 
 
 /**

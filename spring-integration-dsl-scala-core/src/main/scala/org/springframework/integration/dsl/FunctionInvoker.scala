@@ -22,7 +22,7 @@ import scala.collection.JavaConversions._
 
 import org.apache.commons.logging.LogFactory
 import org.springframework.integration.support.MessageBuilder
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 /**
  * @author Oleg Zhurakousky
  * @author Soby Chacko

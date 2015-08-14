@@ -27,7 +27,7 @@ import org.springframework.integration.dsl.utils.DslUtils
 import org.springframework.integration.dsl.utils.Conventions
 import java.util.Collection
 import scala.collection.JavaConversions
-import org.springframework.integration.Message
+import org.springframework.messaging
 
 /**
  * This class provides DSL and related components to support "Message Aggregator" pattern

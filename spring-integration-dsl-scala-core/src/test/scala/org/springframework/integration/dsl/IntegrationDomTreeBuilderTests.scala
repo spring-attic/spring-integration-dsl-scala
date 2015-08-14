@@ -23,7 +23,7 @@ import org.junit.Test
 import org.springframework.integration.dsl.utils.IntegrationDomTreeBuilder
 import org.springframework.integration.endpoint.EventDrivenConsumer
 import org.springframework.integration.endpoint.PollingConsumer
-import org.springframework.integration.Message
+import org.springframework.messaging.Message
 import org.springframework.util.xml.DomUtils
 import org.w3c.dom.Document
 import org.w3c.dom.Element
