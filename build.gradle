@@ -16,7 +16,7 @@ allprojects {
 	group = 'org.springframework.integration'
 
 	repositories {
-		maven { url 'http://repo.springsource.org/libs-milestone' }
+		maven { url 'https://repo.springsource.org/libs-milestone' }
 	}
 }
 
