@@ -51,4 +51,4 @@ The Spring Integration Extensions Framework is released under version 2.0 of the
 [Pull requests]: https://help.github.com/send-pull-requests
 [contributor guidelines]: https://github.com/SpringSource/spring-integration/wiki/Contributor-guidelines
 [administrator guidelines]: https://github.com/SpringSource/spring-integration/wiki/Administrator-Guidelines
-[Apache License]: http://www.apache.org/licenses/LICENSE-2.0
+[Apache License]: https://www.apache.org/licenses/LICENSE-2.0
