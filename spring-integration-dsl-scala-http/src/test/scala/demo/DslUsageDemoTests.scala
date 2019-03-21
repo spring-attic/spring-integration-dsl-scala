@@ -39,7 +39,7 @@ class DSLUsageDemoTests {
 
     val httpFlow =
       enrich.header("company" -> { name: String => tickerService.sendAndReceive[String](name) }) -->
-      http.GET[String] { ticker: String => "http://www.google.com/finance/info?q=" + ticker } -->
+      http.GET[String] { ticker: String => "https://www.google.com/finance/info?q=" + ticker } -->
       handle { (payload: String, headers: Map[String, _]) =>
           println("QUOTES for " + headers.get("company") + " : " + payload)
       }
@@ -62,7 +62,7 @@ class DSLUsageDemoTests {
       }
 
     val httpFlow =
-      http.GET[String]("http://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("Oracle")) -->
+      http.GET[String]("https://www.google.com/finance/info?q=" + tickerService.sendAndReceive[String]("Oracle")) -->
         handle { quotes: Message[_] => println("QUOTES for " + quotes.getHeaders().get("company") + " : " + quotes) }
 
     httpFlow.send("don't care")

@@ -22,7 +22,7 @@ import java.util.concurrent.Executor
  */
 private[dsl] object FileDsl {
   val fileSchema = " http://www.springframework.org/schema/integration/file " +
-    "http://www.springframework.org/schema/integration/file/spring-integration-file.xsd"
+    "https://www.springframework.org/schema/integration/file/spring-integration-file.xsd"
 
 }
 

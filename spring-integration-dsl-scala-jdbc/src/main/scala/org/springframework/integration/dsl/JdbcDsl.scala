@@ -24,7 +24,7 @@ import javax.sql.DataSource
 
 private[dsl] object JdbcDsl {
   val jdbcSchema = " http://www.springframework.org/schema/integration/jdbc " +
-    "http://www.springframework.org/schema/integration/jdbc/spring-integration-jdbc.xsd"
+    "https://www.springframework.org/schema/integration/jdbc/spring-integration-jdbc.xsd"
 
 }
 
