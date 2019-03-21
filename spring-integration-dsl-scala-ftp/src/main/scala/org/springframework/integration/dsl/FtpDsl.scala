@@ -24,7 +24,7 @@ import org.apache.commons.net.ftp.FTPClient
  */
 private[dsl] object FtpDsl {
   val ftpSchema = " http://www.springframework.org/schema/integration/ftp " +
-    "http://www.springframework.org/schema/integration/ftp/spring-integration-ftp.xsd"
+    "https://www.springframework.org/schema/integration/ftp/spring-integration-ftp.xsd"
 
 }
 

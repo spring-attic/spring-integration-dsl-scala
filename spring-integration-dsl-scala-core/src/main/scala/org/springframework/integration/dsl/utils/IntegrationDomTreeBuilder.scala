@@ -76,8 +76,8 @@ class IntegrationDomTreeBuilder {
   root.setAttribute("xmlns", "http://www.springframework.org/schema/beans")
   root.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
   root.setAttribute("xmlns:int", "http://www.springframework.org/schema/integration")
-  root.setAttribute("xsi:schemaLocation", "http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd " +
-    "http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd")
+  root.setAttribute("xsi:schemaLocation", "http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd " +
+    "http://www.springframework.org/schema/integration https://www.springframework.org/schema/integration/spring-integration.xsd")
 
   root.appendChild(document.createComment("Generated file. Don't modify"))
   document.appendChild(root);

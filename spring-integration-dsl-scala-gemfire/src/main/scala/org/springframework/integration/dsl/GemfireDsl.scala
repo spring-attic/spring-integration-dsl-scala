@@ -23,7 +23,7 @@ import com.gemstone.gemfire.cache.EntryEvent
  */
 private[dsl] object GemfireDsl {
   val gemfireSchema = " http://www.springframework.org/schema/integration/gemfire " +
-    "http://www.springframework.org/schema/integration/gemfire/spring-integration-gemfire.xsd"
+    "https://www.springframework.org/schema/integration/gemfire/spring-integration-gemfire.xsd"
 }
 
 class GemfireRegion(val region: Region[_, _], private val cache: Cache) {

@@ -22,7 +22,7 @@ import org.springframework.transaction.PlatformTransactionManager
 private[dsl] object JmsDsl {
 
   val jmsSchema = " http://www.springframework.org/schema/integration/jms " +
-  		"http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd"
+  		"https://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd"
 
 }
 object jms {

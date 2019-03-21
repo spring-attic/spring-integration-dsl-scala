@@ -23,7 +23,7 @@ import org.springframework.integration.sftp.session.DefaultSftpSessionFactory
  */
 private[dsl] object SftpDsl {
   val sftpSchema = " http://www.springframework.org/schema/integration/sftp " +
-    "http://www.springframework.org/schema/integration/sftp/spring-integration-sftp.xsd"
+    "https://www.springframework.org/schema/integration/sftp/spring-integration-sftp.xsd"
 
 }
 

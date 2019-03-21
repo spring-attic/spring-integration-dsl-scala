@@ -7,7 +7,7 @@ For more information please refer to our [WIKI page] (https://github.com/SpringS
 
 ## Api Documentation
 
-* [ScalaDoc](http://static.springsource.org/spring-integration-dsl-scala/docs/current-SNAPSHOT/api)
+* [ScalaDoc](https://docs.spring.io/spring-integration-dsl-scala/docs/current-SNAPSHOT/api)
 
 ## Getting support
 
@@ -35,20 +35,20 @@ Report issues via the [Spring Integration DSL Scala JIRA][].
 
 The Spring Integration Extensions Framework is released under version 2.0 of the [Apache License][] unless noted differently for individual extension Modules, but this should be the rare exception.
 
-[Scala]: http://www.scala-lang.org/
-[EIP]: http://www.eaipatterns.com/
+[Scala]: https://www.scala-lang.org/
+[EIP]: https://www.enterpriseintegrationpatterns.com/
 [Spring Integration]: https://github.com/SpringSource/spring-integration
-[Spring Integration forums]: http://forum.springsource.org/forumdisplay.php?42-Integration
-[spring-integration tag]: http://stackoverflow.com/questions/tagged/spring-integration
-[Stack Overflow]: http://stackoverflow.com/faq
-[Commercial support]: http://springsource.com/support/springsupport
-[Spring Integration DSL Scala JIRA]: http://jira.springsource.org/browse/INTSCALA
+[Spring Integration forums]: https://forum.spring.io/forumdisplay.php?42-Integration
+[spring-integration tag]: https://stackoverflow.com/questions/tagged/spring-integration
+[Stack Overflow]: https://stackoverflow.com/faq
+[Commercial support]: https://springsource.com/support/springsupport
+[Spring Integration DSL Scala JIRA]: https://jira.springsource.org/browse/INTSCALA
 [Spring Integration Samples]: https://github.com/SpringSource/spring-integration-samples
 [Spring Integration Extensions]: https://github.com/SpringSource/spring-integration-extensions
 [Spring Integration Templates]: https://github.com/SpringSource/spring-integration-templates/tree/master/si-sts-templates
 [Spring Integration Dsl Groovy]: https://github.com/SpringSource/spring-integration-dsl-groovy
 [Spring XD]: https://github.com/SpringSource/spring-xd
-[Pull requests]: http://help.github.com/send-pull-requests
+[Pull requests]: https://help.github.com/send-pull-requests
 [contributor guidelines]: https://github.com/SpringSource/spring-integration/wiki/Contributor-guidelines
 [administrator guidelines]: https://github.com/SpringSource/spring-integration/wiki/Administrator-Guidelines
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0

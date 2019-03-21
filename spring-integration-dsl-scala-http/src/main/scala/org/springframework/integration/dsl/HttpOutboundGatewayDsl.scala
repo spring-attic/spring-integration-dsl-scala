@@ -146,7 +146,7 @@ private[dsl] class HttpOutboundGateway(name: String = "$http_out_" + UUID.random
        val schemaLocation = beansElement.getAttribute("xsi:schemaLocation")
        beansElement.setAttribute("xsi:schemaLocation", schemaLocation +
     		   " http://www.springframework.org/schema/integration/http " +
-    		   "http://www.springframework.org/schema/integration/http/spring-integration-http.xsd")
+    		   "https://www.springframework.org/schema/integration/http/spring-integration-http.xsd")
     }
 
     val element = document.createElement("int-http:outbound-gateway")
