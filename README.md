@@ -1,3 +1,5 @@
+# spring-integration-dsl-scala is no longer actively maintained by VMware, Inc.
+
 Spring Integration Scala DSL
 ============================
 
