@@ -25,7 +25,7 @@ object inbound {
 
 	def poll(tgt: Any) = new {
 
-	def atFixedRate(rate: Int) = {
+		def atFixedRate(rate: Int) = {
 			val poller = new Poller(fixedRate = rate)
 			new ListeningIntegrationComposition(null, new InboundChannelAdapterConfig(target= tgt, poller = poller)) {
 

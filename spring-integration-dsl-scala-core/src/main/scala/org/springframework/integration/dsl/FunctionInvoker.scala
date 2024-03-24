@@ -66,6 +66,9 @@ private final class FunctionInvoker(f: => Any) {
     result
   }
 
+  /**
+   *
+   */
 	def invokeAndReceive() = {
 		val result = this.invokeMethod[Object]
 		result
